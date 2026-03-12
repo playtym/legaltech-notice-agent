@@ -1,17 +1,19 @@
 """Escalation pressure strategy agent.
 
-Determines which non-litigation pressure tactics apply to the specific
-dispute and company. The goal is to make the legal notice itself so
-credible and multi-pronged that the company resolves the issue to
-avoid regulatory, reputational, and compliance consequences — WITHOUT
-the complainant ever needing to file a case.
+Uses Claude to determine applicable non-litigation pressure tactics
+tailored to the specific dispute, company, and industry. Falls back
+to keyword-based industry detection if LLM unavailable.
 """
 
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass, field
 
 from legaltech.schemas import ComplaintInput, CompanyProfile, PolicyEvidence
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -120,10 +122,136 @@ _SECTOR_REGULATORS: dict[str, list[tuple[str, str, str]]] = {
 }
 
 
+_ESCALATION_SYSTEM_PROMPT = """\
+You are a senior Indian consumer rights strategist. Given a consumer complaint, \
+company profile, and dispute context, determine the most effective non-litigation \
+pressure tactics to include in the legal notice.
+
+Your goal: make the legal notice so credible and multi-pronged that the company's \
+legal team concludes that resolution is cheaper than fighting.
+
+For each tactic, provide:
+1. Tactic name (short label)
+2. Specific action the consumer will take
+3. Target authority / body
+4. Legal basis (statute, regulation, or scheme)
+5. Impact description (why the company should care)
+
+MANDATORY TACTICS (include for ALL disputes):
+- Director personal liability (CPA 2019 §89)
+- CCPA complaint (CPA 2019 §18, penalty up to ₹50 lakh)
+- Government portal escalation (NCH, INGRAM, CPGRAMS)
+- Public review / social media (Article 19(1)(a))
+- Criminal remedies reservation (BNS 2023 §318-319)
+
+SECTOR-SPECIFIC (include if applicable):
+- Banking/finance: RBI Ombudsman, RBI Charter of Customer Rights
+- E-commerce: E-Commerce Rules 2020 violation, CCPA recall powers
+- Telecom: TRAI, Telecom Ombudsman
+- Airlines/travel: DGCA, AirSewa portal
+- Real estate: state RERA Authority
+- Insurance: IRDAI, Insurance Ombudsman
+- Food/FMCG: FSSAI, Food Safety Commissioner
+- Healthcare: National Medical Commission
+- Education: UGC/AICTE
+- Data/privacy: Data Protection Board (DPDP Act 2023, penalty up to ₹250 crore)
+- Refund/payment: GST authority flag (CGST Act 2017 §34)
+- Listed companies: SEBI / LODR disclosure
+
+Also determine severity level: standard, elevated, or maximum.
+Include a multi-stakeholder CC strategy listing all entities to copy on the notice.
+
+Return JSON:
+{
+  "tactics": [
+    {
+      "tactic": "short label",
+      "action": "detailed action description",
+      "target_authority": "who it targets",
+      "legal_basis": "statute/regulation reference",
+      "impact_description": "why company should care"
+    }
+  ],
+  "severity_level": "standard|elevated|maximum",
+  "summary": "overall strategy summary",
+  "detected_industries": ["list of relevant industry sectors"]
+}
+
+Return ONLY the JSON.
+"""
+
+
 class EscalationStrategyAgent:
     """Determines applicable non-litigation pressure tactics."""
 
-    def run(
+    def __init__(self, llm=None) -> None:
+        self.llm = llm
+
+    async def run(
+        self,
+        complaint: ComplaintInput,
+        company: CompanyProfile,
+        policies: list[PolicyEvidence],
+        contacts_found: int,
+        respondent_identity_found: bool,
+        evidence_count: int,
+        claim_amount_hint: str | None = None,
+    ) -> EscalationStrategy:
+        if self.llm:
+            try:
+                return await self._agentic_run(
+                    complaint, company, policies, contacts_found,
+                    respondent_identity_found, evidence_count, claim_amount_hint,
+                )
+            except Exception as exc:
+                logger.warning("LLM escalation strategy failed, using fallback: %s", exc)
+        return self._deterministic_run(
+            complaint, company, policies, contacts_found,
+            respondent_identity_found, evidence_count, claim_amount_hint,
+        )
+
+    async def _agentic_run(
+        self,
+        complaint: ComplaintInput,
+        company: CompanyProfile,
+        policies: list[PolicyEvidence],
+        contacts_found: int,
+        respondent_identity_found: bool,
+        evidence_count: int,
+        claim_amount_hint: str | None,
+    ) -> EscalationStrategy:
+        company_label = company.legal_name or company.brand_name or "the company"
+        user_prompt = (
+            f"## Complaint Summary\n{complaint.issue_summary}\n\n"
+            f"## Desired Resolution\n{complaint.desired_resolution}\n\n"
+            f"## Company\nName: {company_label}\nDomain: {company.domain or 'unknown'}\n\n"
+            f"## Context\n"
+            f"- Contacts found: {contacts_found}\n"
+            f"- Respondent identity verified: {respondent_identity_found}\n"
+            f"- Evidence items: {evidence_count}\n"
+            f"- Claim amount hint: {claim_amount_hint or 'not specified'}\n"
+            f"- Timeline entries: {len(complaint.timeline)}\n"
+            f"- Policies scraped: {len(policies)}\n"
+        )
+        data = await self.llm.complete_json(_ESCALATION_SYSTEM_PROMPT, user_prompt)
+
+        tactics = [
+            PressureTactic(
+                tactic=t["tactic"],
+                action=t["action"],
+                target_authority=t.get("target_authority", ""),
+                legal_basis=t.get("legal_basis", ""),
+                impact_description=t.get("impact_description", ""),
+            )
+            for t in data.get("tactics", [])
+        ]
+        return EscalationStrategy(
+            tactics=tactics,
+            severity_level=data.get("severity_level", "standard"),
+            summary=data.get("summary", ""),
+        )
+
+    def _deterministic_run(
         self,
         complaint: ComplaintInput,
         company: CompanyProfile,

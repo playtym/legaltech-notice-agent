@@ -9,13 +9,13 @@ from legaltech.agents.claim_elements_agent import ClaimElementsAgent
 from legaltech.agents.escalation_agent import EscalationStrategyAgent
 from legaltech.agents.company_agent import CompanyAgent
 from legaltech.agents.contact_agent import ContactDiscoveryAgent
-from legaltech.agents.cure_period import determine_cure_period
+from legaltech.agents.cure_period import CurePeriodAgent
 from legaltech.agents.evidence_scoring_agent import EvidenceScoringAgent
 from legaltech.agents.gap_analysis_agent import GapAnalysisAgent, GapAnalysisResult
 from legaltech.agents.intake_agent import IntakeAgent
-from legaltech.agents.jurisdiction_agent import determine_jurisdiction
+from legaltech.agents.jurisdiction_agent import JurisdictionAgent
 from legaltech.agents.legal_analysis_agent import LegalAnalysisAgent
-from legaltech.agents.limitation_agent import check_limitation
+from legaltech.agents.limitation_agent import LimitationAgent
 from legaltech.agents.notice_agent import NoticeDraftAgent
 from legaltech.agents.policy_agent import PolicyAgent
 from legaltech.agents.respondent_id_agent import RespondentIdAgent
@@ -60,17 +60,20 @@ class LegalNoticePipeline:
             model_name=settings.model_name,
             api_key=settings.anthropic_api_key,
         )
-        self.intake = IntakeAgent()
+        self.intake = IntakeAgent(llm=self.llm)
         self.company = CompanyAgent()
         self.contacts = ContactDiscoveryAgent()
         self.policy = PolicyAgent()
         self.legal = LegalAnalysisAgent(llm=self.llm)
-        self.claim_elements = ClaimElementsAgent()
+        self.claim_elements = ClaimElementsAgent(llm=self.llm)
         self.respondent_id = RespondentIdAgent()
-        self.evidence_scoring = EvidenceScoringAgent()
-        self.arbitration = ArbitrationDetectionAgent()
-        self.tc_counter = TCCounterAgent()
-        self.escalation = EscalationStrategyAgent()
+        self.evidence_scoring = EvidenceScoringAgent(llm=self.llm)
+        self.arbitration = ArbitrationDetectionAgent(llm=self.llm)
+        self.tc_counter = TCCounterAgent(llm=self.llm)
+        self.escalation = EscalationStrategyAgent(llm=self.llm)
+        self.cure_period_agent = CurePeriodAgent(llm=self.llm)
+        self.limitation_agent = LimitationAgent(llm=self.llm)
+        self.jurisdiction_agent = JurisdictionAgent(llm=self.llm)
         self.gap_analysis = GapAnalysisAgent(self.llm)
         self.notice = NoticeDraftAgent(self.llm)
 
@@ -300,7 +303,7 @@ class LegalNoticePipeline:
         )
 
         # ── Limitation period check ──────────────────────────────────
-        limitation_result = check_limitation(
+        limitation_result = await self.limitation_agent.run(
             timeline=complaint_ctx.timeline,
             issue_summary=complaint_ctx.issue_summary,
         )
@@ -315,7 +318,7 @@ class LegalNoticePipeline:
         )
 
         # ── Jurisdiction / forum determination ───────────────────────
-        jurisdiction_result = determine_jurisdiction(
+        jurisdiction_result = await self.jurisdiction_agent.run(
             complainant_address=complaint_ctx.complainant.address,
             issue_summary=complaint_ctx.issue_summary,
             desired_resolution=complaint_ctx.desired_resolution,
@@ -324,13 +327,14 @@ class LegalNoticePipeline:
         )
 
         # ── Dynamic cure period ──────────────────────────────────────
-        cure_days, cure_rationale = determine_cure_period(
+        cure_days, cure_rationale = await self.cure_period_agent.run(
             issue_summary=complaint_ctx.issue_summary,
             timeline_length=len(complaint_ctx.timeline),
+            timeline=complaint_ctx.timeline,
         )
 
         # ── Escalation strategy (pressure tactics) ────────────────
-        escalation_result = self.escalation.run(
+        escalation_result = await self.escalation.run(
             complaint=complaint_ctx,
             company=company,
             policies=policies,

@@ -1,14 +1,58 @@
 """Element-by-element civil claim analysis.
 
-For each plausible section, checks whether the complaint narrative
-satisfies the required civil claim elements before allowing citation.
+Uses Claude to evaluate whether the complaint narrative satisfies
+the required civil claim elements for each plausible statutory section.
+Falls back to keyword-based heuristics if LLM is unavailable.
 """
 
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass, field
 
 from legaltech.legal_india import LawSection
+
+logger = logging.getLogger(__name__)
+
+_SYSTEM_PROMPT = """\
+You are an expert Indian consumer law analyst. Given statutory sections and a complaint \
+corpus, evaluate whether the complaint facts satisfy the required civil claim elements.
+
+For EACH section, analyse these elements:
+1. DUTY — Did the respondent owe a duty/obligation to the consumer?
+2. BREACH — Did the respondent breach that duty (deficiency, unfair practice, non-compliance)?
+3. CAUSATION — Did the breach directly cause the consumer's loss?
+4. LOSS — Is there a quantifiable or demonstrable loss/harm?
+5. MITIGATION — Did the consumer attempt to resolve before escalation?
+
+Be rigorous but fair. Look for implicit signals:
+- A consumer who contacted customer support has attempted mitigation even if not stated explicitly.
+- A consumer who paid money and did not receive goods has demonstrable loss.
+- Purchasing a product/service establishes duty.
+- Timelines showing repeated follow-ups strengthen causation and mitigation.
+
+Return JSON:
+{
+  "sections": [
+    {
+      "act": "exact act name",
+      "section": "exact section ref",
+      "elements": [
+        {
+          "element": "duty|breach|causation|loss|mitigation",
+          "satisfied": true or false,
+          "reasoning": "2-3 sentence explanation citing specific facts from the complaint"
+        }
+      ],
+      "overall_pass": true or false,
+      "score": 0.0 to 1.0
+    }
+  ]
+}
+
+Return ONLY the JSON array, no preamble.
+"""
 
 
 @dataclass
@@ -26,40 +70,7 @@ class ClaimElementsResult:
     score: float = 0.0
 
 
-# ── Civil claim elements per section family ──────────────────────────────
-
-_CIVIL_ELEMENTS: dict[str, list[str]] = {
-    "Consumer Protection Act, 2019": [
-        "duty",          # respondent owed a duty to the consumer
-        "breach",        # respondent breached that duty / deficiency / unfair practice
-        "causation",     # breach caused the consumer's loss
-        "loss",          # quantifiable or demonstrable loss/harm
-        "mitigation",    # consumer attempted to resolve before escalation
-    ],
-    "Indian Contract Act, 1872": [
-        "valid_contract",  # a valid contract existed between parties
-        "breach",          # respondent breached a term of the contract
-        "causation",       # breach led to actual loss
-        "loss",            # loss that naturally arose or was foreseeable
-        "mitigation",      # consumer mitigated / attempted resolution
-    ],
-    "Information Technology Act, 2000": [
-        "data_handling",   # respondent handled sensitive personal data
-        "negligence",      # failure to implement reasonable security practices
-        "causation",       # negligence caused wrongful loss/gain
-        "loss",            # demonstrable wrongful loss or gain
-        "mitigation",      # consumer reported and sought resolution
-    ],
-    "Payment and Settlement Systems Act, 2007": [
-        "regulated_entity",  # respondent is a regulated payment system participant
-        "obligation",        # specific RBI direction / ombudsman norm applicable
-        "breach",            # respondent failed to comply
-        "loss",              # consumer suffered monetary loss / denial of service
-        "mitigation",        # complaint raised with entity, 30-day rule for ombudsman
-    ],
-}
-
-# ── Keyword signals for each element ─────────────────────────────────────
+# ── Fallback keyword signals (used when LLM unavailable) ──────────────
 
 _ELEMENT_SIGNALS: dict[str, tuple[str, ...]] = {
     "duty": ("service", "product", "customer", "consumer", "subscription", "order"),
@@ -67,33 +78,84 @@ _ELEMENT_SIGNALS: dict[str, tuple[str, ...]] = {
     "causation": ("because", "due to", "result", "caused", "led to", "therefore", "consequently"),
     "loss": ("loss", "damage", "refund", "money", "amount", "cost", "expense", "compensation", "harm"),
     "mitigation": ("complained", "raised", "ticket", "support", "email", "called", "contacted", "escalated", "tried"),
-    "valid_contract": ("order", "purchase", "agreement", "subscription", "paid", "contract", "invoice", "booked"),
-    "data_handling": ("data", "personal information", "account", "profile", "sensitive", "password"),
-    "negligence": ("leak", "exposed", "hack", "security", "negligent", "no protection", "breach"),
-    "regulated_entity": ("bank", "wallet", "upi", "payment", "rbi", "nbfc", "fintech"),
-    "obligation": ("rbi", "ombudsman", "regulation", "circular", "direction", "mandate"),
 }
 
 
 class ClaimElementsAgent:
     """Evaluates whether complaint facts satisfy required civil claim elements."""
 
+    def __init__(self, llm=None) -> None:
+        self.llm = llm
+
     async def run(
+        self,
+        plausible_sections: list[LawSection],
+        corpus: str,
+    ) -> list[ClaimElementsResult]:
+        if self.llm:
+            try:
+                return await self._agentic_run(plausible_sections, corpus)
+            except Exception as exc:
+                logger.warning("LLM claim elements failed, using fallback: %s", exc)
+        return self._deterministic_run(plausible_sections, corpus)
+
+    async def _agentic_run(
+        self,
+        plausible_sections: list[LawSection],
+        corpus: str,
+    ) -> list[ClaimElementsResult]:
+        sections_info = "\n".join(
+            f"- {s.act}, {s.section}: {s.title} — {s.why_relevant}"
+            for s in plausible_sections
+        )
+        user_prompt = (
+            f"## Applicable Sections\n{sections_info}\n\n"
+            f"## Complaint Corpus\n{corpus[:4000]}"
+        )
+        data = await self.llm.complete_json(_SYSTEM_PROMPT, user_prompt)
+
+        section_map = {(s.act, s.section): s for s in plausible_sections}
+        results: list[ClaimElementsResult] = []
+
+        for item in data.get("sections", []):
+            key = (item.get("act", ""), item.get("section", ""))
+            section = section_map.get(key)
+            if not section:
+                continue
+            checks = [
+                ElementCheck(
+                    element=e["element"],
+                    satisfied=bool(e["satisfied"]),
+                    reasoning=e.get("reasoning", ""),
+                )
+                for e in item.get("elements", [])
+            ]
+            results.append(ClaimElementsResult(
+                section=section,
+                checks=checks,
+                overall_pass=bool(item.get("overall_pass", False)),
+                score=round(float(item.get("score", 0.0)), 2),
+            ))
+
+        covered = {(r.section.act, r.section.section) for r in results}
+        for s in plausible_sections:
+            if (s.act, s.section) not in covered:
+                results.append(ClaimElementsResult(section=s, overall_pass=True, score=1.0))
+
+        return results
+
+    def _deterministic_run(
         self,
         plausible_sections: list[LawSection],
         corpus: str,
     ) -> list[ClaimElementsResult]:
         corpus_lower = corpus.lower()
         results: list[ClaimElementsResult] = []
+        default_elements = ["duty", "breach", "causation", "loss", "mitigation"]
 
         for section in plausible_sections:
-            elements = _CIVIL_ELEMENTS.get(section.act)
-            if not elements:
-                results.append(ClaimElementsResult(section=section, overall_pass=True, score=1.0))
-                continue
-
             checks: list[ElementCheck] = []
-            for element in elements:
+            for element in default_elements:
                 signals = _ELEMENT_SIGNALS.get(element, ())
                 found = [s for s in signals if s in corpus_lower]
                 satisfied = len(found) > 0
@@ -106,12 +168,11 @@ class ClaimElementsAgent:
             passed = sum(1 for c in checks if c.satisfied)
             total = len(checks)
             score = passed / total if total > 0 else 0.0
-            overall = score >= 0.6  # at least 3 of 5 elements present
 
             results.append(ClaimElementsResult(
                 section=section,
                 checks=checks,
-                overall_pass=overall,
+                overall_pass=score >= 0.6,
                 score=round(score, 2),
             ))
 

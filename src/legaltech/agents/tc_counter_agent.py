@@ -1,13 +1,14 @@
 """Terms & Conditions counter-argument agent.
 
-Identifies common corporate defense clauses in scraped T&Cs and
-builds persuasive legal counter-arguments that a seasoned Indian
-consumer lawyer would use. Most consumer complaints fall flat because
-the company points to its own T&C — this agent anticipates and
-dismantles those defenses preemptively.
+Uses Claude to identify corporate defense clauses in scraped T&Cs and
+build persuasive legal counter-arguments. Falls back to regex-based
+pattern matching if LLM is unavailable.
 """
 
 from __future__ import annotations
+
+import json
+import logging
 
 import re
 from dataclasses import dataclass, field
@@ -176,10 +177,112 @@ _DEFENSE_PATTERNS: list[tuple[re.Pattern[str], str, str, str, str]] = [
 ]
 
 
+logger = logging.getLogger(__name__)
+
+_TC_SYSTEM_PROMPT = """\
+You are a senior Indian consumer rights lawyer. Given company Terms & Conditions \
+text and a consumer complaint, identify ALL corporate defense clauses the company \
+could use to deny the claim, and build devastating legal counter-arguments.
+
+For each defense clause found, provide:
+1. The defense the company will likely raise
+2. The exact clause excerpt from their T&C
+3. A strong legal counter-argument citing Indian statutory overrides
+4. The statutory basis (Act and section numbers)
+5. Supporting precedent or legal principle
+
+COMMON DEFENSES TO LOOK FOR:
+- No-refund / all-sales-final policies
+- Limitation of liability / damages caps
+- Exclusion of indirect/consequential damages
+- Force majeure / beyond-control clauses
+- Unilateral right to modify terms
+- Sole discretion clauses
+- As-is / no-warranty disclaimers
+- Exclusive jurisdiction clauses
+- Deemed acceptance / clickwrap terms
+- Third-party / intermediary defense
+
+KEY INDIAN STATUTORY OVERRIDES:
+- CPA 2019 §2(46) — unfair contract terms
+- CPA 2019 §2(47) — unfair trade practices
+- CPA 2019 §39(1)(d) — compensation powers
+- CPA 2019 §35 — consumer forum jurisdiction overrides contracts
+- Emaar MGF v. Aftab Singh (2019) 12 SCC 1 — arbitration no bar
+
+If no T&C text is available, analyse the complaint facts and build a \
+primary-objection strategy based on respondent conduct and reasonableness.
+
+Return JSON:
+{
+  "counters": [
+    {
+      "defense_clause": "short label",
+      "clause_excerpt": "quoted text from T&C",
+      "source_url": "URL where found",
+      "legal_counter": "detailed counter-argument",
+      "statutory_basis": "Act §section references",
+      "precedent_note": "supporting case/principle"
+    }
+  ],
+  "overall_strategy": "summary of counter-argument strategy"
+}
+
+Return ONLY the JSON.
+"""
+
+
 class TCCounterAgent:
     """Scans company T&Cs and builds preemptive legal counter-arguments."""
 
+    def __init__(self, llm=None) -> None:
+        self.llm = llm
+
     async def run(
+        self,
+        policy_evidence: list[PolicyEvidence],
+        issue_summary: str,
+    ) -> TCCounterResult:
+        if self.llm:
+            try:
+                return await self._agentic_run(policy_evidence, issue_summary)
+            except Exception as exc:
+                logger.warning("LLM T&C counter failed, using fallback: %s", exc)
+        return self._deterministic_run(policy_evidence, issue_summary)
+
+    async def _agentic_run(
+        self,
+        policy_evidence: list[PolicyEvidence],
+        issue_summary: str,
+    ) -> TCCounterResult:
+        policy_text = "\n\n".join(
+            f"[Source: {p.source_url}]\n{p.excerpt[:800]}"
+            for p in policy_evidence
+        ) if policy_evidence else "(No T&C text scraped)"
+
+        user_prompt = (
+            f"## Consumer Complaint\n{issue_summary}\n\n"
+            f"## Company T&C / Policy Text\n{policy_text}"
+        )
+        data = await self.llm.complete_json(_TC_SYSTEM_PROMPT, user_prompt)
+
+        counters = [
+            TCDefenseCounter(
+                defense_clause=c["defense_clause"],
+                clause_excerpt=c.get("clause_excerpt", ""),
+                source_url=c.get("source_url", "llm-analysis"),
+                legal_counter=c["legal_counter"],
+                statutory_basis=c.get("statutory_basis", ""),
+                precedent_note=c.get("precedent_note", ""),
+            )
+            for c in data.get("counters", [])
+        ]
+        return TCCounterResult(
+            counters=counters,
+            overall_strategy=data.get("overall_strategy", ""),
+        )
+
+    def _deterministic_run(
         self,
         policy_evidence: list[PolicyEvidence],
         issue_summary: str,
@@ -208,47 +311,16 @@ class TCCounterAgent:
                         precedent_note=precedent,
                     ))
 
-        # Build overall strategy
         if result.counters:
             defenses = ", ".join(c.defense_clause for c in result.counters)
             result.overall_strategy = (
                 f"The company's Terms & Conditions contain {len(result.counters)} potentially "
-                f"obstructive clause(s): {defenses}. However, Indian consumer protection law "
-                f"consistently holds that statutory consumer rights under CPA 2019 cannot be "
-                f"contracted away through standard-form terms. Each clause above is addressed "
-                f"with specific statutory overrides and supporting precedent. The notice below "
-                f"preemptively neutralizes these defenses."
+                f"obstructive clause(s): {defenses}. Indian consumer protection law holds that "
+                f"statutory consumer rights under CPA 2019 cannot be contracted away."
             )
         else:
-            lower_issue = issue_summary.lower()
-            if ("unboxing" in lower_issue or "video proof" in lower_issue or "video" in lower_issue) and (
-                "photo" in lower_issue or "image" in lower_issue or "screenshot" in lower_issue
-            ):
-                result.counters.append(TCDefenseCounter(
-                    defense_clause="Unreasonable insistence on unboxing video despite prompt photographic proof",
-                    clause_excerpt=(
-                        "The respondent has insisted that only an unboxing video would be accepted, "
-                        "despite the consumer providing photo evidence within a reasonable reporting window."
-                    ),
-                    source_url="primary-objection-analysis",
-                    legal_counter=(
-                        "Insisting on only one rigid proof format (unboxing video) after receiving prompt "
-                        "photographic evidence is disproportionate and arbitrary. Consumer law evaluates "
-                        "substance over format. Where the consumer reports damage/defect within a short "
-                        "time from delivery with corroborative evidence, refusal to process the claim merely "
-                        "for want of video is unreasonable and amounts to deficiency in service and unfair practice."
-                    ),
-                    statutory_basis="CPA 2019 §2(11) (deficiency), §2(47) (unfair trade practice), §39(1)(d)",
-                    precedent_note=(
-                        "Consumer fora consistently apply reasonableness and proportionality; procedural "
-                        "technicalities cannot defeat substantive consumer rights where timely proof exists."
-                    ),
-                ))
-
             result.overall_strategy = (
-                "No policy clause was available for direct quotation. The notice therefore uses a primary-objection "
-                "strategy based on respondent conduct, reasonableness, proportionality, and statutory consumer rights "
-                "under the CPA 2019."
+                "No policy clause was available for direct quotation. The notice uses a primary-objection "
+                "strategy based on respondent conduct, reasonableness, and statutory consumer rights."
             )
-
         return result

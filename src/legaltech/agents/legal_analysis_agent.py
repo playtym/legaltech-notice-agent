@@ -48,14 +48,13 @@ class LegalAnalysis:
 class LegalAnalysisAgent:
     """Indian-jurisdiction legal plausibility analysis.
 
-    Uses a rule-based engine for known patterns plus Claude as a fallback
-    legal researcher for out-of-syllabus cases the rule engine doesn't cover.
-
-    This does not replace a licensed advocate's advice.
+    Always uses Claude as the primary legal researcher, with the
+    rule-based engine providing seed matches. If no LLM is available,
+    falls back to rule-engine-only matches.
     """
 
     def __init__(self, llm=None) -> None:
-        self.llm = llm  # LLMService — optional, enables Claude fallback
+        self.llm = llm
 
     @staticmethod
     def _needs_llm_boost(corpus: str, plausible_count: int, policy_count: int) -> bool:
@@ -111,8 +110,8 @@ class LegalAnalysisAgent:
 
         used_llm = False
 
-        # ── Phase 2: Claude fallback for out-of-syllabus/complex cases ───────
-        if self.llm and self._needs_llm_boost(corpus, len(plausible), len(policy_evidence)):
+        # ── Phase 2: Always augment with Claude when available ───────
+        if self.llm:
             llm_sections = await self._claude_legal_research(
                 complaint=complaint,
                 normalized_issue=normalized_issue,
@@ -146,15 +145,8 @@ class LegalAnalysisAgent:
                 "Potential criminal allegations detected in intake text; excluded from section-citation because this workflow is civil-only"
             )
 
-        spirit = (
-            "The complaint appears to invoke consumer fairness principles: transparent terms, "
-            "non-deficient service, and good-faith grievance handling."
-        )
-
-        reasonableness = (
-            "A reasonable notice should stick to verifiable facts, proportional remedies "
-            "(refund/replacement/compensation), and a fair cure period before escalation."
-        )
+        # ── Phase 3: Dynamic spirit-of-law and reasonableness analysis ────
+        spirit, reasonableness = await self._generate_views(complaint, corpus)
 
         return LegalAnalysis(
             plausible_sections=plausible,
@@ -164,6 +156,33 @@ class LegalAnalysisAgent:
             risk_flags=risk_flags,
             used_llm_research=used_llm,
         )
+
+    async def _generate_views(self, complaint: ComplaintInput, corpus: str) -> tuple[str, str]:
+        """Generate spirit-of-law and reasonableness views using LLM or defaults."""
+        if not self.llm:
+            return (
+                "The complaint invokes consumer fairness principles: transparent terms, "
+                "non-deficient service, and good-faith grievance handling.",
+                "A reasonable notice should stick to verifiable facts, proportional remedies "
+                "(refund/replacement/compensation), and a fair cure period before escalation.",
+            )
+        try:
+            data = await self.llm.complete_json(
+                "You are a senior Indian consumer law judge. Given a complaint, provide:\n"
+                "1. spirit_of_law: Which fundamental consumer law principles does this complaint invoke? "
+                "(2-3 sentences citing specific principles like fairness, transparency, non-deficiency)\n"
+                "2. reasonableness: What would a reasonable notice look like for this dispute? "
+                "(2-3 sentences on proportionality, appropriate remedies, and fair process)\n"
+                "Return JSON: {\"spirit_of_law\": \"...\", \"reasonableness\": \"...\"}",
+                f"Complaint: {complaint.issue_summary}\nResolution sought: {complaint.desired_resolution}",
+            )
+            return data.get("spirit_of_law", ""), data.get("reasonableness", "")
+        except Exception as exc:
+            logger.warning("LLM views generation failed: %s", exc)
+            return (
+                "The complaint invokes consumer fairness principles.",
+                "A reasonable notice should stick to verifiable facts and proportional remedies.",
+            )
 
     async def _claude_legal_research(
         self,

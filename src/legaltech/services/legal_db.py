@@ -1,13 +1,16 @@
 """Authoritative legal retrieval service.
 
-Provides curated bare-act text, latest amendments, and state-level rules
-for sections cited by the legal analysis agent. In production, back this
-with a vector store or a legal-database API (e.g. Indian Kanoon, SCC Online).
+Provides curated bare-act text for known sections and uses Claude to
+retrieve bare-act text for sections not in the local database.
 """
 
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -222,4 +225,63 @@ def lookup_all_matched(section_ids: list[str]) -> list[BareActEntry]:
         entry = lookup_bare_act(sid)
         if entry:
             results.append(entry)
+    return results
+
+
+_BARE_ACT_SYSTEM_PROMPT = """\
+You are an authoritative Indian legal database. Given statutory section references, \
+provide the bare-act text for EACH section. You MUST return accurate, verbatim text \
+of the Indian statute. Include amendment notes if relevant.
+
+Return JSON:
+{
+  "entries": [
+    {
+      "act": "full act name",
+      "section": "section reference",
+      "title": "short title",
+      "bare_text": "verbatim statutory text",
+      "amendment_note": "amendment info or null"
+    }
+  ]
+}
+
+Return ONLY the JSON.
+"""
+
+
+async def lookup_all_matched_agentic(
+    section_ids: list[str],
+    section_acts: list[tuple[str, str]],
+    llm=None,
+) -> list[BareActEntry]:
+    """Look up bare-act text: local DB first, then LLM for missing sections."""
+    results: list[BareActEntry] = []
+    missing_refs: list[tuple[str, str]] = []
+
+    for act, section in section_acts:
+        entry = lookup_bare_act(section)
+        if entry:
+            results.append(entry)
+        else:
+            missing_refs.append((act, section))
+
+    if missing_refs and llm:
+        try:
+            refs_text = "\n".join(f"- {act}, {sec}" for act, sec in missing_refs)
+            data = await llm.complete_json(
+                _BARE_ACT_SYSTEM_PROMPT,
+                f"Provide bare-act text for these Indian statutory sections:\n{refs_text}",
+            )
+            for item in data.get("entries", []):
+                results.append(BareActEntry(
+                    act=item.get("act", ""),
+                    section=item.get("section", ""),
+                    title=item.get("title", ""),
+                    bare_text=item.get("bare_text", ""),
+                    amendment_note=item.get("amendment_note"),
+                ))
+        except Exception as exc:
+            logger.warning("LLM bare-act lookup failed (non-fatal): %s", exc)
+
     return results

@@ -1,16 +1,56 @@
 """Arbitration clause detection agent.
 
-Scans extracted policy text for arbitration, mediation, and ADR clauses
-that could block direct consumer notice or require alternative dispute
-resolution before escalation.
+Uses Claude to analyse extracted policy text for arbitration, mediation,
+and ADR clauses, and determine legal impact. Falls back to regex-based
+detection if LLM unavailable.
 """
 
 from __future__ import annotations
 
+import json
+import logging
 import re
 from dataclasses import dataclass, field
 
 from legaltech.schemas import PolicyEvidence
+
+logger = logging.getLogger(__name__)
+
+_SYSTEM_PROMPT = """\
+You are an expert Indian dispute resolution lawyer. Analyse the company's policy/T&C \
+text for arbitration, mediation, ADR, and jurisdiction restriction clauses.
+
+For each clause found, determine:
+1. The clause type (arbitration, mediation, jurisdiction_restriction, class_action_waiver)
+2. The exact text excerpt
+3. Legal impact on the consumer's case
+4. Whether it can be overridden under Indian consumer law
+
+KEY LEGAL PRINCIPLES:
+- CPA 2019 §2(7)(ii): consumer forums are NOT bound by arbitration agreements
+- Emaar MGF v. Aftab Singh (2019) 12 SCC 1: arbitration clause no bar to consumer forum
+- CPA 2019 §35: consumer can file where complaint arose regardless of contractual forum clause
+- CPA 2019 §35(1)(c): consumer associations can file regardless of class action waivers
+
+Return JSON:
+{
+  "has_arbitration_clause": true/false,
+  "has_jurisdiction_restriction": true/false,
+  "has_class_action_waiver": true/false,
+  "restricted_jurisdiction": "city name" or null,
+  "clauses": [
+    {
+      "text_excerpt": "quoted clause text",
+      "source_url": "URL",
+      "clause_type": "arbitration|mediation|jurisdiction_restriction|class_action_waiver"
+    }
+  ],
+  "legal_impact": "comprehensive analysis of how these clauses affect the consumer",
+  "recommendation": "specific advice for the consumer, citing statutory overrides"
+}
+
+Return ONLY the JSON.
+"""
 
 
 _ARBITRATION_PATTERNS: list[re.Pattern[str]] = [
@@ -51,7 +91,48 @@ class ArbitrationCheckResult:
 class ArbitrationDetectionAgent:
     """Scans policy evidence for arbitration/ADR clauses that affect notice strategy."""
 
+    def __init__(self, llm=None) -> None:
+        self.llm = llm
+
     async def run(self, policy_evidence: list[PolicyEvidence]) -> ArbitrationCheckResult:
+        if self.llm:
+            try:
+                return await self._agentic_run(policy_evidence)
+            except Exception as exc:
+                logger.warning("LLM arbitration analysis failed, using fallback: %s", exc)
+        return self._deterministic_run(policy_evidence)
+
+    async def _agentic_run(self, policy_evidence: list[PolicyEvidence]) -> ArbitrationCheckResult:
+        policy_text = "\n\n".join(
+            f"[Source: {p.source_url}]\n{p.excerpt[:1000]}"
+            for p in policy_evidence
+        ) if policy_evidence else "(No policy text available)"
+
+        data = await self.llm.complete_json(
+            _SYSTEM_PROMPT,
+            f"## Company Policy/T&C Text\n{policy_text}",
+        )
+
+        clauses = [
+            ArbitrationClause(
+                text_excerpt=c.get("text_excerpt", ""),
+                source_url=c.get("source_url", "llm-analysis"),
+                clause_type=c.get("clause_type", "arbitration"),
+            )
+            for c in data.get("clauses", [])
+        ]
+
+        return ArbitrationCheckResult(
+            has_arbitration_clause=bool(data.get("has_arbitration_clause", False)),
+            has_jurisdiction_restriction=bool(data.get("has_jurisdiction_restriction", False)),
+            has_class_action_waiver=bool(data.get("has_class_action_waiver", False)),
+            restricted_jurisdiction=data.get("restricted_jurisdiction"),
+            clauses_found=clauses,
+            legal_impact=data.get("legal_impact", ""),
+            recommendation=data.get("recommendation", ""),
+        )
+
+    def _deterministic_run(self, policy_evidence: list[PolicyEvidence]) -> ArbitrationCheckResult:
         result = ArbitrationCheckResult()
 
         for policy in policy_evidence:

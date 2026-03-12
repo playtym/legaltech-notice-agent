@@ -1,15 +1,18 @@
 """Limitation period checker for Indian civil claims.
 
-Validates whether the complaint is within the statutory limitation
-period before allowing notice generation. A time-barred claim is
-legally unenforceable and a notice based on it is wasteful.
+Uses Claude to determine claim category and applicable limitation
+period. Falls back to keyword-based heuristics if LLM unavailable.
 """
 
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass
 from datetime import date, timedelta
 import re
+
+logger = logging.getLogger(__name__)
 
 _DATE_RE = re.compile(
     r"\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(\d{4})\b",
@@ -19,6 +22,38 @@ _MONTH_MAP = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
+
+_SYSTEM_PROMPT = """\
+You are an expert Indian civil law practitioner specialised in limitation periods. \
+Given a consumer complaint, determine the claim category and applicable statutory \
+limitation period.
+
+LIMITATION PERIODS (Indian statutes):
+- Consumer complaint (CPA 2019): 2 years from cause of action
+- Contract breach (Limitation Act 1963, Art 55): 3 years
+- Deficiency in service (CPA 2019): 2 years
+- Product liability (CPA 2019 §59): 2 years
+- Data breach / IT Act: 3 years (general tort)
+- Payment disputes / banking: 3 years (PSS Act / general)
+- Insurance claims (Insurance Act 1938): 3 years
+- Unfair trade practice (CPA 2019): 2 years
+- Real estate (RERA): 1 year from possession or 5 years for structural defect
+
+Analyse the complaint facts and determine:
+1. The most appropriate claim category
+2. The statutory limitation period in years
+3. Any special considerations (continuing cause of action, condonation, etc.)
+
+Return JSON:
+{
+  "category": "descriptive category name",
+  "limitation_years": integer,
+  "statutory_basis": "Act and section reference",
+  "special_notes": "any relevant considerations about limitation" or null
+}
+
+Return ONLY the JSON.
+"""
 
 
 @dataclass
@@ -31,16 +66,16 @@ class LimitationResult:
     warning: str
 
 
-# Limitation periods by claim category (Limitation Act, 1963 + CPA 2019)
+# Fallback limitation periods
 _LIMITATION_MAP: dict[str, int] = {
-    "consumer_complaint": 2,        # CPA 2019 - from date cause of action arose
-    "contract_breach": 3,           # Limitation Act, Schedule I, Art 55
-    "deficiency_service": 2,        # CPA 2019
-    "product_liability": 2,         # CPA 2019 §59 read with Schedule
-    "data_breach": 3,               # IT Act / general tort — 3 years
-    "payment_dispute": 3,           # Banking / PSS Act — general
-    "insurance_claim": 3,           # Insurance Act, 1938
-    "unfair_trade_practice": 2,     # CPA 2019
+    "consumer_complaint": 2,
+    "contract_breach": 3,
+    "deficiency_service": 2,
+    "product_liability": 2,
+    "data_breach": 3,
+    "payment_dispute": 3,
+    "insurance_claim": 3,
+    "unfair_trade_practice": 2,
 }
 
 
@@ -79,23 +114,14 @@ def _extract_earliest_date(timeline: list[str]) -> date | None:
     return earliest
 
 
-def check_limitation(
-    timeline: list[str],
-    issue_summary: str,
-    today: date | None = None,
-) -> LimitationResult:
+def _build_result(category: str, years: int, earliest: date | None, today: date | None = None) -> LimitationResult:
     today = today or date.today()
-    category = _detect_claim_category(issue_summary)
-    years = _LIMITATION_MAP.get(category, 2)
-
-    earliest = _extract_earliest_date(timeline)
-
     if earliest is None:
         return LimitationResult(
             earliest_event_date=None,
             limitation_years=years,
             deadline=None,
-            is_within_limit=True,  # can't determine — let it through with warning
+            is_within_limit=True,
             days_remaining=None,
             warning=(
                 f"Cannot determine limitation period: no parseable date found in timeline. "
@@ -104,11 +130,9 @@ def check_limitation(
             ),
         )
 
-    deadline = date(earliest.year + years, earliest.month, earliest.day)
     try:
         deadline = date(earliest.year + years, earliest.month, earliest.day)
     except ValueError:
-        # leap-year edge case
         deadline = date(earliest.year + years, earliest.month, earliest.day - 1)
 
     days_remaining = (deadline - today).days
@@ -117,20 +141,17 @@ def check_limitation(
     if is_within and days_remaining < 90:
         warning = (
             f"URGENT: Only {days_remaining} days remain before limitation expires on {deadline.isoformat()}. "
-            f"Claim category: '{category}' ({years}-year limit under Limitation Act, 1963). "
-            f"File notice and escalate immediately."
+            f"Claim category: '{category}' ({years}-year limit). File notice and escalate immediately."
         )
     elif is_within:
         warning = (
             f"Claim is within limitation period. Deadline: {deadline.isoformat()} "
-            f"({days_remaining} days remaining). "
-            f"Claim category: '{category}' ({years}-year limit)."
+            f"({days_remaining} days remaining). Claim category: '{category}' ({years}-year limit)."
         )
     else:
         warning = (
             f"CLAIM LIKELY TIME-BARRED. Limitation expired on {deadline.isoformat()} "
-            f"({abs(days_remaining)} days ago). "
-            f"Claim category: '{category}' ({years}-year limit under Limitation Act, 1963). "
+            f"({abs(days_remaining)} days ago). Claim category: '{category}' ({years}-year limit). "
             f"Notice may be unenforceable. Consult an advocate for potential exception "
             f"(e.g. Section 5 Limitation Act — condonation of delay)."
         )
@@ -143,3 +164,44 @@ def check_limitation(
         days_remaining=days_remaining if is_within else None,
         warning=warning,
     )
+
+
+def check_limitation(timeline: list[str], issue_summary: str, today: date | None = None) -> LimitationResult:
+    """Deterministic fallback."""
+    category = _detect_claim_category(issue_summary)
+    years = _LIMITATION_MAP.get(category, 2)
+    earliest = _extract_earliest_date(timeline)
+    return _build_result(category, years, earliest, today)
+
+
+class LimitationAgent:
+    """LLM-powered limitation period analysis with deterministic fallback."""
+
+    def __init__(self, llm=None) -> None:
+        self.llm = llm
+
+    async def run(self, timeline: list[str], issue_summary: str, today: date | None = None) -> LimitationResult:
+        earliest = _extract_earliest_date(timeline)
+        today = today or date.today()
+
+        if self.llm:
+            try:
+                return await self._agentic_run(issue_summary, timeline, earliest, today)
+            except Exception as exc:
+                logger.warning("LLM limitation analysis failed, using fallback: %s", exc)
+        return check_limitation(timeline, issue_summary, today)
+
+    async def _agentic_run(
+        self, issue_summary: str, timeline: list[str], earliest: date | None, today: date
+    ) -> LimitationResult:
+        timeline_text = "\n".join(f"- {t}" for t in timeline) if timeline else "(no timeline)"
+        user_prompt = (
+            f"## Issue Summary\n{issue_summary}\n\n"
+            f"## Timeline\n{timeline_text}\n\n"
+            f"## Earliest detected date: {earliest.isoformat() if earliest else 'not detected'}\n"
+            f"## Today: {today.isoformat()}"
+        )
+        data = await self.llm.complete_json(_SYSTEM_PROMPT, user_prompt)
+        category = data.get("category", "consumer_complaint")
+        years = int(data.get("limitation_years", 2))
+        return _build_result(category, years, earliest, today)
