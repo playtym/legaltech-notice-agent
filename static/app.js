@@ -52,6 +52,53 @@ const App = (() => {
         return `${base.replace(/\/$/, '')}${path}`;
     }
 
+    function apiBaseCandidates() {
+        const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
+        const base = configured || window.location.origin;
+        const candidates = [base.replace(/\/$/, '')];
+
+        try {
+            const u = new URL(candidates[0]);
+            const host = u.hostname;
+            const protocol = u.protocol;
+            const port = u.port ? `:${u.port}` : '';
+
+            // Common production redirects: apex -> www or api subdomain.
+            if (!host.startsWith('www.') && host.split('.').length >= 2) {
+                candidates.push(`${protocol}//www.${host}${port}`);
+            }
+            if (!host.startsWith('api.') && host.split('.').length >= 2) {
+                candidates.push(`${protocol}//api.${host}${port}`);
+            }
+        } catch (_) {
+            // keep default base only
+        }
+
+        return [...new Set(candidates)];
+    }
+
+    async function apiFetch(path, options) {
+        const bases = apiBaseCandidates();
+        let lastErr = null;
+
+        for (const base of bases) {
+            try {
+                const res = await fetch(`${base}${path}`, options);
+                // Persist working base so next calls skip failed hosts.
+                if ((localStorage.getItem('legaltech_api_base') || '').trim() !== base) {
+                    localStorage.setItem('legaltech_api_base', base);
+                    const input = document.getElementById('api-base');
+                    if (input) input.value = base;
+                }
+                return res;
+            } catch (err) {
+                lastErr = err;
+            }
+        }
+
+        throw lastErr || new Error('Unable to reach API endpoint');
+    }
+
     function ensureApiConfigured() {
         const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
         const onGithubPages = window.location.hostname.endsWith('github.io');
@@ -168,7 +215,7 @@ const App = (() => {
         };
 
         try {
-            const res = await fetch(apiUrl('/notice/analyze'), {
+            const res = await apiFetch('/notice/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
@@ -179,7 +226,12 @@ const App = (() => {
             goTo(5);
         } catch (err) {
             goTo(3);
-            showError(`Analysis failed: ${err.message}. Please try again.`);
+            const msg = `${err?.message || err}`;
+            if (/fetch|failed|cors|preflight|network|302/i.test(msg)) {
+                showError('Analysis failed due to API CORS/redirect configuration. Use the exact backend origin that does not redirect (for example, www or api subdomain), then try again.');
+            } else {
+                showError(`Analysis failed: ${msg}. Please try again.`);
+            }
         }
     }
 
@@ -273,7 +325,7 @@ const App = (() => {
         };
 
         try {
-            const res = await fetch(apiUrl('/notice/typed'), {
+            const res = await apiFetch('/notice/typed', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
@@ -285,7 +337,12 @@ const App = (() => {
             goTo(8);
         } catch (err) {
             goTo(6);
-            showError(`Notice generation failed: ${err.message}. Please try again.`);
+            const msg = `${err?.message || err}`;
+            if (/fetch|failed|cors|preflight|network|302/i.test(msg)) {
+                showError('Notice generation failed due to API CORS/redirect configuration. Use the exact backend origin that does not redirect, then try again.');
+            } else {
+                showError(`Notice generation failed: ${msg}. Please try again.`);
+            }
         }
     }
 
@@ -327,7 +384,9 @@ const App = (() => {
         // If we have a stored notice_id, use the admin PDF endpoint
         if (state.noticeId) {
             try {
-                const res = await fetch(apiUrl(`/api/admin/notices/${state.noticeId}/pdf`));
+                const res = await apiFetch(`/api/admin/notices/${state.noticeId}/pdf`, {
+                    method: 'GET',
+                });
                 if (res.ok) {
                     const blob = await res.blob();
                     downloadBlob(blob, `Legal_Notice_${state.noticeId}.pdf`);
@@ -337,7 +396,7 @@ const App = (() => {
         }
 
         try {
-            const res = await fetch(apiUrl('/notice/typed/pdf'), {
+            const res = await apiFetch('/notice/typed/pdf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
