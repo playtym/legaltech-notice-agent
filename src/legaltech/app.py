@@ -79,6 +79,10 @@ class TranscriptIntakeRequest(BaseModel):
     jurisdiction: str = "India"
 
 
+class SpeechRefineRequest(BaseModel):
+    transcript_text: str
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok", "model": pipeline.llm.model_name}
@@ -336,6 +340,44 @@ async def intake_from_transcript(payload: TranscriptIntakeRequest):
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Transcript intake failed: {exc}") from exc
+
+
+@app.post("/speech/refine")
+async def refine_speech_transcript(payload: SpeechRefineRequest):
+    text = payload.transcript_text.strip()
+    if not text:
+        return {
+            "romanized_text": "",
+            "english_text": "",
+            "quality_note": "empty_input",
+        }
+
+    try:
+        refined = await pipeline.llm.complete_json(
+            system_prompt=(
+                "You are an ASR post-processor for Indian Hinglish consumer complaints. "
+                "Input may contain Hindi words, English words, misspellings, and mixed scripts. "
+                "Return strict JSON with keys: romanized_text, english_text, quality_note. "
+                "romanized_text: keep meaning intact, render everything in English script (Latin letters), "
+                "including Hindi words transliterated. "
+                "english_text: accurate English translation preserving all facts, dates, amounts, IDs. "
+                "Do not invent facts."
+            ),
+            user_prompt=f"Raw transcript:\n{text}",
+            max_tokens=1800,
+        )
+        return {
+            "romanized_text": (refined.get("romanized_text") or text).strip(),
+            "english_text": (refined.get("english_text") or text).strip(),
+            "quality_note": (refined.get("quality_note") or "ok").strip(),
+        }
+    except Exception as exc:
+        # Fallback: preserve original transcript so UX doesn't break.
+        return {
+            "romanized_text": text,
+            "english_text": text,
+            "quality_note": f"fallback: {exc}",
+        }
 
 
 @app.post("/notice/typed/pdf")

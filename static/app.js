@@ -115,6 +115,25 @@ const App = (() => {
         return (data.translated_text || '').trim();
     }
 
+    async function refineSpeechTranscript(text) {
+        const res = await apiFetch('/speech/refine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript_text: text }),
+        });
+        if (!res.ok) throw new Error(`Speech refinement failed: ${res.status}`);
+        return res.json();
+    }
+
+    function resolveRecognitionLang(raw) {
+        const v = `${raw || ''}`.trim();
+        if (!v || v === 'auto-hinglish') {
+            // en-IN generally performs better for Hinglish/mixed speech in web speech engines.
+            return 'en-IN';
+        }
+        return v;
+    }
+
     function setVoiceStatus(fieldId, message) {
         const status = document.getElementById(`voice-status-${fieldId}`);
         if (status) status.textContent = message;
@@ -226,7 +245,7 @@ const App = (() => {
 
         smartTranscript = '';
         smartRecognition = new Ctor();
-        smartRecognition.lang = 'hi-IN';
+        smartRecognition.lang = 'en-IN';
         smartRecognition.continuous = true;
         smartRecognition.interimResults = true;
 
@@ -255,8 +274,10 @@ const App = (() => {
                 return;
             }
             try {
-                setSmartStatus('Understanding your speech and auto-filling your case...');
-                await processSmartTranscript(finalText);
+                setSmartStatus('Refining mixed Hindi-English speech with AI...');
+                const refined = await refineSpeechTranscript(finalText);
+                const transcriptForIntake = (refined.english_text || finalText || '').trim();
+                await processSmartTranscript(transcriptForIntake);
             } catch (err) {
                 setSmartStatus('Could not auto-process speech. Please try again or type manually.');
                 showError(`${err?.message || err}`);
@@ -291,7 +312,7 @@ const App = (() => {
         capturedFinalText = '';
         recognitionField = fieldId;
         const langSel = document.getElementById(`voice-lang-${fieldId}`);
-        const recogLang = langSel ? langSel.value : 'hi-IN';
+        const recogLang = resolveRecognitionLang(langSel ? langSel.value : 'auto-hinglish');
 
         recognition = new Ctor();
         recognition.lang = recogLang;
@@ -329,14 +350,15 @@ const App = (() => {
             }
 
             try {
-                setVoiceStatus(fieldId, 'Translating to English...');
-                const translated = await translateToEnglish(transcript);
+                setVoiceStatus(fieldId, 'Refining Hinglish transcript...');
+                const refined = await refineSpeechTranscript(transcript);
+                const translated = (refined.english_text || '').trim() || await translateToEnglish(transcript);
                 const target = document.getElementById(fieldId);
                 if (target) {
                     const existing = target.value.trim();
                     target.value = [existing, translated].filter(Boolean).join('\n');
                 }
-                setVoiceStatus(fieldId, 'Done. Speech added in English.');
+                setVoiceStatus(fieldId, 'Done. Speech added in English script and translated English.');
             } catch (_) {
                 const target = document.getElementById(fieldId);
                 if (target) {

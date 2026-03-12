@@ -127,7 +127,8 @@
                     required minlength="20" maxlength="10000"></textarea>
                 <div class="voice-row">
                     <select id="voice-lang-issue-summary" class="voice-lang" aria-label="Voice input language for issue summary">
-                        <option value="hi-IN" selected>Hindi + English (India)</option>
+                        <option value="auto-hinglish" selected>Auto Hinglish (Hindi + English) — Recommended</option>
+                        <option value="hi-IN">Hindi (India)</option>
                         <option value="en-IN">English (India)</option>
                     </select>
                     <button type="button" class="btn btn-sm btn-outline" onclick="App.startVoiceInput('issue-summary')">Start Mic</button>
@@ -161,7 +162,8 @@
                     required maxlength="2000"></textarea>
                 <div class="voice-row">
                     <select id="voice-lang-desired-resolution" class="voice-lang" aria-label="Voice input language for desired resolution">
-                        <option value="hi-IN" selected>Hindi + English (India)</option>
+                        <option value="auto-hinglish" selected>Auto Hinglish (Hindi + English) — Recommended</option>
+                        <option value="hi-IN">Hindi (India)</option>
                         <option value="en-IN">English (India)</option>
                     </select>
                     <button type="button" class="btn btn-sm btn-outline" onclick="App.startVoiceInput('desired-resolution')">Start Mic</button>
