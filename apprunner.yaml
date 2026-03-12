@@ -1,5 +1,5 @@
 version: 1.0
-runtime: python3
+runtime: python311
 
 build:
   commands:
@@ -7,7 +7,6 @@ build:
       - pip3 install -r requirements.txt
 
 run:
-  runtime-version: 3.11
   command: python3 -m uvicorn legaltech.app:app --host 0.0.0.0 --port 8000 --app-dir src
   network:
     port: 8000
