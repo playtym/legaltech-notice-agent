@@ -117,7 +117,12 @@ class LegalNoticePipeline:
             except Exception as exc:
                 logger.warning("Contact discovery failed (non-fatal): %s", exc)
             try:
-                policies = await self.policy.run(website=website, web=self.web)
+                policies = await self.policy.run(
+                    website=website,
+                    web=self.web,
+                    issue_summary=complaint.issue_summary,
+                    company_name_hint=complaint.company_name_hint,
+                )
                 policies_found = [p.title for p in policies]
             except Exception as exc:
                 logger.warning("Policy scraping failed (non-fatal): %s", exc)
@@ -197,7 +202,12 @@ class LegalNoticePipeline:
             except Exception as exc:
                 logger.warning("Contact discovery failed (non-fatal): %s", exc)
             try:
-                policies = await self.policy.run(website=website, web=self.web)
+                policies = await self.policy.run(
+                    website=website,
+                    web=self.web,
+                    issue_summary=complaint.issue_summary,
+                    company_name_hint=complaint.company_name_hint,
+                )
             except Exception as exc:
                 logger.warning("Policy scraping failed (non-fatal): %s", exc)
             try:

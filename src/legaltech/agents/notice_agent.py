@@ -347,9 +347,6 @@ class NoticeDraftAgent:
             b.append(f"\n## COMPANY POLICIES/T&C SCRAPED ({len(policies)} pages)")
             for policy in policies[:5]:
                 b.append(f"[{policy.source_url}]: {policy.excerpt[:300]}")
-        else:
-            b.append("\n## COMPANY POLICIES/T&C SCRAPED")
-            b.append("No policy excerpts available for citation. Draft arguments from facts and statutory consumer protections only.")
 
         # ── Follow-up answers from user ──────────────────────────────
         if follow_up_answers:

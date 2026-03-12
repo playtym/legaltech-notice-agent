@@ -35,9 +35,10 @@
     <div class="hero">
         <div class="logo-container">
             <div class="sun-logo">
-                 <img src="img/logo.png" alt="Jago Grahak Jago" class="logo-img"
+                 <img src="img/logo.png" alt="Jago Grahak Jago" class="logo-img" style="display:none;"
+                     onload="if(this.naturalWidth>80&&this.naturalHeight>80){this.style.display='block';document.getElementById('fallback-logo').style.display='none';}else{this.style.display='none';document.getElementById('fallback-logo').style.display='flex';}"
                      onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
-                <div id="fallback-logo" class="fallback-logo" style="display:none;">
+                <div id="fallback-logo" class="fallback-logo" style="display:flex;">
                     <div class="sun-text top">JAGO</div>
                     <div class="sun-text mid">GRAHAK</div>
                     <div class="sun-text bot">JAGO</div>
