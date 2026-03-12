@@ -20,7 +20,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://playtym.github.io",
-        "https://xxexhygvsg.ap-south-1.awsapprunner.com",
+        "https://tpryg57xem.ap-south-1.awsapprunner.com",
         "http://127.0.0.1:8000",
         "http://localhost:8000",
     ],

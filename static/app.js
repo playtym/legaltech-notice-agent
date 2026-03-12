@@ -47,7 +47,7 @@ const App = (() => {
     function start() { goTo(1); }
 
     // ── API base: App Runner backend when on GitHub Pages, same-origin when local ──
-    const API_BACKEND = 'https://xxexhygvsg.ap-south-1.awsapprunner.com';
+    const API_BACKEND = 'https://tpryg57xem.ap-south-1.awsapprunner.com';
 
     function getApiBase() {
         const stored = (localStorage.getItem('legaltech_api_base') || '').trim();
