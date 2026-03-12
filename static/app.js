@@ -52,6 +52,16 @@ const App = (() => {
         return `${base.replace(/\/$/, '')}${path}`;
     }
 
+    function ensureApiConfigured() {
+        const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
+        const onGithubPages = window.location.hostname.endsWith('github.io');
+        if (onGithubPages && !configured) {
+            showError('Set API Base URL first (top bar). Hosted frontend needs your backend URL to analyze and generate notices.');
+            return false;
+        }
+        return true;
+    }
+
     function saveApiBase() {
         const input = document.getElementById('api-base');
         if (!input) return;
@@ -113,6 +123,7 @@ const App = (() => {
 
     // ── Step 3 → 4: Analyze ─────────────────────────────────────────
     async function analyzeCase() {
+        if (!ensureApiConfigured()) return;
         const summary = val('issue-summary');
         const resolution = val('desired-resolution');
         if (!summary || summary.length < 20) return showError('Please describe your issue in at least 20 characters.');
@@ -222,6 +233,7 @@ const App = (() => {
 
     // ── Step 7: Generate notice ─────────────────────────────────────
     async function generateNotice() {
+        if (!ensureApiConfigured()) return;
         goTo(7);
         animateStages(['gen-stage-1', 'gen-stage-2', 'gen-stage-3', 'gen-stage-4', 'gen-stage-5'], 8000);
 
@@ -276,6 +288,7 @@ const App = (() => {
 
     // ── PDF download ────────────────────────────────────────────────
     async function downloadPDF() {
+        if (!ensureApiConfigured()) return;
         const body = {
             complainant: state.complainant,
             issue_summary: state.issueSummary,

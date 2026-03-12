@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
@@ -14,6 +15,18 @@ _STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
 app = FastAPI(title="Indian Legal Notice Agent", version="0.4.0")
 pipeline = LegalNoticePipeline()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://playtym.github.io",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+    ],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Serve static files
 if _STATIC_DIR.exists():
