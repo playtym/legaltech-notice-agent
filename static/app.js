@@ -56,6 +56,7 @@ const App = (() => {
         const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
         const base = configured || window.location.origin;
         const candidates = [base.replace(/\/$/, '')];
+        const pageIsHttps = window.location.protocol === 'https:';
 
         try {
             const u = new URL(candidates[0]);
@@ -74,7 +75,9 @@ const App = (() => {
             // keep default base only
         }
 
-        return [...new Set(candidates)];
+        // On secure pages, do not attempt insecure HTTP API bases.
+        const filtered = candidates.filter((b) => !pageIsHttps || b.startsWith('https://'));
+        return [...new Set(filtered)];
     }
 
     async function apiFetch(path, options) {
@@ -103,6 +106,9 @@ const App = (() => {
         const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
         const onGithubPages = window.location.hostname.endsWith('github.io');
         if (onGithubPages && !configured) {
+            // Show the config bar only when on hosted pages and backend URL is missing
+            const bar = document.getElementById('api-config-bar');
+            if (bar) bar.style.display = 'flex';
             showError('Set API Base URL first (top bar). Hosted frontend needs your backend URL to analyze and generate notices.');
             return false;
         }
@@ -112,7 +118,12 @@ const App = (() => {
     async function ensureApiConfiguredAsync() {
         if (ensureApiConfigured()) return true;
 
-        // Best-effort auto-detection for users running backend locally.
+        // Best-effort auto-detection only on non-HTTPS pages to avoid mixed-content blocks.
+        if (window.location.protocol === 'https:') {
+            showError('Set API Base URL first (top bar) to your HTTPS backend API origin (for example: https://api.yourdomain.com).');
+            return false;
+        }
+
         const candidates = ['http://127.0.0.1:8000', 'http://localhost:8000'];
         for (const base of candidates) {
             try {
@@ -127,7 +138,9 @@ const App = (() => {
             }
         }
 
-        showError('Set API Base URL first (top bar). Example: http://127.0.0.1:8000 for local backend.');
+        const bar = document.getElementById('api-config-bar');
+        if (bar) bar.style.display = 'flex';
+        showError('Could not reach local backend. Enter API Base URL above, or start the backend with: uvicorn legaltech.app:app --port 8000');
         return false;
     }
 
@@ -142,8 +155,11 @@ const App = (() => {
         if (!isValidHttpUrl(v)) {
             return showError('Please enter a valid API base URL, e.g. https://your-backend.example.com');
         }
+        if (window.location.protocol === 'https:' && v.startsWith('http://')) {
+            return showError('Blocked: HTTPS site cannot call HTTP API. Use an HTTPS API base URL.');
+        }
         localStorage.setItem('legaltech_api_base', v.replace(/\/$/, ''));
-        showError('API base saved. You can continue now.');
+        showError('API base saved. You can continue now. If analyze still fails, your API origin is likely redirecting or not exposing /notice/analyze.');
     }
 
     function normalizeWebsite(raw) {
