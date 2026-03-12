@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime
 
 from legaltech.agents.arbitration_agent import ArbitrationDetectionAgent
@@ -73,6 +74,55 @@ class LegalNoticePipeline:
         self.gap_analysis = GapAnalysisAgent(self.llm)
         self.notice = NoticeDraftAgent(self.llm)
 
+    @staticmethod
+    def _clean_list(items: list[str]) -> list[str]:
+        seen: set[str] = set()
+        cleaned: list[str] = []
+        for item in items:
+            norm = re.sub(r"\s+", " ", (item or "").strip())
+            if not norm:
+                continue
+            key = norm.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            cleaned.append(norm)
+        return cleaned
+
+    @staticmethod
+    def _merge_follow_up_context(issue_summary: str, follow_up_answers: dict[str, str] | None) -> str:
+        if not follow_up_answers:
+            return issue_summary
+        extra = [
+            f"- {answer.strip()}"
+            for answer in follow_up_answers.values()
+            if (answer or "").strip()
+        ]
+        if not extra:
+            return issue_summary
+        return (
+            f"{issue_summary.strip()}\n\n"
+            "Additional clarifications from complainant:\n"
+            + "\n".join(extra)
+        )
+
+    def _prepare_complaint_context(
+        self,
+        complaint: ComplaintInput,
+        follow_up_answers: dict[str, str] | None = None,
+    ) -> ComplaintInput:
+        timeline = self._clean_list(complaint.timeline)
+        evidence = self._clean_list(complaint.evidence)
+        issue_summary = self._merge_follow_up_context(complaint.issue_summary, follow_up_answers)
+
+        return complaint.model_copy(
+            update={
+                "timeline": timeline,
+                "evidence": evidence,
+                "issue_summary": issue_summary,
+            }
+        )
+
     def _required_user_uploads(self, complaint: ComplaintInput) -> list[str]:
         required = [
             "Purchase receipt/invoice",
@@ -96,12 +146,14 @@ class LegalNoticePipeline:
         questions to the user, collect answers, and call analyze() again with
         previous_answers until ready_to_generate is True (or user wants to proceed anyway).
         """
+        complaint_ctx = self._prepare_complaint_context(complaint, previous_answers)
+
         # Run lightweight pipeline steps to gather context
-        intake = await self.intake.run(complaint)
+        intake = await self.intake.run(complaint_ctx)
 
         company = await self.company.run(
-            company_name_hint=complaint.company_name_hint,
-            website=str(complaint.website) if complaint.website else None,
+            company_name_hint=complaint_ctx.company_name_hint,
+            website=str(complaint_ctx.website) if complaint_ctx.website else None,
         )
 
         contacts_found: list[str] = []
@@ -109,8 +161,8 @@ class LegalNoticePipeline:
         respondent_found = False
         respondent_identity = None
 
-        if complaint.website:
-            website = str(complaint.website)
+        if complaint_ctx.website:
+            website = str(complaint_ctx.website)
             try:
                 contacts = await self.contacts.run(website=website, web=self.web)
                 contacts_found = [c.email or c.phone or "" for c in contacts if c.email or c.phone]
@@ -120,8 +172,8 @@ class LegalNoticePipeline:
                 policies = await self.policy.run(
                     website=website,
                     web=self.web,
-                    issue_summary=complaint.issue_summary,
-                    company_name_hint=complaint.company_name_hint,
+                    issue_summary=complaint_ctx.issue_summary,
+                    company_name_hint=complaint_ctx.company_name_hint,
                 )
                 policies_found = [p.title for p in policies]
             except Exception as exc:
@@ -129,7 +181,7 @@ class LegalNoticePipeline:
             try:
                 respondent_identity = await self.respondent_id.run(
                     website=website,
-                    company_name_hint=complaint.company_name_hint,
+                    company_name_hint=complaint_ctx.company_name_hint,
                     web=self.web,
                 )
                 respondent_found = bool(
@@ -140,12 +192,12 @@ class LegalNoticePipeline:
 
         # Run Claude-powered gap analysis
         gap_result = await self.gap_analysis.run(
-            issue_summary=complaint.issue_summary,
-            timeline=complaint.timeline,
-            evidence=complaint.evidence,
-            desired_resolution=complaint.desired_resolution,
-            company_name=complaint.company_name_hint,
-            website=str(complaint.website) if complaint.website else None,
+            issue_summary=complaint_ctx.issue_summary,
+            timeline=complaint_ctx.timeline,
+            evidence=complaint_ctx.evidence,
+            desired_resolution=complaint_ctx.desired_resolution,
+            company_name=complaint_ctx.company_name_hint,
+            website=str(complaint_ctx.website) if complaint_ctx.website else None,
             contacts_found=contacts_found,
             policies_found=policies_found,
             respondent_identity_found=respondent_found,
@@ -185,18 +237,20 @@ class LegalNoticePipeline:
         tier: ServiceTier = ServiceTier.self_send,
         follow_up_answers: dict[str, str] | None = None,
     ) -> NoticePacket:
-        intake = await self.intake.run(complaint)
+        complaint_ctx = self._prepare_complaint_context(complaint, follow_up_answers)
+
+        intake = await self.intake.run(complaint_ctx)
 
         company = await self.company.run(
-            company_name_hint=complaint.company_name_hint,
-            website=str(complaint.website) if complaint.website else None,
+            company_name_hint=complaint_ctx.company_name_hint,
+            website=str(complaint_ctx.website) if complaint_ctx.website else None,
         )
 
         contacts = []
         policies = []
         respondent_identity = None
-        if complaint.website:
-            website = str(complaint.website)
+        if complaint_ctx.website:
+            website = str(complaint_ctx.website)
             try:
                 contacts = await self.contacts.run(website=website, web=self.web)
             except Exception as exc:
@@ -205,22 +259,22 @@ class LegalNoticePipeline:
                 policies = await self.policy.run(
                     website=website,
                     web=self.web,
-                    issue_summary=complaint.issue_summary,
-                    company_name_hint=complaint.company_name_hint,
+                    issue_summary=complaint_ctx.issue_summary,
+                    company_name_hint=complaint_ctx.company_name_hint,
                 )
             except Exception as exc:
                 logger.warning("Policy scraping failed (non-fatal): %s", exc)
             try:
                 respondent_identity = await self.respondent_id.run(
                     website=website,
-                    company_name_hint=complaint.company_name_hint,
+                    company_name_hint=complaint_ctx.company_name_hint,
                     web=self.web,
                 )
             except Exception as exc:
                 logger.warning("Respondent ID lookup failed (non-fatal): %s", exc)
 
         legal_analysis = await self.legal.run(
-            complaint=complaint,
+            complaint=complaint_ctx,
             policy_evidence=policies,
             normalized_issue=intake.normalized_issue,
         )
@@ -228,10 +282,10 @@ class LegalNoticePipeline:
         # ── Element-by-element claim checks ──────────────────────────
         corpus = " ".join([
             complaint.issue_summary,
-            complaint.desired_resolution,
+            complaint_ctx.desired_resolution,
             intake.normalized_issue,
-            " ".join(complaint.timeline),
-            " ".join(complaint.evidence),
+            " ".join(complaint_ctx.timeline),
+            " ".join(complaint_ctx.evidence),
             " ".join(e.excerpt for e in policies),
         ])
         claim_results = await self.claim_elements.run(
@@ -241,14 +295,14 @@ class LegalNoticePipeline:
 
         # ── Evidence consistency scoring ─────────────────────────────
         evidence_score = await self.evidence_scoring.run(
-            complaint=complaint,
+            complaint=complaint_ctx,
             normalized_issue=intake.normalized_issue,
         )
 
         # ── Limitation period check ──────────────────────────────────
         limitation_result = check_limitation(
-            timeline=complaint.timeline,
-            issue_summary=complaint.issue_summary,
+            timeline=complaint_ctx.timeline,
+            issue_summary=complaint_ctx.issue_summary,
         )
 
         # ── Arbitration clause detection ─────────────────────────────
@@ -257,39 +311,39 @@ class LegalNoticePipeline:
         # ── T&C counter-arguments (preemptive defense rebuttal) ──────
         tc_counter_result = await self.tc_counter.run(
             policy_evidence=policies,
-            issue_summary=complaint.issue_summary,
+            issue_summary=complaint_ctx.issue_summary,
         )
 
         # ── Jurisdiction / forum determination ───────────────────────
         jurisdiction_result = determine_jurisdiction(
-            complainant_address=complaint.complainant.address,
-            issue_summary=complaint.issue_summary,
-            desired_resolution=complaint.desired_resolution,
-            timeline=complaint.timeline,
-            evidence=complaint.evidence,
+            complainant_address=complaint_ctx.complainant.address,
+            issue_summary=complaint_ctx.issue_summary,
+            desired_resolution=complaint_ctx.desired_resolution,
+            timeline=complaint_ctx.timeline,
+            evidence=complaint_ctx.evidence,
         )
 
         # ── Dynamic cure period ──────────────────────────────────────
         cure_days, cure_rationale = determine_cure_period(
-            issue_summary=complaint.issue_summary,
-            timeline_length=len(complaint.timeline),
+            issue_summary=complaint_ctx.issue_summary,
+            timeline_length=len(complaint_ctx.timeline),
         )
 
         # ── Escalation strategy (pressure tactics) ────────────────
         escalation_result = self.escalation.run(
-            complaint=complaint,
+            complaint=complaint_ctx,
             company=company,
             policies=policies,
             contacts_found=len(contacts),
             respondent_identity_found=bool(
                 respondent_identity and (respondent_identity.cin or respondent_identity.registered_name)
             ),
-            evidence_count=len(complaint.evidence),
+            evidence_count=len(complaint_ctx.evidence),
         )
 
         # ── Notice draft ─────────────────────────────────────────────
         legal_notice = await self.notice.run(
-            complaint=complaint,
+            complaint=complaint_ctx,
             normalized_issue=intake.normalized_issue,
             company=company,
             contacts=contacts,
@@ -469,7 +523,7 @@ class LegalNoticePipeline:
             delivery.delivery_status = "served_to_company" if result.success else f"email_failed: {result.message}"
 
         return NoticePacket(
-            complaint=complaint,
+            complaint=complaint_ctx,
             company=company,
             contacts=contacts,
             policy_evidence=synthetic_policy,
@@ -482,7 +536,7 @@ class LegalNoticePipeline:
             jurisdiction_info=jurisdiction_info,
             cure_period_info=cure_period_info,
             tc_counters=tc_counter_infos,
-            required_user_uploads=self._required_user_uploads(complaint),
+            required_user_uploads=self._required_user_uploads(complaint_ctx),
             legal_notice=legal_notice,
             delivery=delivery,
             generated_at=datetime.utcnow(),

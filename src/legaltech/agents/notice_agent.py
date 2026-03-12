@@ -154,6 +154,51 @@ class NoticeDraftAgent:
             cleaned_lines.append(line)
         return "\n".join(cleaned_lines).strip()
 
+    @staticmethod
+    def _strategy_hints(
+        complaint: ComplaintInput,
+        evidence_score: EvidenceScore | None,
+        arbitration_result: ArbitrationCheckResult | None,
+        tc_counter_result: TCCounterResult | None,
+    ) -> list[str]:
+        hints: list[str] = []
+        issue = complaint.issue_summary.lower()
+        desired = complaint.desired_resolution.lower()
+
+        if "refund" in issue or "refund" in desired:
+            hints.append(
+                "Prioritize a quantified refund demand first, then add compensation and litigation costs as secondary relief."
+            )
+        if "replacement" in issue or "replace" in desired:
+            hints.append(
+                "Frame replacement as an alternative remedy with strict timeline, while preserving right to full refund if non-compliance continues."
+            )
+        if len(complaint.timeline) < 2:
+            hints.append(
+                "Strengthen chronology by anchoring at least one concrete transaction date and one follow-up/escalation date in the facts section."
+            )
+        if not complaint.evidence:
+            hints.append(
+                "Add a short preservation demand requiring respondent to retain call logs, chat logs, order logs, and ticket history pending adjudication."
+            )
+        if evidence_score and evidence_score.contradictions:
+            hints.append(
+                "Avoid overclaiming disputed facts; explicitly rely on documentary points with highest consistency score to maintain credibility."
+            )
+        if tc_counter_result and tc_counter_result.counters:
+            hints.append(
+                "In rebuttal section, quote each defense clause verbatim before applying statutory override; this improves enforceability and persuasion."
+            )
+        if arbitration_result and arbitration_result.clauses_found:
+            hints.append(
+                "Keep arbitration rebuttal concise and place it immediately after T&C rebuttal to prevent forum-deflection by respondent counsel."
+            )
+        if "mental agony" in desired or "harassment" in issue:
+            hints.append(
+                "State compensation for harassment as proportionate and evidence-linked to avoid appearing speculative."
+            )
+        return hints
+
     def _build_brief(
         self,
         complaint: ComplaintInput,
@@ -354,6 +399,18 @@ class NoticeDraftAgent:
             for qid, answer in follow_up_answers.items():
                 b.append(f"Q {qid}: {answer}")
             b.append("\nIMPORTANT: Incorporate ALL of the above answers into the notice facts, evidence, and arguments.")
+
+        # ── Strategic drafting hints ────────────────────────────────
+        strategy_hints = self._strategy_hints(
+            complaint=complaint,
+            evidence_score=evidence_score,
+            arbitration_result=arbitration_result,
+            tc_counter_result=tc_counter_result,
+        )
+        if strategy_hints:
+            b.append("\n## STRATEGIC DRAFTING HINTS (priority)")
+            for hint in strategy_hints:
+                b.append(f"- {hint}")
 
         # ── Escalation strategy (pressure tactics) ───────────────────
         if escalation_strategy and escalation_strategy.tactics:

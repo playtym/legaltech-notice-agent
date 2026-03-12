@@ -57,6 +57,38 @@ class LegalAnalysisAgent:
     def __init__(self, llm=None) -> None:
         self.llm = llm  # LLMService — optional, enables Claude fallback
 
+    @staticmethod
+    def _needs_llm_boost(corpus: str, plausible_count: int, policy_count: int) -> bool:
+        """Decide whether rule-based legal matching likely needs LLM augmentation."""
+        if plausible_count <= 2:
+            return True
+
+        complex_markers = (
+            "upi",
+            "wallet",
+            "payment gateway",
+            "subscription",
+            "chargeback",
+            "auto debit",
+            "dark pattern",
+            "privacy",
+            "data breach",
+            "intermediary",
+            "platform",
+            "marketplace",
+            "fintech",
+            "insurance",
+            "sebi",
+            "rbi",
+            "irda",
+            "telecom",
+            "ai",
+            "algorithm",
+        )
+        low_coverage_complex_case = plausible_count <= 4 and any(m in corpus.lower() for m in complex_markers)
+        policy_dense_but_low_sections = policy_count >= 2 and plausible_count <= 3
+        return low_coverage_complex_case or policy_dense_but_low_sections
+
     async def run(
         self,
         complaint: ComplaintInput,
@@ -79,10 +111,8 @@ class LegalAnalysisAgent:
 
         used_llm = False
 
-        # ── Phase 2: Claude fallback for out-of-syllabus cases ───────
-        # If the rule engine found ≤2 matches, the case likely involves
-        # law the rule engine doesn't know about. Ask Claude.
-        if self.llm and len(plausible) <= 2:
+        # ── Phase 2: Claude fallback for out-of-syllabus/complex cases ───────
+        if self.llm and self._needs_llm_boost(corpus, len(plausible), len(policy_evidence)):
             llm_sections = await self._claude_legal_research(
                 complaint=complaint,
                 normalized_issue=normalized_issue,
