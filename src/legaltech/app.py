@@ -64,6 +64,10 @@ class VoiceNoticeRequest(NoticeRequest):
     transcript_text: str
 
 
+class TranslateRequest(BaseModel):
+    text: str
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok", "model": pipeline.llm.model_name}
@@ -204,6 +208,27 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
         return packet.model_dump()
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc
+
+
+@app.post("/translate/to-english")
+async def translate_to_english(payload: TranslateRequest):
+    source = payload.text.strip()
+    if not source:
+        return {"translated_text": ""}
+
+    try:
+        translated = await pipeline.llm.complete_text(
+            system_prompt=(
+                "You are a precise translation engine for Indian consumer complaints. "
+                "Translate Hindi/English mixed text to clear professional English. "
+                "Do not add or remove facts. Preserve names, amounts, dates, order IDs, and product details."
+            ),
+            user_prompt=f"Translate this to English only:\n\n{source}",
+            max_tokens=1500,
+        )
+        return {"translated_text": translated.strip()}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Translation failed: {exc}") from exc
 
 
 @app.post("/notice/typed/pdf")

@@ -120,6 +120,15 @@
                 <textarea id="issue-summary" rows="5"
                     placeholder="Describe the problem in detail — what you bought/ordered, what went wrong, how the company responded..."
                     required minlength="20" maxlength="10000"></textarea>
+                <div class="voice-row">
+                    <select id="voice-lang-issue-summary" class="voice-lang" aria-label="Voice input language for issue summary">
+                        <option value="hi-IN" selected>Hindi + English (India)</option>
+                        <option value="en-IN">English (India)</option>
+                    </select>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="App.startVoiceInput('issue-summary')">Start Mic</button>
+                    <button type="button" class="btn btn-sm btn-ghost" onclick="App.stopVoiceInput('issue-summary')">Stop</button>
+                </div>
+                <small class="hint" id="voice-status-issue-summary">Speak in Hindi or English. We will translate your speech to English.</small>
             </div>
 
             <div class="form-group">
@@ -145,6 +154,15 @@
                 <textarea id="desired-resolution" rows="3"
                     placeholder="e.g. Full refund of Rs. 78,999 with 18% interest plus Rs. 25,000 compensation for mental agony"
                     required maxlength="2000"></textarea>
+                <div class="voice-row">
+                    <select id="voice-lang-desired-resolution" class="voice-lang" aria-label="Voice input language for desired resolution">
+                        <option value="hi-IN" selected>Hindi + English (India)</option>
+                        <option value="en-IN">English (India)</option>
+                    </select>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="App.startVoiceInput('desired-resolution')">Start Mic</button>
+                    <button type="button" class="btn btn-sm btn-ghost" onclick="App.stopVoiceInput('desired-resolution')">Stop</button>
+                </div>
+                <small class="hint" id="voice-status-desired-resolution">Voice text is translated to English and appended here.</small>
             </div>
 
             <div class="btn-row">

@@ -162,6 +162,22 @@ body {
 .add-row { display: flex; gap: 8px; }
 .add-row input { flex: 1; padding: 8px 12px; border: 1px solid var(--gray-200); border-radius: 8px; font-size: .9rem; }
 
+.voice-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.voice-lang {
+    min-width: 210px;
+    padding: 6px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: var(--white);
+    font-size: .85rem;
+}
+
 /* ─── Buttons ──────────────────────────────────────────────────── */
 .btn {
     display: inline-flex; align-items: center; gap: 6px;

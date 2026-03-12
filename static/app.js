@@ -1,6 +1,10 @@
 /* ─── Jago Grahak Jago — Frontend Application ───────────────────── */
 
 const App = (() => {
+    let recognition = null;
+    let recognitionField = null;
+    let capturedFinalText = '';
+
     // ── State ────────────────────────────────────────────────────────
     const state = {
         currentStep: 0,
@@ -95,6 +99,111 @@ const App = (() => {
         }
 
         throw lastError || new Error('Unable to reach API backend');
+    }
+
+    async function translateToEnglish(text) {
+        const payload = { text };
+        const res = await apiFetch('/translate/to-english', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`Translation failed: ${res.status}`);
+        const data = await res.json();
+        return (data.translated_text || '').trim();
+    }
+
+    function setVoiceStatus(fieldId, message) {
+        const status = document.getElementById(`voice-status-${fieldId}`);
+        if (status) status.textContent = message;
+    }
+
+    function speechCtor() {
+        return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    }
+
+    async function startVoiceInput(fieldId) {
+        const Ctor = speechCtor();
+        if (!Ctor) {
+            showError('Voice input is not supported in this browser. Please use Chrome on desktop/mobile.');
+            return;
+        }
+
+        if (recognition && recognitionField && recognitionField !== fieldId) {
+            recognition.stop();
+        }
+
+        capturedFinalText = '';
+        recognitionField = fieldId;
+        const langSel = document.getElementById(`voice-lang-${fieldId}`);
+        const recogLang = langSel ? langSel.value : 'hi-IN';
+
+        recognition = new Ctor();
+        recognition.lang = recogLang;
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+            setVoiceStatus(fieldId, 'Listening... speak naturally in Hindi or English.');
+        };
+
+        recognition.onresult = (event) => {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; i += 1) {
+                const part = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    capturedFinalText += `${part} `;
+                } else {
+                    interim += part;
+                }
+            }
+            if (interim.trim()) {
+                setVoiceStatus(fieldId, `Listening... ${interim.trim()}`);
+            }
+        };
+
+        recognition.onerror = (event) => {
+            setVoiceStatus(fieldId, `Mic error: ${event.error || 'unknown error'}`);
+        };
+
+        recognition.onend = async () => {
+            const transcript = capturedFinalText.trim();
+            if (!transcript) {
+                setVoiceStatus(fieldId, 'Stopped. No speech detected.');
+                return;
+            }
+
+            try {
+                setVoiceStatus(fieldId, 'Translating to English...');
+                const translated = await translateToEnglish(transcript);
+                const target = document.getElementById(fieldId);
+                if (target) {
+                    const existing = target.value.trim();
+                    target.value = [existing, translated].filter(Boolean).join('\n');
+                }
+                setVoiceStatus(fieldId, 'Done. Speech added in English.');
+            } catch (_) {
+                const target = document.getElementById(fieldId);
+                if (target) {
+                    const existing = target.value.trim();
+                    target.value = [existing, transcript].filter(Boolean).join('\n');
+                }
+                setVoiceStatus(fieldId, 'Translation failed, original speech text was added.');
+            } finally {
+                recognition = null;
+                recognitionField = null;
+                capturedFinalText = '';
+            }
+        };
+
+        recognition.start();
+    }
+
+    function stopVoiceInput(fieldId) {
+        if (recognition && recognitionField === fieldId) {
+            recognition.stop();
+            setVoiceStatus(fieldId, 'Stopping...');
+        }
     }
 
     function saveApiBase() {
@@ -474,5 +583,6 @@ const App = (() => {
         selectTier, generateNotice, downloadPDF, renderNotice,
         addTimeline, addEvidence, removeItem, saveAnswer,
         showError, dismissError, reset, saveApiBase,
+        startVoiceInput, stopVoiceInput,
     };
 })();
