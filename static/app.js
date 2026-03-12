@@ -125,6 +125,18 @@ const App = (() => {
         if (el) el.textContent = message;
     }
 
+    function criticalQuestions(analysis) {
+        if (!analysis || !Array.isArray(analysis.questions)) return [];
+        return analysis.questions.filter((q) => `${q.priority || ''}`.toLowerCase() === 'critical');
+    }
+
+    function isHighConfidence(analysis) {
+        if (!analysis || !analysis.ready_to_generate) return false;
+        const strength = `${analysis.case_strength || ''}`.toLowerCase();
+        const criticalCount = criticalQuestions(analysis).length;
+        return strength === 'strong' || (strength === 'moderate' && criticalCount === 0);
+    }
+
     async function processSmartTranscript(transcriptText) {
         const payload = {
             transcript_text: transcriptText,
@@ -176,9 +188,22 @@ const App = (() => {
 
         if (data.analysis) {
             state.analysisResult = data.analysis;
+            if (isHighConfidence(data.analysis)) {
+                setSmartStatus('High confidence case detected. Generating your notice automatically...');
+                state.tier = 'self_send';
+                await generateNotice();
+                return;
+            }
+
             renderAnalysis();
             goTo(5);
-            setSmartStatus('Done. We auto-filled details and pre-answered follow-up questions from your speech.');
+
+            const remainingCritical = criticalQuestions(data.analysis).length;
+            if (remainingCritical > 0) {
+                setSmartStatus(`Done. We pre-filled your case. Please answer ${remainingCritical} critical question(s) to strengthen notice generation.`);
+            } else {
+                setSmartStatus('Done. We auto-filled details and pre-answered follow-up questions from your speech.');
+            }
         } else {
             setSmartStatus('Done. We filled the form from your speech.');
         }
@@ -460,9 +485,15 @@ const App = (() => {
         // Questions
         const qSection = document.getElementById('questions-section');
         const qList = document.getElementById('questions-list');
-        if (a.questions && a.questions.length > 0) {
+        const allQuestions = Array.isArray(a.questions) ? a.questions : [];
+        const criticalOnly = allQuestions.filter((q) => `${q.priority || ''}`.toLowerCase() === 'critical');
+        const shownQuestions = !a.ready_to_generate
+            ? (criticalOnly.length > 0 ? criticalOnly : allQuestions.slice(0, 3))
+            : allQuestions;
+
+        if (shownQuestions.length > 0) {
             qSection.classList.remove('hidden');
-            qList.innerHTML = a.questions.map(q => `
+            qList.innerHTML = shownQuestions.map(q => `
                 <div class="question-card">
                     <span class="q-label ${q.priority}">${q.priority}</span>
                     <div class="q-text">${esc(q.question)}</div>
