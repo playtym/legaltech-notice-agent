@@ -20,6 +20,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://playtym.github.io",
+        "https://legaltech-notice-agent.onrender.com",
         "http://127.0.0.1:8000",
         "http://localhost:8000",
     ],

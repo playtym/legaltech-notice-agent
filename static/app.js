@@ -46,120 +46,29 @@ const App = (() => {
     // ── Start ───────────────────────────────────────────────────────
     function start() { goTo(1); }
 
-    function apiUrl(path) {
-        const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
-        const base = configured || window.location.origin;
-        return `${base.replace(/\/$/, '')}${path}`;
+    // ── API base: Render backend when on GitHub Pages, same-origin when local ──
+    const RENDER_BACKEND = 'https://legaltech-notice-agent.onrender.com';
+
+    function getApiBase() {
+        const stored = (localStorage.getItem('legaltech_api_base') || '').trim();
+        if (stored) return stored;
+        // GitHub Pages can't serve API — use the deployed Render backend
+        if (window.location.hostname.endsWith('github.io')) return RENDER_BACKEND;
+        return window.location.origin;
     }
 
-    function apiBaseCandidates() {
-        const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
-        const base = configured || window.location.origin;
-        const candidates = [base.replace(/\/$/, '')];
-        const pageIsHttps = window.location.protocol === 'https:';
-
-        try {
-            const u = new URL(candidates[0]);
-            const host = u.hostname;
-            const protocol = u.protocol;
-            const port = u.port ? `:${u.port}` : '';
-
-            // Common production redirects: apex -> www or api subdomain.
-            if (!host.startsWith('www.') && host.split('.').length >= 2) {
-                candidates.push(`${protocol}//www.${host}${port}`);
-            }
-            if (!host.startsWith('api.') && host.split('.').length >= 2) {
-                candidates.push(`${protocol}//api.${host}${port}`);
-            }
-        } catch (_) {
-            // keep default base only
-        }
-
-        // On secure pages, do not attempt insecure HTTP API bases.
-        const filtered = candidates.filter((b) => !pageIsHttps || b.startsWith('https://'));
-        return [...new Set(filtered)];
+    function apiUrl(path) {
+        return `${getApiBase().replace(/\/$/, '')}${path}`;
     }
 
     async function apiFetch(path, options) {
-        const bases = apiBaseCandidates();
-        let lastErr = null;
-
-        for (const base of bases) {
-            try {
-                const res = await fetch(`${base}${path}`, options);
-                // Persist working base so next calls skip failed hosts.
-                if ((localStorage.getItem('legaltech_api_base') || '').trim() !== base) {
-                    localStorage.setItem('legaltech_api_base', base);
-                    const input = document.getElementById('api-base');
-                    if (input) input.value = base;
-                }
-                return res;
-            } catch (err) {
-                lastErr = err;
-            }
-        }
-
-        throw lastErr || new Error('Unable to reach API endpoint');
-    }
-
-    function ensureApiConfigured() {
-        const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
-        const onGithubPages = window.location.hostname.endsWith('github.io');
-        if (onGithubPages && !configured) {
-            // Show the config bar only when on hosted pages and backend URL is missing
-            const bar = document.getElementById('api-config-bar');
-            if (bar) bar.style.display = 'flex';
-            showError('Set API Base URL first (top bar). Hosted frontend needs your backend URL to analyze and generate notices.');
-            return false;
-        }
-        return true;
-    }
-
-    async function ensureApiConfiguredAsync() {
-        if (ensureApiConfigured()) return true;
-
-        // Best-effort auto-detection only on non-HTTPS pages to avoid mixed-content blocks.
-        if (window.location.protocol === 'https:') {
-            showError('Set API Base URL first (top bar) to your HTTPS backend API origin (for example: https://api.yourdomain.com).');
-            return false;
-        }
-
-        const candidates = ['http://127.0.0.1:8000', 'http://localhost:8000'];
-        for (const base of candidates) {
-            try {
-                const res = await fetch(`${base}/health`, { method: 'GET' });
-                if (res.ok) {
-                    localStorage.setItem('legaltech_api_base', base);
-                    dismissError();
-                    return true;
-                }
-            } catch (_) {
-                // Try next candidate
-            }
-        }
-
-        const bar = document.getElementById('api-config-bar');
-        if (bar) bar.style.display = 'flex';
-        showError('Could not reach local backend. Enter API Base URL above, or start the backend with: uvicorn legaltech.app:app --port 8000');
-        return false;
+        const base = getApiBase().replace(/\/$/, '');
+        const res = await fetch(`${base}${path}`, options);
+        return res;
     }
 
     function saveApiBase() {
-        const input = document.getElementById('api-base');
-        if (!input) return;
-        const v = input.value.trim();
-        if (!v) {
-            localStorage.removeItem('legaltech_api_base');
-            return showError('API base cleared. The app will use the current site origin.');
-        }
-        if (!isValidHttpUrl(v)) {
-            return showError('Please enter a valid API base URL, e.g. https://your-backend.example.com');
-        }
-        if (window.location.protocol === 'https:' && v.startsWith('http://')) {
-            return showError('Blocked: HTTPS site cannot call HTTP API. Use an HTTPS API base URL.');
-        }
-        localStorage.setItem('legaltech_api_base', v.replace(/\/$/, ''));
-        showError('API base saved. You can continue now. If analyze still fails, your API origin is likely redirecting or not exposing /notice/analyze.');
+        // no-op kept for backwards compat
     }
 
     function normalizeWebsite(raw) {
@@ -208,7 +117,6 @@ const App = (() => {
 
     // ── Step 3 → 4: Analyze ─────────────────────────────────────────
     async function analyzeCase() {
-        if (!(await ensureApiConfiguredAsync())) return;
         const summary = val('issue-summary');
         const resolution = val('desired-resolution');
         if (!summary || summary.length < 20) return showError('Please describe your issue in at least 20 characters.');
@@ -242,12 +150,7 @@ const App = (() => {
             goTo(5);
         } catch (err) {
             goTo(3);
-            const msg = `${err?.message || err}`;
-            if (/fetch|failed|cors|preflight|network|302/i.test(msg)) {
-                showError('Analysis failed due to API CORS/redirect configuration. Use the exact backend origin that does not redirect (for example, www or api subdomain), then try again.');
-            } else {
-                showError(`Analysis failed: ${msg}. Please try again.`);
-            }
+            showError('Could not reach the backend server. Please run the app locally: open http://127.0.0.1:8000 in your browser after starting the backend.');
         }
     }
 
@@ -323,7 +226,6 @@ const App = (() => {
 
     // ── Step 7: Generate notice ─────────────────────────────────────
     async function generateNotice() {
-        if (!(await ensureApiConfiguredAsync())) return;
         goTo(7);
         animateStages(['gen-stage-1', 'gen-stage-2', 'gen-stage-3', 'gen-stage-4', 'gen-stage-5'], 8000);
 
@@ -353,12 +255,7 @@ const App = (() => {
             goTo(8);
         } catch (err) {
             goTo(6);
-            const msg = `${err?.message || err}`;
-            if (/fetch|failed|cors|preflight|network|302/i.test(msg)) {
-                showError('Notice generation failed due to API CORS/redirect configuration. Use the exact backend origin that does not redirect, then try again.');
-            } else {
-                showError(`Notice generation failed: ${msg}. Please try again.`);
-            }
+            showError('Could not reach the backend server. Please run the app locally: open http://127.0.0.1:8000 in your browser after starting the backend.');
         }
     }
 
@@ -383,7 +280,6 @@ const App = (() => {
 
     // ── PDF download ────────────────────────────────────────────────
     async function downloadPDF() {
-        if (!(await ensureApiConfiguredAsync())) return;
         const body = {
             complainant: state.complainant,
             issue_summary: state.issueSummary,
