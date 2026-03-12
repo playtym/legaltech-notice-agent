@@ -62,6 +62,28 @@ const App = (() => {
         return true;
     }
 
+    async function ensureApiConfiguredAsync() {
+        if (ensureApiConfigured()) return true;
+
+        // Best-effort auto-detection for users running backend locally.
+        const candidates = ['http://127.0.0.1:8000', 'http://localhost:8000'];
+        for (const base of candidates) {
+            try {
+                const res = await fetch(`${base}/health`, { method: 'GET' });
+                if (res.ok) {
+                    localStorage.setItem('legaltech_api_base', base);
+                    dismissError();
+                    return true;
+                }
+            } catch (_) {
+                // Try next candidate
+            }
+        }
+
+        showError('Set API Base URL first (top bar). Example: http://127.0.0.1:8000 for local backend.');
+        return false;
+    }
+
     function saveApiBase() {
         const input = document.getElementById('api-base');
         if (!input) return;
@@ -123,7 +145,7 @@ const App = (() => {
 
     // ── Step 3 → 4: Analyze ─────────────────────────────────────────
     async function analyzeCase() {
-        if (!ensureApiConfigured()) return;
+        if (!(await ensureApiConfiguredAsync())) return;
         const summary = val('issue-summary');
         const resolution = val('desired-resolution');
         if (!summary || summary.length < 20) return showError('Please describe your issue in at least 20 characters.');
@@ -233,7 +255,7 @@ const App = (() => {
 
     // ── Step 7: Generate notice ─────────────────────────────────────
     async function generateNotice() {
-        if (!ensureApiConfigured()) return;
+        if (!(await ensureApiConfiguredAsync())) return;
         goTo(7);
         animateStages(['gen-stage-1', 'gen-stage-2', 'gen-stage-3', 'gen-stage-4', 'gen-stage-5'], 8000);
 
@@ -288,7 +310,7 @@ const App = (() => {
 
     // ── PDF download ────────────────────────────────────────────────
     async function downloadPDF() {
-        if (!ensureApiConfigured()) return;
+        if (!(await ensureApiConfiguredAsync())) return;
         const body = {
             complainant: state.complainant,
             issue_summary: state.issueSummary,
