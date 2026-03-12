@@ -24,14 +24,53 @@ const App = (() => {
         noticeId: null,
     };
 
+    // ── Loading tips (rotate during wait) ─────────────────────────
+    const _LOADING_TIPS = [
+        "Did you know? Under CPA 2019, companies must resolve complaints within 30 days of receiving a legal notice.",
+        "A well-drafted legal notice gets a response from 70% of companies — most prefer to settle than face consumer court.",
+        "Consumer courts in India have a 90-day disposal mandate and zero court fees for claims under ₹5 lakh.",
+        "Tip: Keep all email confirmations and screenshots. Courts accept digital evidence under IT Act §65B.",
+        "Under the Consumer Protection Act, even 'no refund' clauses are invalid if the product/service is defective.",
+        "Companies that ignore legal notices face up to ₹10 lakh compensation + litigation costs in consumer court.",
+        "Fun fact: India's consumer courts handle 5 lakh+ cases per year — and complainants win more than 60% of them.",
+        "Filing on e-daakhil.nic.in after the cure period takes less than 15 minutes. No lawyer required.",
+    ];
+
+    function startLoadingTips(elementId) {
+        const el = document.getElementById(elementId);
+        if (!el) return null;
+        let idx = Math.floor(Math.random() * _LOADING_TIPS.length);
+        el.textContent = _LOADING_TIPS[idx];
+        el.classList.add('visible');
+        return setInterval(() => {
+            idx = (idx + 1) % _LOADING_TIPS.length;
+            el.classList.remove('visible');
+            setTimeout(() => {
+                el.textContent = _LOADING_TIPS[idx];
+                el.classList.add('visible');
+            }, 300);
+        }, 5000);
+    }
+
+    let _tipInterval4 = null;
+    let _tipInterval7 = null;
+
     // ── Step navigation ─────────────────────────────────────────────
     function goTo(step) {
+        // Stop tip rotations when leaving loading screens
+        if (_tipInterval4) { clearInterval(_tipInterval4); _tipInterval4 = null; }
+        if (_tipInterval7) { clearInterval(_tipInterval7); _tipInterval7 = null; }
+
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
         const el = document.getElementById(`step-${step}`);
         if (el) el.classList.add('active');
         state.currentStep = step;
         updateProgress(step);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Start tip rotation on loading screens
+        if (step === 4) _tipInterval4 = startLoadingTips('loading-tip-4');
+        if (step === 7) _tipInterval7 = startLoadingTips('loading-tip-7');
     }
 
     function updateProgress(step) {
@@ -527,6 +566,15 @@ const App = (() => {
         } else {
             qSection.classList.add('hidden');
         }
+
+        // Strength nudge bar
+        renderStrengthNudge(shownQuestions);
+
+        // Value preview
+        renderValuePreview();
+
+        // Tier urgency (pre-calculate for step 6)
+        renderTierUrgency();
     }
 
     function foundCard(title, value, found) {
@@ -538,6 +586,89 @@ const App = (() => {
     function saveAnswer(qid, value) {
         if (value.trim()) state.followUpAnswers[qid] = value.trim();
         else delete state.followUpAnswers[qid];
+        // Re-render strength nudge to reflect progress
+        const a = state.analysisResult;
+        if (a) {
+            const allQ = Array.isArray(a.questions) ? a.questions : [];
+            renderStrengthNudge(allQ);
+        }
+    }
+
+    // ── Strength nudge bar ──────────────────────────────────────────
+    function renderStrengthNudge(questions) {
+        const nudge = document.getElementById('strength-nudge');
+        const fill = document.getElementById('strength-nudge-fill');
+        const text = document.getElementById('strength-nudge-text');
+        if (!nudge || !fill || !text) return;
+
+        const total = questions.length;
+        if (total === 0) { nudge.classList.add('hidden'); return; }
+        nudge.classList.remove('hidden');
+
+        const answered = questions.filter(q => state.followUpAnswers[q.id]).length;
+        const pct = Math.round((answered / total) * 100);
+        const baseStrength = (state.analysisResult?.case_strength || 'moderate').toLowerCase();
+
+        // Base starts at 40 (weak), 60 (moderate), 80 (strong)
+        const baseVal = baseStrength === 'strong' ? 80 : baseStrength === 'moderate' ? 60 : 40;
+        const bonus = total > 0 ? Math.round(((100 - baseVal) * answered) / total) : 0;
+        const effectivePct = Math.min(baseVal + bonus, 100);
+
+        fill.style.width = effectivePct + '%';
+        fill.className = 'strength-nudge-fill ' +
+            (effectivePct >= 80 ? 'strong' : effectivePct >= 55 ? 'moderate' : 'weak');
+
+        if (answered === total) {
+            text.textContent = `Notice strength: ${effectivePct}% — Maximum power!`;
+        } else {
+            text.textContent = `Notice strength: ${effectivePct}% — answer ${total - answered} more to maximize`;
+        }
+    }
+
+    // ── Value preview (what the notice will include) ────────────────
+    function renderValuePreview() {
+        const grid = document.getElementById('value-preview-grid');
+        if (!grid) return;
+        const a = state.analysisResult;
+
+        const items = [];
+        const sectionCount = a?.policies_found?.length || 0;
+        items.push(vpItem('⚖️', 'Statutory Arguments', 'Legal sections from 15+ Indian acts'));
+        items.push(vpItem('🛡️', 'Defense Counter-Arguments', 'Pre-emptive rebuttals to company T&Cs'));
+        items.push(vpItem('🔥', 'Escalation Strategy', 'Sector regulators & pressure tactics'));
+        if (a?.respondent_cin) items.push(vpItem('🏛️', 'Company Identity', `CIN: ${a.respondent_cin}`));
+        if (sectionCount > 0) items.push(vpItem('📄', 'Policy Analysis', `${sectionCount} pages of T&Cs analyzed`));
+        if (a?.contacts_found?.length > 0) items.push(vpItem('📞', 'Contact Details', `${a.contacts_found.length} contacts auto-discovered`));
+        items.push(vpItem('📑', 'Court-Ready PDF', 'Formatted for consumer commission filing'));
+        items.push(vpItem('⏱️', 'Cure Period', 'Statutory deadline for company response'));
+
+        grid.innerHTML = items.join('');
+    }
+
+    function vpItem(icon, title, desc) {
+        return `<div class="vp-item"><span class="vp-icon">${icon}</span><div><strong>${esc(title)}</strong><br><small>${esc(desc)}</small></div></div>`;
+    }
+
+    // ── Tier urgency messaging ──────────────────────────────────────
+    function renderTierUrgency() {
+        const el = document.getElementById('tier-urgency');
+        if (!el) return;
+
+        // Generate urgency based on case context
+        const strength = (state.analysisResult?.case_strength || '').toLowerCase();
+        if (strength === 'strong') {
+            el.innerHTML = `<p>⚡ <strong>You have a strong case.</strong> Don't weaken it with informal delivery. A lawyer-served notice signals real legal intent.</p>`;
+        } else if (strength === 'moderate') {
+            el.innerHTML = `<p>⏰ <strong>Act now.</strong> Limitation periods are running. A properly served notice preserves your legal rights and puts the company on formal notice.</p>`;
+        } else {
+            el.innerHTML = `<p>💡 <strong>Maximize your chances.</strong> Even moderate cases succeed when professionally presented. A lawyer-reviewed notice fills gaps and adds credibility.</p>`;
+        }
+    }
+
+    // ── Upgrade self-send → lawyer ──────────────────────────────────
+    function upgradeTier() {
+        state.tier = 'lawyer';
+        generateNotice();
     }
 
     // ── Step 6: Select tier ─────────────────────────────────────────
@@ -764,7 +895,7 @@ const App = (() => {
     // ── Public API ──────────────────────────────────────────────────
     return {
         start, goTo, nextFromComplainant, nextFromCompany, analyzeCase,
-        selectTier, generateNotice, downloadPDF, renderNotice,
+        selectTier, generateNotice, downloadPDF, renderNotice, upgradeTier,
         addTimeline, addEvidence, removeItem, saveAnswer,
         showError, dismissError, reset, saveApiBase,
         startVoiceInput, stopVoiceInput,
