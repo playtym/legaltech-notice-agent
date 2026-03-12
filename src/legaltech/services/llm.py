@@ -1,13 +1,13 @@
-"""Claude-powered LLM service via Anthropic API.
+"""Claude-powered LLM service via Amazon Bedrock (or direct Anthropic API).
 
-Model: claude-sonnet-4-20250514
-Pricing (per million tokens): Input $3 | Output $15
+Model: claude-sonnet-4-20250514 via Bedrock inference profile
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import os
 from typing import Any
 
 import anthropic
@@ -15,15 +15,25 @@ import anthropic
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MODEL = "claude-sonnet-4-20250514"
+_BEDROCK_MODEL = "apac.anthropic.claude-sonnet-4-20250514-v1:0"
 _MAX_TOKENS = 8192
 
 
 class LLMService:
-    """Thin wrapper around Anthropic Messages API."""
+    """Thin wrapper around Anthropic Messages API (Bedrock or direct)."""
 
     def __init__(self, model_name: str = _DEFAULT_MODEL, api_key: str | None = None) -> None:
-        self.model_name = model_name or _DEFAULT_MODEL
-        self.client = anthropic.AsyncAnthropic(api_key=api_key)
+        use_bedrock = os.getenv("USE_BEDROCK", "").lower() in ("1", "true", "yes")
+        aws_region = os.getenv("AWS_REGION", "ap-south-1")
+
+        if use_bedrock:
+            self.model_name = os.getenv("BEDROCK_MODEL_ID", _BEDROCK_MODEL)
+            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
+            logger.info("LLM: using Bedrock in %s, model=%s", aws_region, self.model_name)
+        else:
+            self.model_name = model_name or _DEFAULT_MODEL
+            self.client = anthropic.AsyncAnthropic(api_key=api_key)
+            logger.info("LLM: using direct Anthropic API, model=%s", self.model_name)
 
     async def complete_json(
         self,
