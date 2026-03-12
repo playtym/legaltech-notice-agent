@@ -46,14 +46,14 @@ const App = (() => {
     // ── Start ───────────────────────────────────────────────────────
     function start() { goTo(1); }
 
-    // ── API base: Render backend when on GitHub Pages, same-origin when local ──
-    const RENDER_BACKEND = 'https://legaltech-notice-agent.onrender.com';
+    // ── API base: App Runner backend when on GitHub Pages, same-origin when local ──
+    const API_BACKEND = 'https://xgp73pem2c.ap-south-1.awsapprunner.com';
 
     function getApiBase() {
         const stored = (localStorage.getItem('legaltech_api_base') || '').trim();
         if (stored) return stored;
-        // GitHub Pages can't serve API — use the deployed Render backend
-        if (window.location.hostname.endsWith('github.io')) return RENDER_BACKEND;
+        // GitHub Pages can't serve API — use the deployed App Runner backend
+        if (window.location.hostname.endsWith('github.io')) return API_BACKEND;
         return window.location.origin;
     }
 
