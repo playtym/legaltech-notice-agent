@@ -57,14 +57,44 @@ const App = (() => {
         return window.location.origin;
     }
 
+    function apiBaseCandidates() {
+        const stored = (localStorage.getItem('legaltech_api_base') || '').trim();
+        const candidates = [];
+
+        if (stored) candidates.push(stored.replace(/\/$/, ''));
+
+        if (window.location.hostname.endsWith('github.io')) {
+            candidates.push(API_BACKEND.replace(/\/$/, ''));
+        } else {
+            candidates.push(window.location.origin.replace(/\/$/, ''));
+        }
+
+        return [...new Set(candidates)];
+    }
+
     function apiUrl(path) {
         return `${getApiBase().replace(/\/$/, '')}${path}`;
     }
 
     async function apiFetch(path, options) {
-        const base = getApiBase().replace(/\/$/, '');
-        const res = await fetch(`${base}${path}`, options);
-        return res;
+        const candidates = apiBaseCandidates();
+        let lastError = null;
+
+        for (const base of candidates) {
+            try {
+                const res = await fetch(`${base}${path}`, options);
+                if (res.ok || res.status < 500) {
+                    // Persist the working origin so subsequent calls are fast.
+                    localStorage.setItem('legaltech_api_base', base);
+                    return res;
+                }
+                lastError = new Error(`Server error: ${res.status} from ${base}`);
+            } catch (err) {
+                lastError = err;
+            }
+        }
+
+        throw lastError || new Error('Unable to reach API backend');
     }
 
     function saveApiBase() {
@@ -150,7 +180,8 @@ const App = (() => {
             goTo(5);
         } catch (err) {
             goTo(3);
-            showError('Could not reach the backend server. Please run the app locally: open http://127.0.0.1:8000 in your browser after starting the backend.');
+            const attempted = apiBaseCandidates().join(', ');
+            showError(`Could not reach backend. Tried: ${attempted}. Please refresh and try again.`);
         }
     }
 
@@ -255,7 +286,8 @@ const App = (() => {
             goTo(8);
         } catch (err) {
             goTo(6);
-            showError('Could not reach the backend server. Please run the app locally: open http://127.0.0.1:8000 in your browser after starting the backend.');
+            const attempted = apiBaseCandidates().join(', ');
+            showError(`Could not reach backend. Tried: ${attempted}. Please refresh and try again.`);
         }
     }
 
