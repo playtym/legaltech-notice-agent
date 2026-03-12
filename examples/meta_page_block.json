@@ -1,0 +1,35 @@
+{
+  "complainant": {
+    "full_name": "Priya Sharma",
+    "email": "priya.sharma@example.com",
+    "phone": "+91-98xxxxxx20",
+    "address": "Jaipur, Rajasthan"
+  },
+  "company_name_hint": "Meta Platforms Inc (Facebook/Instagram)",
+  "website": "https://www.meta.com/",
+  "issue_summary": "Meta/Facebook has randomly blocked and unpublished my business page 'Priya Art Studio' with 45,000 followers, alleging 'violent content' under their community standards. My page only contains artwork, painting tutorials, and art sale posts. There is ZERO violent content. Their AI moderation system has misbehaved and wrongly flagged my page. I have lost my entire business — all customer contacts, order history, reviews, years of content. I appealed through their system 3 times but each time got an automated rejection with no human review. My livelihood depends on this page.",
+  "timeline": [
+    "15 Jan 2026: Received notification that page was 'unpublished' for violating community standards on violence",
+    "15 Jan 2026: Immediately appealed via Facebook's appeal form — auto-rejected within 2 hours",
+    "18 Jan 2026: Filed second appeal with detailed explanation — rejected again with generic message",
+    "25 Jan 2026: Filed third appeal attaching 50+ screenshots proving no violent content — rejected",
+    "01 Feb 2026: Emailed Meta's India Grievance Officer (grievance-officer@meta.com) as required under IT Rules 2021 — no response in 30 days",
+    "10 Mar 2026: Still no response from Grievance Officer. Page remains blocked. Business destroyed."
+  ],
+  "evidence": [
+    "Screenshots of all page content (artwork and tutorials only, zero violence)",
+    "Facebook notification showing 'violent content' violation allegation",
+    "Three appeal rejection emails from Facebook",
+    "Email to Meta India Grievance Officer dated 01 Feb 2026 with delivery receipt",
+    "Page Insights showing 45,000 followers and business revenue of Rs. 3.5 lakh/month",
+    "GST returns showing business income from page-based sales",
+    "Customer testimonials about art purchases via the page"
+  ],
+  "desired_resolution": "Immediate restoration of my Facebook page 'Priya Art Studio' with all content, followers, and history intact. Compensation of Rs. 10,50,000 (3 months lost business income at Rs. 3.5 lakh/month) plus Rs. 5,00,000 for mental agony, reputational damage, and loss of livelihood",
+  "tier": "self_send",
+  "follow_up_answers": {
+    "q1": "Monthly revenue from page was Rs. 3.5 lakh (proven by GST returns). Page has been blocked for nearly 2 months. Total business loss so far: Rs. 7 lakh and counting.",
+    "q2": "Meta Platforms Inc. Their India entity is Facebook India Online Services Pvt Ltd, CIN U72900KA2010PTC054142, registered at: Ground Floor, Module 2, Block B, RMZ Infinity, Old Madras Road, Bangalore 560016. India Grievance Officer: grievance-officer@meta.com",
+    "q3": "I have 50+ screenshots of my page content — every single post is artwork, painting tutorials, or art sale listings. Not a single post has any violent content whatsoever. The AI flagged a painting of Mahishasura Mardini (goddess Durga) as 'violent' which is clearly a religious artwork."
+  }
+}

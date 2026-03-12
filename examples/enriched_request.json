@@ -1,0 +1,34 @@
+{
+  "complainant": {
+    "full_name": "Aarav Mehta",
+    "email": "aarav@example.com",
+    "phone": "+91-98xxxxxx10",
+    "address": "Bengaluru, Karnataka"
+  },
+  "company_name_hint": "Example E-commerce Pvt Ltd",
+  "website": "https://www.example.com/",
+  "issue_summary": "I ordered a laptop but received a used and damaged unit. Customer support kept delaying replacement and then refused refund despite pickup of the item.",
+  "timeline": [
+    "05 Feb 2026: Order placed and paid online Rs. 78,999.",
+    "08 Feb 2026: Product delivered in damaged condition - screen cracked, missing charger.",
+    "09-20 Feb 2026: Multiple support tickets with no resolution. They kept saying 7 days.",
+    "22 Feb 2026: Item picked up, but refund not processed despite verbal promise."
+  ],
+  "evidence": [
+    "Order invoice #12345 showing Rs. 78,999",
+    "Screenshots of chat support showing 4 unfulfilled promises",
+    "Email trail with support team dated 09-20 Feb",
+    "Pickup confirmation message with tracking number",
+    "Photos of damaged laptop (cracked screen, missing charger)",
+    "Bank statement showing Rs. 78,999 debit"
+  ],
+  "desired_resolution": "Full refund of Rs. 78,999 with 18% interest from date of payment, plus Rs. 25,000 compensation for mental agony and harassment",
+  "tier": "self_send",
+  "follow_up_answers": {
+    "q1": "Laptop cost was Rs. 78,999 paid via HDFC debit card on 05 Feb 2026. I want full refund plus 18% interest = approx Rs. 82,000 total.",
+    "q2": "Invoice shows: Example E-commerce Pvt Ltd, CIN U72200KA2018PTC123456, Registered Office: 4th Floor, Brigade Tower, MG Road, Bengaluru 560001. Grievance officer email: grievance@example.com",
+    "q3": "Screen was cracked in 3 places, charger was missing, laptop had pre-existing user data/login showing it was a USED unit. I have 8 photos.",
+    "q5": "I filed complaint on their portal (ticket #GRV-9988) on 10 Feb. Their policy says 7-day resolution. It has been 30+ days with no resolution.",
+    "q7": "Ordered: HP Pavilion 15-eg3000, i5-1335U, 16GB RAM, 512GB SSD. Received: Same model but clearly used/refurbished with physical damage."
+  }
+}

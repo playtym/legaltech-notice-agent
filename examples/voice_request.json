@@ -1,0 +1,24 @@
+{
+  "complainant": {
+    "full_name": "Neha Sharma",
+    "email": "neha@example.com",
+    "phone": "+91-97xxxxxx21",
+    "address": "Mumbai, Maharashtra"
+  },
+  "company_name_hint": "Example Payments Ltd",
+  "website": "https://www.example-payments.com",
+  "issue_summary": "Unauthorized wallet debit and no grievance redressal.",
+  "transcript_text": "I noticed two unauthorized debits from my wallet on 3rd March. I raised complaint tickets and emailed support but there is no concrete resolution. They keep saying wait for 48 hours. It has been over 10 days and my money is not reversed.",
+  "timeline": [
+    "03 Mar 2026: Unauthorized debits observed.",
+    "03 Mar 2026: Complaint ticket raised.",
+    "14 Mar 2026: No resolution provided."
+  ],
+  "evidence": [
+    "Wallet statement screenshot",
+    "Ticket IDs",
+    "Bank debit SMS screenshots"
+  ],
+  "desired_resolution": "Immediate reversal, apology, and compensation",
+  "jurisdiction": "India"
+}

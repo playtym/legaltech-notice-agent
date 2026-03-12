@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Legal Notice System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body { background: var(--gray-100); }
+        .admin-header {
+            background: var(--gray-900); color: var(--white); padding: 16px 32px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .admin-header h1 { font-size: 1.1rem; font-weight: 700; }
+        .admin-header a { color: var(--gray-400); text-decoration: none; font-size: .9rem; }
+        .admin-header a:hover { color: var(--white); }
+        .admin-layout { max-width: 1000px; margin: 0 auto; padding: 24px; }
+        .admin-section { margin-bottom: 32px; }
+        .admin-section h2 { font-size: 1.2rem; margin-bottom: 16px; color: var(--gray-800); }
+
+        /* Lawyer form */
+        .lawyer-form { background: var(--white); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow); }
+        .lawyer-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .lawyer-form .form-group { margin-bottom: 14px; }
+        .lawyer-status { margin-top: 12px; font-size: .9rem; padding: 8px 12px; border-radius: 6px; }
+        .lawyer-status.saved { background: var(--green-light); color: var(--green); }
+
+        /* Notices table */
+        .notices-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+        .notices-table th { background: var(--gray-50); text-align: left; padding: 10px 14px; font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-400); border-bottom: 1px solid var(--gray-200); }
+        .notices-table td { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); font-size: .9rem; }
+        .notices-table tr:hover td { background: var(--gray-50); }
+        .badge {
+            display: inline-block; padding: 2px 10px; border-radius: 20px;
+            font-size: .75rem; font-weight: 600;
+        }
+        .badge.pending { background: #FFF7ED; color: var(--orange-dark); }
+        .badge.approved { background: var(--green-light); color: var(--green); }
+        .badge.sent { background: #DBEAFE; color: #2563EB; }
+        .badge.delivered { background: var(--gray-100); color: var(--gray-600); }
+        .badge.rejected { background: #FEF2F2; color: var(--red); }
+
+        /* Notice detail modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.5);
+            display: flex; align-items: center; justify-content: center; z-index: 999;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal-box {
+            background: var(--white); border-radius: var(--radius); padding: 28px;
+            max-width: 750px; width: 95%; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-box h3 { margin-bottom: 16px; }
+        .modal-box pre {
+            background: var(--gray-50); padding: 16px; border-radius: 8px;
+            font-size: .78rem; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word;
+            max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace;
+        }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+        .empty-state { text-align: center; padding: 40px; color: var(--gray-400); }
+    </style>
+</head>
+<body>
+
+<div class="api-config">
+    <label for="api-base-admin">API Base URL (optional, for hosted frontend):</label>
+    <input id="api-base-admin" type="url" placeholder="https://your-backend.example.com">
+    <button type="button" class="btn btn-sm" onclick="Admin.saveApiBase()">Save</button>
+</div>
+
+<div class="admin-header">
+    <h1>⚖️ Legal Notice Admin</h1>
+    <a href="/">← Back to Main Site</a>
+</div>
+
+<div class="admin-layout">
+
+    <!-- Lawyer Details Section -->
+    <div class="admin-section">
+        <h2>👨‍⚖️ Lawyer Details</h2>
+        <div class="lawyer-form">
+            <p style="color:var(--gray-400); font-size:.9rem; margin-bottom:16px;">
+                Configure the advocate who will review and attest ₹599 tier notices.
+            </p>
+            <form id="lawyer-form" onsubmit="return false;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Advocate Name <span class="req">*</span></label>
+                        <input type="text" id="l-name" required placeholder="e.g. Adv. Rajesh Kumar">
+                    </div>
+                    <div class="form-group">
+                        <label>Email <span class="req">*</span></label>
+                        <input type="email" id="l-email" required placeholder="advocate@lawfirm.com">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Bar Council Enrollment No. <span class="req">*</span></label>
+                        <input type="text" id="l-enrollment" required placeholder="e.g. KAR/1234/2015">
+                    </div>
+                    <div class="form-group">
+                        <label>Bar Council</label>
+                        <input type="text" id="l-bar" placeholder="e.g. Bar Council of Karnataka">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="l-phone" placeholder="+91-98XXXXXXXX">
+                </div>
+                <button type="button" class="btn btn-primary" onclick="Admin.saveLawyer()">Save Lawyer Details</button>
+                <div id="lawyer-save-status" class="lawyer-status hidden"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notices Section -->
+    <div class="admin-section">
+        <h2>📋 All Notices</h2>
+        <div id="notices-container">
+            <div class="empty-state">Loading notices...</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay hidden" id="modal-overlay">
+    <div class="modal-box">
+        <h3 id="modal-title">Notice Detail</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+            <div class="found-card"><h4>Complainant</h4><p id="modal-complainant"></p></div>
+            <div class="found-card"><h4>Company</h4><p id="modal-company"></p></div>
+            <div class="found-card"><h4>Tier</h4><p id="modal-tier"></p></div>
+            <div class="found-card"><h4>Status</h4><p id="modal-status"></p></div>
+        </div>
+        <pre id="modal-notice"></pre>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="Admin.closeModal()">Close</button>
+            <button class="btn btn-outline" id="modal-btn-pdf" onclick="Admin.downloadPDF()">⬇ PDF</button>
+            <button class="btn btn-primary" id="modal-btn-approve" onclick="Admin.approveNotice()">✓ Approve & Send</button>
+            <button class="btn btn-ghost" id="modal-btn-reject" onclick="Admin.rejectNotice()" style="color:var(--red)">✕ Reject</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const Admin = (() => {
+    let currentNoticeId = null;
+
+    function apiUrl(path) {
+        const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
+        const base = configured || window.location.origin;
+        return `${base.replace(/\/$/, '')}${path}`;
+    }
+
+    function saveApiBase() {
+        const input = document.getElementById('api-base-admin');
+        const v = (input?.value || '').trim();
+        if (!v) {
+            localStorage.removeItem('legaltech_api_base');
+            alert('API base cleared. Using current site origin.');
+            return;
+        }
+        try {
+            const u = new URL(v);
+            if (!['http:', 'https:'].includes(u.protocol)) throw new Error('Invalid protocol');
+        } catch (_) {
+            alert('Please enter a valid URL, e.g. https://your-backend.example.com');
+            return;
+        }
+        localStorage.setItem('legaltech_api_base', v.replace(/\/$/, ''));
+        alert('API base saved.');
+    }
+
+    // ── Load initial data ───────────────────────────────────────
+    async function init() {
+        const input = document.getElementById('api-base-admin');
+        if (input) input.value = localStorage.getItem('legaltech_api_base') || '';
+        await loadLawyer();
+        await loadNotices();
+    }
+
+    // ── Lawyer ──────────────────────────────────────────────────
+    async function loadLawyer() {
+        try {
+            const res = await fetch(apiUrl('/api/admin/lawyer'));
+            const data = await res.json();
+            if (data && data.name) {
+                document.getElementById('l-name').value = data.name || '';
+                document.getElementById('l-email').value = data.email || '';
+                document.getElementById('l-enrollment').value = data.enrollment_no || '';
+                document.getElementById('l-bar').value = data.bar_council || '';
+                document.getElementById('l-phone').value = data.phone || '';
+            }
+        } catch (_) {}
+    }
+
+    async function saveLawyer() {
+        const body = {
+            name: document.getElementById('l-name').value.trim(),
+            email: document.getElementById('l-email').value.trim(),
+            enrollment_no: document.getElementById('l-enrollment').value.trim(),
+            bar_council: document.getElementById('l-bar').value.trim() || null,
+            phone: document.getElementById('l-phone').value.trim() || null,
+        };
+        if (!body.name || !body.email || !body.enrollment_no) {
+            alert('Please fill in name, email, and enrollment number.');
+            return;
+        }
+        try {
+            const res = await fetch(apiUrl('/api/admin/lawyer'), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            if (res.ok) {
+                const el = document.getElementById('lawyer-save-status');
+                el.textContent = '✓ Lawyer details saved successfully.';
+                el.className = 'lawyer-status saved';
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 3000);
+            }
+        } catch (err) {
+            alert('Failed to save: ' + err.message);
+        }
+    }
+
+    // ── Notices ─────────────────────────────────────────────────
+    async function loadNotices() {
+        try {
+            const res = await fetch(apiUrl('/api/admin/notices'));
+            const notices = await res.json();
+            renderNotices(notices);
+        } catch (_) {
+            document.getElementById('notices-container').innerHTML =
+                '<div class="empty-state">Failed to load notices.</div>';
+        }
+    }
+
+    function renderNotices(notices) {
+        const container = document.getElementById('notices-container');
+        if (!notices || notices.length === 0) {
+            container.innerHTML = '<div class="empty-state">No notices generated yet.</div>';
+            return;
+        }
+        const rows = notices.map(n => {
+            const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-IN') : '—';
+            const statusClass = n.status === 'pending_review' ? 'pending'
+                : n.status === 'approved' ? 'approved'
+                : n.status === 'sent' ? 'sent'
+                : n.status === 'rejected' ? 'rejected'
+                : 'delivered';
+            const statusLabel = n.status === 'pending_review' ? 'Pending Review'
+                : n.status.charAt(0).toUpperCase() + n.status.slice(1);
+            return `<tr style="cursor:pointer" onclick="Admin.openNotice('${n.id}')">
+                <td><strong>#${(n.id || '').toUpperCase()}</strong></td>
+                <td>${esc(n.complainant_name)}</td>
+                <td>${esc(n.company_name)}</td>
+                <td>${esc(n.tier === 'lawyer' ? '₹599 Lawyer' : '₹199 Self')}</td>
+                <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                <td>${date}</td>
+            </tr>`;
+        }).join('');
+
+        container.innerHTML = `
+            <table class="notices-table">
+                <thead><tr>
+                    <th>ID</th><th>Complainant</th><th>Company</th><th>Tier</th><th>Status</th><th>Date</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    }
+
+    // ── Notice detail modal ─────────────────────────────────────
+    async function openNotice(id) {
+        currentNoticeId = id;
+        try {
+            const res = await fetch(apiUrl(`/api/admin/notices/${id}`));
+            const n = await res.json();
+            document.getElementById('modal-title').textContent = `Notice #${id.toUpperCase()}`;
+            document.getElementById('modal-complainant').textContent = n.complainant_name || '';
+            document.getElementById('modal-company').textContent = n.company_name || '';
+            document.getElementById('modal-tier').textContent = n.tier === 'lawyer' ? '₹599 Lawyer-Assisted' : '₹199 Self-Send';
+            document.getElementById('modal-status').textContent = n.status || '';
+            document.getElementById('modal-notice').textContent = n.legal_notice || '';
+            // Show/hide action buttons based on status
+            const isPending = n.status === 'pending_review';
+            document.getElementById('modal-btn-approve').classList.toggle('hidden', !isPending);
+            document.getElementById('modal-btn-reject').classList.toggle('hidden', !isPending);
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        } catch (err) {
+            alert('Failed to load notice: ' + err.message);
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('modal-overlay').classList.add('hidden');
+        currentNoticeId = null;
+    }
+
+    async function approveNotice() {
+        if (!currentNoticeId) return;
+        try {
+            await fetch(apiUrl(`/api/admin/notices/${currentNoticeId}/status`), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'approved', reviewer_notes: 'Approved by admin' }),
+            });
+            closeModal();
+            await loadNotices();
+        } catch (err) {
+            alert('Failed: ' + err.message);
+        }
+    }
+
+    async function rejectNotice() {
+        if (!currentNoticeId) return;
+        const reason = prompt('Rejection reason (optional):') || '';
+        try {
+            await fetch(apiUrl(`/api/admin/notices/${currentNoticeId}/status`), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'rejected', reviewer_notes: reason }),
+            });
+            closeModal();
+            await loadNotices();
+        } catch (err) {
+            alert('Failed: ' + err.message);
+        }
+    }
+
+    async function downloadPDF() {
+        if (!currentNoticeId) return;
+        try {
+            const res = await fetch(apiUrl(`/api/admin/notices/${currentNoticeId}/pdf`));
+            if (!res.ok) throw new Error('PDF failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `Legal_Notice_${currentNoticeId}.pdf`;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('Failed: ' + err.message);
+        }
+    }
+
+    function esc(s) {
+        if (!s) return '';
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    // Auto-init
+    document.addEventListener('DOMContentLoaded', init);
+
+    return { saveApiBase, saveLawyer, loadNotices, openNotice, closeModal, approveNotice, rejectNotice, downloadPDF };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jago Grahak Jago — Legal Notice Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="api-config">
+    <label for="api-base">API Base URL (optional, for hosted frontend):</label>
+    <input id="api-base" type="url" placeholder="https://your-backend.example.com">
+    <button type="button" class="btn btn-sm" onclick="App.saveApiBase()">Save</button>
+</div>
+
+<!-- ─── Progress Bar ─────────────────────────────────────────────── -->
+<div id="progress-bar" class="progress-bar hidden">
+    <div class="progress-steps">
+        <div class="p-step active" data-step="1"><span>1</span><small>You</small></div>
+        <div class="p-step" data-step="2"><span>2</span><small>Company</small></div>
+        <div class="p-step" data-step="3"><span>3</span><small>Complaint</small></div>
+        <div class="p-step" data-step="4"><span>4</span><small>Analysis</small></div>
+        <div class="p-step" data-step="5"><span>5</span><small>Review</small></div>
+        <div class="p-step" data-step="6"><span>6</span><small>Plan</small></div>
+        <div class="p-step" data-step="7"><span>7</span><small>Notice</small></div>
+    </div>
+</div>
+
+<!-- ─── Step 0: Welcome ──────────────────────────────────────────── -->
+<section class="step active" id="step-0">
+    <div class="hero">
+        <div class="logo-container">
+            <div class="sun-logo">
+                <img src="/static/img/logo.png" alt="Jago Grahak Jago" class="logo-img"
+                     onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
+                <div id="fallback-logo" class="fallback-logo" style="display:none;">
+                    <div class="sun-text top">JAGO</div>
+                    <div class="sun-text mid">GRAHAK</div>
+                    <div class="sun-text bot">JAGO</div>
+                </div>
+            </div>
+        </div>
+        <h1>Your Rights. Your Power.</h1>
+        <p class="hero-sub">Generate a professional AI-powered legal notice in minutes.<br>
+        No lawyer needed for the first step. Backed by Indian consumer law.</p>
+        <div class="hero-stats">
+            <div class="stat"><strong>15+</strong><span>Indian Statutes</span></div>
+            <div class="stat"><strong>AI</strong><span>Claude Sonnet</span></div>
+            <div class="stat"><strong>₹199</strong><span>Starting at</span></div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="App.start()">
+            Start Your Legal Notice →
+        </button>
+        <p class="hero-note">Civil/consumer disputes only. English output. Works for any company in India.</p>
+    </div>
+</section>
+
+<!-- ─── Step 1: Your Details ─────────────────────────────────────── -->
+<section class="step" id="step-1">
+    <div class="card">
+        <h2>👤 Tell Us About Yourself</h2>
+        <p class="card-sub">Your details will appear as the complainant on the legal notice.</p>
+        <form id="form-complainant" onsubmit="return false;">
+            <div class="form-group">
+                <label for="c-name">Full Name <span class="req">*</span></label>
+                <input type="text" id="c-name" placeholder="e.g. Aarav Mehta" required maxlength="200">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="c-email">Email <span class="req">*</span></label>
+                    <input type="email" id="c-email" placeholder="aarav@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="c-phone">Phone</label>
+                    <input type="tel" id="c-phone" placeholder="+91-98XXXXXXXX">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="c-address">City / Address <span class="req">*</span></label>
+                <input type="text" id="c-address" placeholder="e.g. Bengaluru, Karnataka" required maxlength="500">
+            </div>
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" onclick="App.goTo(0)">← Back</button>
+                <button type="button" class="btn btn-primary" onclick="App.nextFromComplainant()">Continue →</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- ─── Step 2: Company Details ──────────────────────────────────── -->
+<section class="step" id="step-2">
+    <div class="card">
+        <h2>🏢 About the Company</h2>
+        <p class="card-sub">Who do you have a complaint against?</p>
+        <form id="form-company" onsubmit="return false;">
+            <div class="form-group">
+                <label for="company-name">Company / Brand Name <span class="req">*</span></label>
+                <input type="text" id="company-name" placeholder="e.g. Example E-commerce Pvt Ltd" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="company-website">Company Website</label>
+                <input type="url" id="company-website" placeholder="https://www.example.com">
+                <small class="hint">We'll fetch their contacts, policies, and registration details automatically.</small>
+            </div>
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" onclick="App.goTo(1)">← Back</button>
+                <button type="button" class="btn btn-primary" onclick="App.nextFromCompany()">Continue →</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- ─── Step 3: Complaint Details ────────────────────────────────── -->
+<section class="step" id="step-3">
+    <div class="card">
+        <h2>📝 Describe Your Problem</h2>
+        <p class="card-sub">Be as detailed as possible. More detail = stronger notice.</p>
+        <form id="form-complaint" onsubmit="return false;">
+            <div class="form-group">
+                <label for="issue-summary">What happened? <span class="req">*</span></label>
+                <textarea id="issue-summary" rows="5"
+                    placeholder="Describe the problem in detail — what you bought/ordered, what went wrong, how the company responded..."
+                    required minlength="20" maxlength="10000"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Timeline of Events</label>
+                <div id="timeline-list" class="dynamic-list"></div>
+                <div class="add-row">
+                    <input type="text" id="timeline-input" placeholder="e.g. 05 Feb 2026: Ordered laptop, paid Rs. 78,999" maxlength="500">
+                    <button type="button" class="btn btn-sm" onclick="App.addTimeline()">+ Add</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Evidence You Have</label>
+                <div id="evidence-list" class="dynamic-list"></div>
+                <div class="add-row">
+                    <input type="text" id="evidence-input" placeholder="e.g. Order invoice, screenshots of chat support" maxlength="500">
+                    <button type="button" class="btn btn-sm" onclick="App.addEvidence()">+ Add</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="desired-resolution">What resolution do you want? <span class="req">*</span></label>
+                <textarea id="desired-resolution" rows="3"
+                    placeholder="e.g. Full refund of Rs. 78,999 with 18% interest plus Rs. 25,000 compensation for mental agony"
+                    required maxlength="2000"></textarea>
+            </div>
+
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" onclick="App.goTo(2)">← Back</button>
+                <button type="button" class="btn btn-primary" onclick="App.analyzeCase()">Analyze My Case →</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- ─── Step 4: Analyzing (loading) ──────────────────────────────── -->
+<section class="step" id="step-4">
+    <div class="card loading-card">
+        <div class="spinner"></div>
+        <h2>Analyzing Your Case</h2>
+        <div class="loading-stages">
+            <div class="stage" id="stage-company">🔍 Researching the company...</div>
+            <div class="stage" id="stage-contacts">📞 Finding contact details...</div>
+            <div class="stage" id="stage-policies">📄 Scraping policies & T&Cs...</div>
+            <div class="stage" id="stage-legal">⚖️ Identifying legal provisions...</div>
+            <div class="stage" id="stage-strength">💪 Assessing case strength...</div>
+        </div>
+        <p class="loading-note">This takes 30-60 seconds — Claude AI is researching your case.</p>
+    </div>
+</section>
+
+<!-- ─── Step 5: Review + Questions ───────────────────────────────── -->
+<section class="step" id="step-5">
+    <div class="card">
+        <h2>🔎 What We Found</h2>
+
+        <!-- Fetched data cards -->
+        <div class="found-grid" id="found-data"></div>
+
+        <!-- Case strength -->
+        <div class="case-strength-box" id="case-strength-box"></div>
+
+        <!-- Follow-up questions -->
+        <div id="questions-section" class="questions-section">
+            <h3>Help Us Make Your Notice Stronger</h3>
+            <p class="card-sub">Answer as many as you can — each answer strengthens the legal notice.</p>
+            <div id="questions-list"></div>
+        </div>
+
+        <div class="btn-row">
+            <button type="button" class="btn btn-ghost" onclick="App.goTo(3)">← Back to Editing</button>
+            <button type="button" class="btn btn-primary" onclick="App.goTo(6)">Choose Plan →</button>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Step 6: Choose Plan ──────────────────────────────────────── -->
+<section class="step" id="step-6">
+    <div class="card">
+        <h2>Choose Your Plan</h2>
+        <p class="card-sub">Both plans generate the same powerful legal notice.</p>
+        <div class="tier-grid">
+            <div class="tier-card" id="tier-self" onclick="App.selectTier('self_send')">
+                <div class="tier-price">₹199</div>
+                <div class="tier-name">Self-Send</div>
+                <ul class="tier-features">
+                    <li>✓ Professional AI-generated legal notice</li>
+                    <li>✓ Full statutory citations & bare-act text</li>
+                    <li>✓ T&C counter-arguments</li>
+                    <li>✓ Escalation strategy with regulators</li>
+                    <li>✓ PDF download</li>
+                    <li>✓ You email it to the company</li>
+                </ul>
+                <button class="btn btn-outline">Select Self-Send</button>
+            </div>
+            <div class="tier-card recommended" id="tier-lawyer" onclick="App.selectTier('lawyer')">
+                <div class="tier-badge">RECOMMENDED</div>
+                <div class="tier-price">₹599</div>
+                <div class="tier-name">Lawyer-Assisted</div>
+                <ul class="tier-features">
+                    <li>✓ Everything in Self-Send</li>
+                    <li>✓ Reviewed by a licensed advocate</li>
+                    <li>✓ Attested on advocate's letterhead</li>
+                    <li>✓ Served to the company on your behalf</li>
+                    <li>✓ Read-receipt tracking</li>
+                    <li>✓ 10x more pressure on the company</li>
+                </ul>
+                <button class="btn btn-primary">Select Lawyer-Assisted</button>
+            </div>
+        </div>
+        <div class="btn-row">
+            <button type="button" class="btn btn-ghost" onclick="App.goTo(5)">← Back</button>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Step 7: Generating (loading) ─────────────────────────────── -->
+<section class="step" id="step-7">
+    <div class="card loading-card">
+        <div class="spinner"></div>
+        <h2>Generating Your Legal Notice</h2>
+        <div class="loading-stages">
+            <div class="stage" id="gen-stage-1">⚖️ Building statutory arguments...</div>
+            <div class="stage" id="gen-stage-2">🛡️ Dismantling T&C defenses...</div>
+            <div class="stage" id="gen-stage-3">🔥 Assembling escalation strategy...</div>
+            <div class="stage" id="gen-stage-4">📄 Drafting formal legal notice...</div>
+            <div class="stage" id="gen-stage-5">📑 Generating PDF...</div>
+        </div>
+        <p class="loading-note">Claude AI is drafting your legal notice like a seasoned lawyer.</p>
+    </div>
+</section>
+
+<!-- ─── Step 8a: Notice Ready (self-send) ────────────────────────── -->
+<section class="step" id="step-8">
+    <div class="card success-card">
+        <div class="success-icon">✅</div>
+        <h2>Your Legal Notice is Ready!</h2>
+        <p class="card-sub" id="notice-id-display"></p>
+
+        <!-- Self-send instructions -->
+        <div id="self-send-info" class="info-box">
+            <h3>📧 What to do next</h3>
+            <ol>
+                <li>Download the PDF below</li>
+                <li>Email it to the company's official grievance email with <strong>read receipt</strong> enabled</li>
+                <li>CC the regulatory stakeholders mentioned in the notice</li>
+                <li>Save all sent-email confirmations as proof of service</li>
+                <li>If no response within the cure period, file on <a href="https://edaakhil.nic.in" target="_blank">e-daakhil.nic.in</a></li>
+            </ol>
+        </div>
+
+        <!-- Lawyer-sent info -->
+        <div id="lawyer-send-info" class="info-box hidden">
+            <div class="lawyer-status">
+                <h3>👨‍⚖️ Sent for Lawyer Review</h3>
+                <p>Your notice has been submitted for review by a licensed advocate.</p>
+                <div class="status-timeline">
+                    <div class="status-step done"><span class="dot"></span> Notice Generated</div>
+                    <div class="status-step active"><span class="dot"></span> Under Lawyer Review</div>
+                    <div class="status-step"><span class="dot"></span> Approved & Attested</div>
+                    <div class="status-step"><span class="dot"></span> Served to Company</div>
+                </div>
+                <p class="lawyer-note">We'll email you at <strong id="notify-email"></strong> when the notice is reviewed and served.</p>
+            </div>
+        </div>
+
+        <!-- Notice preview -->
+        <details class="notice-preview">
+            <summary>📄 Preview Notice Text</summary>
+            <pre id="notice-text"></pre>
+        </details>
+
+        <div class="btn-row">
+            <button class="btn btn-primary" id="btn-download-pdf" onclick="App.downloadPDF()">⬇ Download PDF</button>
+            <button class="btn btn-ghost" onclick="App.reset()">Start New Notice</button>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Error overlay ────────────────────────────────────────────── -->
+<div id="error-overlay" class="error-overlay hidden">
+    <div class="error-box">
+        <h3>⚠️ Something went wrong</h3>
+        <p id="error-message"></p>
+        <button class="btn btn-primary" onclick="App.dismissError()">OK</button>
+    </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

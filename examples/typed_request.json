@@ -1,0 +1,26 @@
+{
+  "complainant": {
+    "full_name": "Aarav Mehta",
+    "email": "aarav@example.com",
+    "phone": "+91-98xxxxxx10",
+    "address": "Bengaluru, Karnataka"
+  },
+  "company_name_hint": "Example E-commerce Pvt Ltd",
+  "website": "https://www.example.com",
+  "issue_summary": "I ordered a laptop but received a used and damaged unit. Customer support kept delaying replacement and then refused refund despite pickup of the item.",
+  "timeline": [
+    "05 Feb 2026: Order placed and paid online.",
+    "08 Feb 2026: Product delivered in damaged condition.",
+    "09-20 Feb 2026: Multiple support tickets with no resolution.",
+    "22 Feb 2026: Item picked up, but refund not processed."
+  ],
+  "evidence": [
+    "Order invoice #12345",
+    "Screenshots of chat support",
+    "Email trail with support team",
+    "Pickup confirmation message"
+  ],
+  "desired_resolution": "Full refund with interest and compensation for inconvenience",
+  "jurisdiction": "India",
+  "tier": "self_send"
+}
