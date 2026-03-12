@@ -262,6 +262,38 @@ body {
 .tier-features { list-style: none; text-align: left; margin-bottom: 20px; }
 .tier-features li { padding: 4px 0; font-size: .88rem; color: var(--gray-600); }
 
+.gen-progress-wrap {
+    width: 100%;
+    max-width: 560px;
+    margin: 14px auto 12px;
+}
+
+.gen-progress-track {
+    width: 100%;
+    height: 12px;
+    background: var(--gray-200);
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.gen-progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--orange), var(--red));
+    border-radius: 999px;
+    transition: width 0.35s ease;
+}
+
+.gen-progress-meta {
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--gray-600);
+}
+
 /* ─── Success card (step 8) ────────────────────────────────────── */
 .success-card { text-align: center; }
 .success-icon { font-size: 3rem; margin-bottom: 8px; }

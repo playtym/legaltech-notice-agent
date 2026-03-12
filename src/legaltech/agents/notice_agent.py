@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime
 
 from legaltech.agents.arbitration_agent import ArbitrationCheckResult
@@ -71,6 +72,9 @@ CRITICAL RULES:
 - Use the exact section citations and bare-act text provided in the brief — do NOT hallucinate sections
 - If the brief contains CLAUDE-RESEARCHED PROVISIONS (marked as such), cite them with the same \
   authority as rule-engine provisions — Claude has identified them as applicable law
+- Never print placeholder text such as "To be verified via MCA Portal" or similar verification placeholders
+- If CIN/LLPIN/registered office details are unavailable, omit those fields entirely from the final notice
+- If no T&C/policy text is available, do NOT mention this absence; proceed with primary-objection reasonableness analysis
 - Include ALL T&C counter-arguments provided — do not skip any
 - Include ALL escalation tactics provided in the brief — each one adds pressure
 - Include the arbitration rebuttal if an arbitration clause was found
@@ -133,7 +137,22 @@ class NoticeDraftAgent:
         )
 
         notice_text = await self.llm.complete_text(_SYSTEM_PROMPT, brief)
-        return notice_text
+        return self._sanitize_notice(notice_text)
+
+    @staticmethod
+    def _sanitize_notice(notice_text: str) -> str:
+        """Remove known placeholder artifacts that should never be shown to users."""
+        cleaned_lines: list[str] = []
+        banned = [
+            re.compile(r"registered\s+office\s+address\s*:\s*to\s+be\s+verified\s+via\s+mca\s+portal", re.I),
+            re.compile(r"cin\s*/\s*llpin\s*:\s*to\s+be\s+verified\s+via\s+mca\s+portal", re.I),
+            re.compile(r"to\s+be\s+verified\s+via\s+mca\s+portal", re.I),
+        ]
+        for line in notice_text.splitlines():
+            if any(p.search(line) for p in banned):
+                continue
+            cleaned_lines.append(line)
+        return "\n".join(cleaned_lines).strip()
 
     def _build_brief(
         self,
@@ -199,7 +218,11 @@ class NoticeDraftAgent:
             for flag in respondent_identity.verification_flags:
                 b.append(f"[VERIFY] {flag}")
         else:
-            b.append("[Respondent CIN/registered office NOT found from website — note this as non-compliance with E-Commerce Rules 2020 Rule 4]")
+            b.append(
+                "Respondent identity details could not be conclusively extracted from the available "
+                "public website sources. If applicable, frame this as non-compliance with mandatory "
+                "e-commerce disclosure obligations under E-Commerce Rules 2020 Rule 4, without using placeholders."
+            )
 
         # ── Facts ────────────────────────────────────────────────────
         b.append(f"\n## COMPLAINT SUMMARY (normalized)")
@@ -282,7 +305,11 @@ class NoticeDraftAgent:
                 b.append(f"Precedent: {counter.precedent_note}")
         else:
             b.append(f"\n## T&C COUNTER-ARGUMENTS")
-            b.append("No specific T&C clauses detected — use general consumer protection framing")
+            b.append(
+                "Build a strong objection-rebuttal analysis from the primary dispute facts and respondent conduct. "
+                "Do not mention missing T&C/policy pages. Focus on reasonableness, proportionality, burden of proof, "
+                "and unfair trade practice standards under CPA 2019."
+            )
 
         # ── Arbitration clause ───────────────────────────────────────
         if arbitration_result and arbitration_result.clauses_found:
@@ -320,6 +347,9 @@ class NoticeDraftAgent:
             b.append(f"\n## COMPANY POLICIES/T&C SCRAPED ({len(policies)} pages)")
             for policy in policies[:5]:
                 b.append(f"[{policy.source_url}]: {policy.excerpt[:300]}")
+        else:
+            b.append("\n## COMPANY POLICIES/T&C SCRAPED")
+            b.append("No policy excerpts available for citation. Draft arguments from facts and statutory consumer protections only.")
 
         # ── Follow-up answers from user ──────────────────────────────
         if follow_up_answers:

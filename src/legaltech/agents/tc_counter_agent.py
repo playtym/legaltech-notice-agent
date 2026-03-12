@@ -220,10 +220,35 @@ class TCCounterAgent:
                 f"preemptively neutralizes these defenses."
             )
         else:
+            lower_issue = issue_summary.lower()
+            if ("unboxing" in lower_issue or "video proof" in lower_issue or "video" in lower_issue) and (
+                "photo" in lower_issue or "image" in lower_issue or "screenshot" in lower_issue
+            ):
+                result.counters.append(TCDefenseCounter(
+                    defense_clause="Unreasonable insistence on unboxing video despite prompt photographic proof",
+                    clause_excerpt=(
+                        "The respondent has insisted that only an unboxing video would be accepted, "
+                        "despite the consumer providing photo evidence within a reasonable reporting window."
+                    ),
+                    source_url="primary-objection-analysis",
+                    legal_counter=(
+                        "Insisting on only one rigid proof format (unboxing video) after receiving prompt "
+                        "photographic evidence is disproportionate and arbitrary. Consumer law evaluates "
+                        "substance over format. Where the consumer reports damage/defect within a short "
+                        "time from delivery with corroborative evidence, refusal to process the claim merely "
+                        "for want of video is unreasonable and amounts to deficiency in service and unfair practice."
+                    ),
+                    statutory_basis="CPA 2019 §2(11) (deficiency), §2(47) (unfair trade practice), §39(1)(d)",
+                    precedent_note=(
+                        "Consumer fora consistently apply reasonableness and proportionality; procedural "
+                        "technicalities cannot defeat substantive consumer rights where timely proof exists."
+                    ),
+                ))
+
             result.overall_strategy = (
-                "No specific obstructive T&C clauses detected in the scraped policies. Standard "
-                "consumer protection arguments apply. The notice uses persuasive statutory framing "
-                "to strengthen the complainant's position."
+                "No policy clause was available for direct quotation. The notice therefore uses a primary-objection "
+                "strategy based on respondent conduct, reasonableness, proportionality, and statutory consumer rights "
+                "under the CPA 2019."
             )
 
         return result

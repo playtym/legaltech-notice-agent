@@ -237,6 +237,26 @@ async def favicon():
     return FileResponse(str(_STATIC_DIR / "favicon.ico"))
 
 
+@app.get("/style.css")
+async def style_css():
+    return FileResponse(str(_STATIC_DIR / "style.css"))
+
+
+@app.get("/app.js")
+async def app_js():
+    return FileResponse(str(_STATIC_DIR / "app.js"))
+
+
+@app.get("/img/{asset_path:path}")
+async def img_asset(asset_path: str):
+    return FileResponse(str(_STATIC_DIR / "img" / asset_path))
+
+
+@app.get("/admin.html")
+async def admin_html_page():
+    return FileResponse(str(_STATIC_DIR / "admin.html"))
+
+
 @app.get("/admin")
 async def admin_page():
     return FileResponse(str(_STATIC_DIR / "admin.html"))

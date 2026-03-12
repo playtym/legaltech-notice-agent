@@ -6,8 +6,8 @@
     <title>Jago Grahak Jago — Legal Notice Generator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -35,7 +35,7 @@
     <div class="hero">
         <div class="logo-container">
             <div class="sun-logo">
-                <img src="/static/img/logo.png" alt="Jago Grahak Jago" class="logo-img"
+                 <img src="img/logo.png" alt="Jago Grahak Jago" class="logo-img"
                      onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
                 <div id="fallback-logo" class="fallback-logo" style="display:none;">
                     <div class="sun-text top">JAGO</div>
@@ -246,6 +246,15 @@
     <div class="card loading-card">
         <div class="spinner"></div>
         <h2>Generating Your Legal Notice</h2>
+        <div class="gen-progress-wrap" aria-live="polite">
+            <div class="gen-progress-track">
+                <div class="gen-progress-fill" id="gen-progress-fill"></div>
+            </div>
+            <div class="gen-progress-meta">
+                <span id="gen-progress-label">Preparing your draft...</span>
+                <strong id="gen-progress-pct">0%</strong>
+            </div>
+        </div>
         <div class="loading-stages">
             <div class="stage" id="gen-stage-1">⚖️ Building statutory arguments...</div>
             <div class="stage" id="gen-stage-2">🛡️ Dismantling T&C defenses...</div>
@@ -313,6 +322,6 @@
     </div>
 </div>
 
-<script src="/static/app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
