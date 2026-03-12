@@ -178,6 +178,22 @@ body {
     font-size: .85rem;
 }
 
+.smart-intake {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    background: var(--gray-50);
+    margin-bottom: 14px;
+}
+
+#smart-intake-status {
+    flex: 1 1 280px;
+}
+
 /* ─── Buttons ──────────────────────────────────────────────────── */
 .btn {
     display: inline-flex; align-items: center; gap: 6px;

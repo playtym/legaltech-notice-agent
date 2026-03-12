@@ -114,6 +114,11 @@
     <div class="card">
         <h2>📝 Describe Your Problem</h2>
         <p class="card-sub">Be as detailed as possible. More detail = stronger notice.</p>
+        <div class="smart-intake">
+            <button type="button" class="btn btn-primary" onclick="App.startSmartIntake()">🎙 Speak Once (Hindi + English)</button>
+            <button type="button" class="btn btn-ghost" onclick="App.stopSmartIntake()">Stop</button>
+            <small id="smart-intake-status" class="hint">Speak freely for 30-90 seconds. We will auto-fill details and pre-answer follow-up questions.</small>
+        </div>
         <form id="form-complaint" onsubmit="return false;">
             <div class="form-group">
                 <label for="issue-summary">What happened? <span class="req">*</span></label>

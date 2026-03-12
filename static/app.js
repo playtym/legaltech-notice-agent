@@ -4,6 +4,8 @@ const App = (() => {
     let recognition = null;
     let recognitionField = null;
     let capturedFinalText = '';
+    let smartRecognition = null;
+    let smartTranscript = '';
 
     // ── State ────────────────────────────────────────────────────────
     const state = {
@@ -116,6 +118,134 @@ const App = (() => {
     function setVoiceStatus(fieldId, message) {
         const status = document.getElementById(`voice-status-${fieldId}`);
         if (status) status.textContent = message;
+    }
+
+    function setSmartStatus(message) {
+        const el = document.getElementById('smart-intake-status');
+        if (el) el.textContent = message;
+    }
+
+    async function processSmartTranscript(transcriptText) {
+        const payload = {
+            transcript_text: transcriptText,
+            complainant: state.complainant,
+            company_name_hint: state.companyName || null,
+            website: state.companyWebsite || null,
+            desired_resolution: state.desiredResolution || null,
+            timeline: state.timeline,
+            evidence: state.evidence,
+            jurisdiction: 'India',
+        };
+
+        const res = await apiFetch('/intake/from-transcript', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`Smart intake failed: ${res.status}`);
+        const data = await res.json();
+
+        const issueEl = document.getElementById('issue-summary');
+        const resEl = document.getElementById('desired-resolution');
+        if (issueEl && data.issue_summary) issueEl.value = data.issue_summary;
+        if (resEl && data.desired_resolution) resEl.value = data.desired_resolution;
+
+        state.issueSummary = data.issue_summary || state.issueSummary;
+        state.desiredResolution = data.desired_resolution || state.desiredResolution;
+
+        if ((!state.companyName || !state.companyName.trim()) && data.company_name_hint) {
+            state.companyName = data.company_name_hint;
+            const companyInput = document.getElementById('company-name');
+            if (companyInput) companyInput.value = data.company_name_hint;
+        }
+
+        if ((!state.companyWebsite || !state.companyWebsite.trim()) && data.website) {
+            state.companyWebsite = data.website;
+            const websiteInput = document.getElementById('company-website');
+            if (websiteInput) websiteInput.value = data.website;
+        }
+
+        state.timeline = Array.isArray(data.timeline) ? [...new Set(data.timeline.map(x => `${x}`.trim()).filter(Boolean))] : state.timeline;
+        state.evidence = Array.isArray(data.evidence) ? [...new Set(data.evidence.map(x => `${x}`.trim()).filter(Boolean))] : state.evidence;
+        renderList('timeline-list', state.timeline);
+        renderList('evidence-list', state.evidence);
+
+        if (data.auto_answers && typeof data.auto_answers === 'object') {
+            state.followUpAnswers = { ...state.followUpAnswers, ...data.auto_answers };
+        }
+
+        if (data.analysis) {
+            state.analysisResult = data.analysis;
+            renderAnalysis();
+            goTo(5);
+            setSmartStatus('Done. We auto-filled details and pre-answered follow-up questions from your speech.');
+        } else {
+            setSmartStatus('Done. We filled the form from your speech.');
+        }
+    }
+
+    function startSmartIntake() {
+        if (!state.complainant?.full_name || !state.complainant?.email || !state.complainant?.address) {
+            showError('Please complete Step 1 (your details) before using Speak Once intake.');
+            return;
+        }
+        const Ctor = speechCtor();
+        if (!Ctor) {
+            showError('Voice input is not supported in this browser. Please use Chrome.');
+            return;
+        }
+
+        if (smartRecognition) {
+            smartRecognition.stop();
+        }
+
+        smartTranscript = '';
+        smartRecognition = new Ctor();
+        smartRecognition.lang = 'hi-IN';
+        smartRecognition.continuous = true;
+        smartRecognition.interimResults = true;
+
+        smartRecognition.onstart = () => setSmartStatus('Listening... describe your entire issue naturally.');
+
+        smartRecognition.onresult = (event) => {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; i += 1) {
+                const txt = event.results[i][0].transcript;
+                if (event.results[i].isFinal) smartTranscript += `${txt} `;
+                else interim += txt;
+            }
+            if (interim.trim()) setSmartStatus(`Listening... ${interim.trim()}`);
+        };
+
+        smartRecognition.onerror = (event) => {
+            setSmartStatus(`Mic error: ${event.error || 'unknown'}`);
+        };
+
+        smartRecognition.onend = async () => {
+            const finalText = smartTranscript.trim();
+            smartRecognition = null;
+            smartTranscript = '';
+            if (!finalText) {
+                setSmartStatus('Stopped. No speech detected.');
+                return;
+            }
+            try {
+                setSmartStatus('Understanding your speech and auto-filling your case...');
+                await processSmartTranscript(finalText);
+            } catch (err) {
+                setSmartStatus('Could not auto-process speech. Please try again or type manually.');
+                showError(`${err?.message || err}`);
+            }
+        };
+
+        smartRecognition.start();
+    }
+
+    function stopSmartIntake() {
+        if (smartRecognition) {
+            smartRecognition.stop();
+            setSmartStatus('Stopping...');
+        }
     }
 
     function speechCtor() {
@@ -275,6 +405,7 @@ const App = (() => {
             website: state.companyWebsite,
             timeline: state.timeline,
             evidence: state.evidence,
+            previous_answers: Object.keys(state.followUpAnswers).length > 0 ? state.followUpAnswers : null,
         };
 
         try {
@@ -337,7 +468,7 @@ const App = (() => {
                     <div class="q-text">${esc(q.question)}</div>
                     <div class="q-why">${esc(q.why_it_matters)}</div>
                     <textarea rows="2" data-qid="${esc(q.id)}" placeholder="Your answer (optional)..."
-                        oninput="App.saveAnswer('${esc(q.id)}', this.value)"></textarea>
+                        oninput="App.saveAnswer('${esc(q.id)}', this.value)">${esc(state.followUpAnswers[q.id] || '')}</textarea>
                 </div>
             `).join('');
         } else {
@@ -584,5 +715,6 @@ const App = (() => {
         addTimeline, addEvidence, removeItem, saveAnswer,
         showError, dismissError, reset, saveApiBase,
         startVoiceInput, stopVoiceInput,
+        startSmartIntake, stopSmartIntake,
     };
 })();
