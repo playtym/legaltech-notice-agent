@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: legaltech-notice-agent
+    runtime: python
+    buildCommand: pip install .
+    startCommand: uvicorn legaltech.app:app --host 0.0.0.0 --port $PORT --app-dir src
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MODEL_NAME
+        value: claude-sonnet-4-20250514
+      - key: REQUEST_TIMEOUT_SECONDS
+        value: "30"
+      - key: LEGALTECH_USER_AGENT
+        value: LegalTech-Notice-Agent/0.2 (+https://playtym.github.io/legaltech-notice-agent)
+      - key: PYTHON_VERSION
+        value: "3.11.8"
