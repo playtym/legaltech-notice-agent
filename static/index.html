@@ -134,11 +134,20 @@
             <small id="smart-intake-status" class="hint">Speak freely for 30-90 seconds. We will auto-fill details and pre-answer follow-up questions.</small>
         </div>
         <form id="form-complaint" onsubmit="return false;">
-            <div class="form-group">
+            <div class="form-group prompt-composer-group">
                 <label for="issue-summary">What happened? <span class="req">*</span></label>
-                <textarea id="issue-summary" rows="5"
-                    placeholder="Describe the incident parameters (dates, products, interactions)..."
-                    required minlength="20" maxlength="10000"></textarea>
+                <div class="prompt-composer light">
+                    <textarea id="issue-summary" rows="4"
+                        placeholder="Ask Lawly to draft your case from your facts..."
+                        required minlength="20" maxlength="10000"></textarea>
+                    <div class="prompt-composer-actions" aria-hidden="true">
+                        <button type="button" class="prompt-icon-btn" title="Attach files" onclick="document.getElementById('file-input').click()">+</button>
+                        <div class="prompt-right-actions">
+                            <button type="button" class="prompt-icon-btn" title="Voice input" onclick="App.toggleVoiceInput()">🎤</button>
+                            <button type="button" class="prompt-send-btn" title="Analyze now" onclick="App.analyzeCase()">↑</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">

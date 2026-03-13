@@ -918,6 +918,96 @@ h1 .highlight {
     .controls-grid { grid-template-columns: 1fr; }
 }
 
+/* ─── Light Prompt Composer (Step 3) ───────────────────────────── */
+.prompt-composer-group .hint {
+    margin-top: 8px;
+}
+
+.prompt-composer {
+    background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+    border: 1px solid #dbe4f0;
+    border-radius: 26px;
+    padding: 14px 14px 12px;
+    box-shadow: 0 16px 28px rgba(16, 24, 40, 0.08);
+}
+
+.prompt-composer textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: vertical;
+    min-height: 96px;
+    font-size: 1.05rem;
+    color: #1f2937;
+    line-height: 1.5;
+    background: transparent;
+    padding: 2px 4px 10px;
+}
+
+.prompt-composer textarea::placeholder {
+    color: #64748b;
+}
+
+.prompt-composer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #e5ebf5;
+    padding-top: 10px;
+}
+
+.prompt-right-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.prompt-icon-btn,
+.prompt-send-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    border: 1px solid #d3ddeb;
+    background: #ffffff;
+    color: #334155;
+    font-size: 1.35rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.prompt-send-btn {
+    background: linear-gradient(135deg, #e8f1ff 0%, #dbeafe 100%);
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+    font-size: 1.45rem;
+    font-weight: 700;
+}
+
+.prompt-icon-btn:hover,
+.prompt-send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.12);
+    border-color: #93c5fd;
+}
+
+@media (max-width: 640px) {
+    .prompt-composer {
+        border-radius: 20px;
+        padding: 12px 12px 10px;
+    }
+
+    .prompt-icon-btn,
+    .prompt-send-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 1.15rem;
+    }
+}
+
 
 /* ============================================================== */
 /* 🔥 ULTRA MODERN AI-FIRST LIGHT THEME (AGENTIC RE-SKIN)          */
