@@ -918,3 +918,384 @@ h1 .highlight {
     .controls-grid { grid-template-columns: 1fr; }
 }
 
+
+/* ============================================================== */
+/* 🔥 ULTRA MODERN AI-FIRST LIGHT THEME (AGENTIC RE-SKIN)          */
+/* ============================================================== */
+
+:root {
+    --bg-main: #FFFFFF;
+    --bg-card: rgba(255, 255, 255, 0.75);
+    --text-main: #111827;
+    --text-sub: #4b5563;
+    --text-muted: #9ca3af;
+    --accent: #2563eb; 
+    --accent-glow: rgba(37, 99, 235, 0.15);
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --blurple: #6366f1;
+    --blurple-light: #e0e7ff;
+    --radius: 16px;
+    --shadow-subtle: 0 4px 24px -4px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0,0,0,0.1);
+    --shadow-hover: 0 12px 32px -8px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0,0,0,0.1);
+    --font-heading: 'Inter', -apple-system, sans-serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+    background-color: var(--bg-main) !important;
+    background-image: 
+        radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px) !important;
+    background-size: 24px 24px !important;
+    background-position: 0 0 !important;
+    color: var(--text-main) !important;
+    font-family: var(--font-body) !important;
+    letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading) !important;
+    letter-spacing: -0.03em !important;
+    color: var(--text-main) !important;
+    font-weight: 700 !important;
+}
+
+/* Glassmorphic App Container / Cards */
+.card {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow-subtle) !important;
+    padding: 40px !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-hover) !important;
+}
+
+/* Hero Modifications */
+.hero h1 {
+    font-size: 3.5rem !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, #111827 0%, #4b5563 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    margin-bottom: 1rem !important;
+    letter-spacing: -0.04em !important;
+}
+
+.hero-sub {
+    font-size: 1.15rem !important;
+    color: var(--text-sub) !important;
+    font-weight: 400 !important;
+}
+
+/* Sleek Command Buttons */
+.btn {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.01em !important;
+    text-transform: none !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #111827 0%, #374151 100%) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+    background: linear-gradient(135deg, #000000 0%, #1f2937 100%) !important;
+}
+
+.btn-ghost {
+    background: transparent !important;
+    color: var(--text-sub) !important;
+    border: 1px solid transparent !important;
+}
+
+.btn-ghost:hover {
+    background: rgba(0,0,0,0.04) !important;
+    color: var(--text-main) !important;
+}
+
+/* Chat Prompt Style Inputs */
+input[type="text"], input[type="email"], input[type="tel"], input[type="number"], input[type="url"], textarea, select {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    font-size: 1rem !important;
+    color: var(--text-main) !important;
+    transition: all 0.2s ease !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none !important;
+    border-color: var(--blurple) !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 4px var(--blurple-light), inset 0 2px 4px rgba(0,0,0,0.01) !important;
+}
+
+textarea {
+    resize: vertical !important;
+}
+
+/* Loading Agent States (Refined) */
+.loading-card h2 {
+    display: inline-block !important;
+    background: linear-gradient(90deg, #6366f1, #a855f7, #6366f1) !important;
+    background-size: 200% auto !important;
+    color: transparent !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    animation: gradientPulse 3s linear infinite !important;
+}
+
+@keyframes gradientPulse {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.spinner {
+    width: 40px !important;
+    height: 40px !important;
+    border: 3px solid var(--border-subtle) !important;
+    border-top-color: var(--blurple) !important;
+    border-radius: 50% !important;
+    animation: spin 1s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite !important;
+    margin: 0 auto 20px !important;
+}
+
+.stage {
+    font-family: var(--font-mono) !important;
+    font-size: 0.9rem !important;
+    padding: 12px 16px !important;
+    background: rgba(255,255,255,0.5) !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--border-subtle) !important;
+    margin-bottom: 8px !important;
+    text-align: left !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    color: var(--text-sub) !important;
+    transition: all 0.3s ease !important;
+}
+
+.stage.active {
+    color: var(--blurple) !important;
+    background: #fff !important;
+    border-color: var(--blurple-light) !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1) !important;
+    font-weight: 600 !important;
+    transform: scale(1.02) !important;
+}
+
+.stage.done {
+    color: #10b981 !important;
+    opacity: 0.6 !important;
+    transform: scale(1) !important;
+}
+
+/* Agent Progress Bar */
+.gen-progress-track {
+    height: 6px !important;
+    border-radius: 3px !important;
+    background: var(--border-subtle) !important;
+    overflow: hidden !important;
+    margin: 30px 0 10px !important;
+}
+.gen-progress-fill {
+    background: linear-gradient(90deg, #6366f1, #a855f7) !important;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.5) !important;
+}
+
+/* Pricing/Tiers */
+.tier-card {
+    background: rgba(255,255,255,0.6) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: var(--radius) !important;
+    transition: all 0.3s ease !important;
+}
+.tier-card:hover {
+    background: #fff !important;
+    border-color: rgba(0,0,0,0.15) !important;
+}
+
+.tier-card.recommended {
+    background: #fff !important;
+    border: 2px solid var(--blurple) !important;
+    box-shadow: var(--shadow-hover), 0 0 0 4px var(--blurple-light) !important;
+}
+
+.tier-badge {
+    background: var(--blurple) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.tier-price {
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.05em !important;
+    color: var(--text-main) !important;
+}
+
+/* Evidence Dropzone */
+.upload-dropzone {
+    background: rgba(255,255,255,0.4) !important;
+    border: 2px dashed rgba(99, 102, 241, 0.3) !important;
+    border-radius: 16px !important;
+    transition: all 0.2s !important;
+}
+.upload-dropzone:hover, .upload-dropzone.dragover {
+    background: rgba(99, 102, 241, 0.05) !important;
+    border-color: var(--blurple) !important;
+    transform: scale(1.01) !important;
+}
+.upload-icon {
+    font-size: 2.5rem !important;
+    opacity: 0.9 !important;
+}
+
+/* Agent Extracted Cards */
+.found-card {
+    background: linear-gradient(180deg, #fff 0%, #fafafa 100%) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+    padding: 16px !important;
+}
+.found-card h4 {
+    font-family: var(--font-mono) !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: var(--text-muted) !important;
+    margin-bottom: 8px !important;
+}
+.found-card p {
+    font-size: 1.05rem !important;
+    color: var(--text-main) !important;
+    font-weight: 600 !important;
+}
+
+/* Progress Steps UI */
+.progress-bar {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.p-step {
+    color: var(--text-muted) !important;
+    font-weight: 500 !important;
+}
+
+.p-step.active {
+    color: var(--blurple) !important;
+    font-weight: 700 !important;
+}
+
+.p-step.active span {
+    background: var(--blurple) !important;
+    color: white !important;
+    box-shadow: 0 0 10px var(--blurple-light) !important;
+}
+
+.p-step span {
+    background: var(--border-subtle) !important;
+    color: var(--text-sub) !important;
+    font-weight: 600 !important;
+}
+
+/* Value Preview Items */
+.vp-item {
+    background: rgba(255,255,255,0.6) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+}
+
+.vp-item strong {
+    color: var(--text-main) !important;
+    font-weight: 600 !important;
+}
+
+
+/* -- Additional AI-First Animations & Tweaks -- */
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.step.active {
+    animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes slideUpFade {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.form-group label {
+    font-weight: 600 !important;
+    color: var(--text-main) !important;
+    letter-spacing: -0.01em !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+/* Subtle AI sparkling icons on inputs */
+.form-group label::after {
+    content: "✦";
+    font-size: 0.8rem;
+    color: var(--blurple);
+    opacity: 0.5;
+}
+
+.agent-badge {
+    position: relative !important;
+    overflow: hidden !important;
+}
+.agent-badge::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important; left: -100% !important; width: 50% !important; height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent) !important;
+    animation: shine 4s ease-in-out infinite !important;
+}
+@keyframes shine {
+    0% { left: -100%; }
+    20% { left: 200%; }
+    100% { left: 200%; }
+}
+
+/* Smart intake button restyle */
+.smart-intake .btn-primary {
+    background: linear-gradient(135deg, var(--blurple) 0%, #a855f7 100%) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3) !important;
+}
+.smart-intake .btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%) !important;
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4) !important;
+}

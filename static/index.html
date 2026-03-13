@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jago Grahak Jago — AI Legal Notice Generator for Indian Consumers</title>
+    <title>Lawly AI — Autonomous Legal Agent</title>
     <meta name="description" content="Generate a professional AI-powered legal notice in minutes. Backed by 15+ Indian consumer protection statutes. No lawyer needed for the first step. Starting at ₹199.">
     <meta name="keywords" content="legal notice generator, consumer complaint India, CPA 2019, consumer protection, legal notice online, consumer court notice, AI legal notice">
     <link rel="canonical" href="https://lawly.store/">
@@ -52,7 +52,7 @@
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -73,29 +73,20 @@
 <!-- ─── Step 0: Welcome ──────────────────────────────────────────── -->
 <section class="step active" id="step-0">
     <div class="hero">
-        <div class="logo-container">
-            <div class="sun-logo">
-                 <img src="img/logo.png" alt="Lawly" class="logo-img" style="display:none;"
-                     onload="if(this.naturalWidth>80&&this.naturalHeight>80){this.style.display='block';document.getElementById('fallback-logo').style.display='none';}else{this.style.display='none';document.getElementById('fallback-logo').style.display='flex';}"
-                     onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
-                <div id="fallback-logo" class="fallback-logo" style="display:flex;">
-                    <div class="sun-text top">JAGO</div>
-                    <div class="sun-text mid">GRAHAK</div>
-                    <div class="sun-text bot">JAGO</div>
-                </div>
-            </div>
+        <div class="agent-badge" style="display:inline-flex; align-items:center; gap:8px; padding:6px 16px; background:rgba(99,102,241,0.1); color:#4f46e5; border-radius:20px; font-size:0.85rem; font-weight:600; margin-bottom:1.5rem; border: 1px solid rgba(99,102,241,0.2);">
+            <span class="pulse-dot" style="width:8px; height:8px; background:#4f46e5; border-radius:50%; display:inline-block; box-shadow: 0 0 8px #4f46e5; animation:pulse 2s infinite;"></span>
+            AI Legal Agent v2.0
         </div>
-        <h1>Your Rights. Your Power.</h1>
-        <p class="hero-sub">Generate a professional AI-powered legal notice in minutes.<br>
-        No lawyer needed for the first step. Backed by Indian consumer law.</p>
+        <h1 style="line-height:1.1; margin-bottom:1rem; font-weight:800;">Consumer Justice,<br>Engineered by AI.</h1>
+        <p class="hero-sub" style="font-size:1.15rem; max-width:600px; margin:0 auto 2.5rem; color:#6b7280; line-height:1.6;">
+            Upload your evidence. Our autonomous agent analyzes facts, maps them to Indian statutes, and drafts a court-ready legal notice in minutes.
+        </p>
         <div class="hero-stats">
             <div class="stat"><strong>2,500+</strong><span>Notices Generated</span></div>
             <div class="stat"><strong>15+</strong><span>Indian Statutes</span></div>
             <div class="stat"><strong>₹199</strong><span>Starting at</span></div>
         </div>
-        <button class="btn btn-primary btn-lg" onclick="App.goTo(2)">
-            Start Your Legal Notice →
-        </button>
+        <button class="btn btn-primary btn-lg" onclick="App.goTo(2)" style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:1.1rem; margin:0 auto;">Initialize Agent <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
         <div class="trust-badges">
             <span class="trust-badge">⚖️ CPA 2019 Compliant</span>
             <span class="trust-badge">🛡️ Advocate-Reviewed Option</span>
@@ -112,7 +103,7 @@
 <!-- ─── Step 2: Company Details ──────────────────────────────────── -->
 <section class="step" id="step-2">
     <div class="card">
-        <h2>🏢 About the Company</h2>
+        <h2>🎯 Identify Target Entity</h2>
         <p class="card-sub">Who do you have a complaint against?</p>
         <form id="form-company" onsubmit="return false;">
             <div class="form-group">
@@ -122,7 +113,7 @@
             <div class="form-group">
                 <label for="company-website">Company Website</label>
                 <input type="url" id="company-website" placeholder="https://www.example.com">
-                <small class="hint">We'll fetch their contacts, policies, and registration details automatically.</small>
+                <small class="hint">AI agent will scan for entity contacts, policies, and MCA registration data.</small>
             </div>
             <div class="btn-row">
                 <button type="button" class="btn btn-ghost" onclick="App.goTo(0)">← Back</button>
@@ -135,7 +126,7 @@
 <!-- ─── Step 3: Complaint Details ────────────────────────────────── -->
 <section class="step" id="step-3">
     <div class="card">
-        <h2>📝 Describe Your Problem</h2>
+        <h2>🧠 Context & Evidence</h2>
         <p class="card-sub">Be as detailed as possible. More detail = stronger notice.</p>
         <div class="smart-intake">
             <button type="button" class="btn btn-primary" onclick="App.startSmartIntake()">🎙 Speak Once (Hindi + English)</button>
@@ -146,7 +137,7 @@
             <div class="form-group">
                 <label for="issue-summary">What happened? <span class="req">*</span></label>
                 <textarea id="issue-summary" rows="5"
-                    placeholder="Describe the problem in detail — what you bought/ordered, what went wrong, how the company responded..."
+                    placeholder="Describe the incident parameters (dates, products, interactions)..."
                     required minlength="20" maxlength="10000"></textarea>
             </div>
 
@@ -163,7 +154,7 @@
                 <label>Evidence You Have</label>
                 <div id="evidence-list" class="dynamic-list"></div>
                 <div class="add-row">
-                    <input type="text" id="evidence-input" placeholder="e.g. Order invoice, screenshots of chat support" maxlength="500">
+                    <input type="text" id="evidence-input" placeholder="e.g. Order IDs, screenshots, specific communication logs" maxlength="500">
                     <button type="button" class="btn btn-sm" onclick="App.addEvidence()">+ Add</button>
                 </div>
             </div>
@@ -211,7 +202,7 @@
 
             <div class="btn-row">
                 <button type="button" class="btn btn-ghost" onclick="App.goTo(2)">← Back</button>
-                <button type="button" class="btn btn-primary" onclick="App.analyzeCase()">Analyze My Case →</button>
+                <button type="button" class="btn btn-primary" onclick="App.analyzeCase()">Initialize Legal Agent →</button>
             </div>
         </form>
     </div>
@@ -221,23 +212,23 @@
 <section class="step" id="step-4">
     <div class="card loading-card">
         <div class="spinner"></div>
-        <h2>Analyzing Your Case</h2>
+        <h2>Agent Processing Workload</h2>
         <div class="loading-stages">
-            <div class="stage" id="stage-company">🔍 Researching the company...</div>
-            <div class="stage" id="stage-contacts">📞 Finding contact details...</div>
-            <div class="stage" id="stage-policies">📄 Scraping policies & T&Cs...</div>
-            <div class="stage" id="stage-legal">⚖️ Identifying legal provisions...</div>
-            <div class="stage" id="stage-strength">💪 Assessing case strength...</div>
+            <div class="stage" id="stage-company">🔍 Querying entity graph...</div>
+            <div class="stage" id="stage-contacts">📞 Resolving grievance nodes...</div>
+            <div class="stage" id="stage-policies">📄 Extracting semantic commitments...</div>
+            <div class="stage" id="stage-legal">⚖️ Mapping statutory violations...</div>
+            <div class="stage" id="stage-strength">💪 Computing legal leverage...</div>
         </div>
         <div class="loading-tip" id="loading-tip-4"></div>
-        <p class="loading-note">This takes 30-60 seconds — we're researching your case.</p>
+        <p class="loading-note">Agent is constructing the legal logic graph. This takes 30-60 seconds.</p>
     </div>
 </section>
 
 <!-- ─── Step 5: Review + Questions ───────────────────────────────── -->
 <section class="step" id="step-5">
     <div class="card">
-        <h2>🔎 What We Found</h2>
+        <h2>⚡ Intelligence Extraction</h2>
 
         <!-- Fetched data cards -->
         <div class="found-grid" id="found-data"></div>
@@ -255,7 +246,7 @@
 
         <!-- Follow-up questions -->
         <div id="questions-section" class="questions-section">
-            <h3>Help Us Make Your Notice Stronger</h3>
+            <h3>Agent Queries (Missing Context)</h3>
             <p class="card-sub">Each answer adds legal weight — companies respond faster to well-documented notices.</p>
             <div id="questions-list"></div>
         </div>
