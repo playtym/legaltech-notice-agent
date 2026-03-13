@@ -22,6 +22,7 @@ const App = (() => {
         tier: 'self_send',
         noticeResult: null,
         noticeId: null,
+        uploadedFiles: [],  // [{file_id, filename, content_type, size, thumbUrl?}]
     };
 
     // ── Loading tips (rotate during wait) ─────────────────────────
@@ -89,17 +90,20 @@ const App = (() => {
     }
 
     // ── Start ───────────────────────────────────────────────────────
-    function start() { goTo(1); }
+    function start() { goTo(0); }
 
-    // ── API base: App Runner backend when on GitHub Pages, same-origin when local ──
-    const API_BACKEND = 'https://v5pah3m82k.ap-south-1.awsapprunner.com';
+    // ── API base: dedicated API domain in production, same-origin for local dev ──
+    const API_BACKEND = 'https://api.lawly.store';
+
+    function isLocalHost() {
+        return ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    }
 
     function getApiBase() {
         const stored = (localStorage.getItem('legaltech_api_base') || '').trim();
         if (stored) return stored;
-        // GitHub Pages can't serve API — use the deployed App Runner backend
-        if (window.location.hostname.endsWith('github.io')) return API_BACKEND;
-        return window.location.origin;
+        if (isLocalHost()) return window.location.origin;
+        return API_BACKEND;
     }
 
     function apiBaseCandidates() {
@@ -108,9 +112,12 @@ const App = (() => {
 
         if (stored) candidates.push(stored.replace(/\/$/, ''));
 
-        if (window.location.hostname.endsWith('github.io')) {
-            candidates.push(API_BACKEND.replace(/\/$/, ''));
+        if (isLocalHost()) {
+            candidates.push(window.location.origin.replace(/\/$/, ''));
         } else {
+            candidates.push(API_BACKEND.replace(/\/$/, ''));
+            // Direct CloudFront proxy fallback in case DNS hasn't propagated
+            candidates.push('https://d1exs4vnzimint.cloudfront.net');
             candidates.push(window.location.origin.replace(/\/$/, ''));
         }
 
@@ -174,8 +181,20 @@ const App = (() => {
     }
 
     function setVoiceStatus(fieldId, message) {
-        const status = document.getElementById(`voice-status-${fieldId}`);
+        const status = document.getElementById('voice-status-shared') || document.getElementById(`voice-status-${fieldId}`);
         if (status) status.textContent = message;
+    }
+
+    function setVoiceButtonState(isRecording) {
+        const btn = document.getElementById('voice-toggle-btn');
+        if (!btn) return;
+        btn.classList.toggle('recording', !!isRecording);
+        btn.setAttribute('aria-label', isRecording ? 'Stop microphone' : 'Start microphone');
+    }
+
+    function getVoiceTargetField() {
+        const sel = document.getElementById('voice-target');
+        return sel ? sel.value : 'issue-summary';
     }
 
     function setSmartStatus(message) {
@@ -247,9 +266,9 @@ const App = (() => {
         if (data.analysis) {
             state.analysisResult = data.analysis;
             if (isHighConfidence(data.analysis)) {
-                setSmartStatus('High confidence case detected. Generating your notice automatically...');
-                state.tier = 'self_send';
-                await generateNotice();
+                setSmartStatus('High confidence case detected. Review findings and confirm exact details before generation.');
+                renderAnalysis();
+                goTo(5);
                 return;
             }
 
@@ -268,10 +287,6 @@ const App = (() => {
     }
 
     function startSmartIntake() {
-        if (!state.complainant?.full_name || !state.complainant?.email || !state.complainant?.address) {
-            showError('Please complete Step 1 (your details) before using Speak Once intake.');
-            return;
-        }
         const Ctor = speechCtor();
         if (!Ctor) {
             showError('Voice input is not supported in this browser. Please use Chrome.');
@@ -422,8 +437,174 @@ const App = (() => {
         }
     }
 
+    function toggleVoiceInput() {
+        const fieldId = getVoiceTargetField();
+        if (recognition && recognitionField === fieldId) {
+            stopVoiceInput(fieldId);
+        } else {
+            startVoiceInput(fieldId);
+        }
+    }
+
     function saveApiBase() {
         // no-op kept for backwards compat
+    }
+
+    // ── File Upload Handling ────────────────────────────────────────
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    }
+    function handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+    function handleDrop(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length) uploadFiles(files);
+    }
+    function handleFileSelect(e) {
+        const files = e.target.files;
+        if (files.length) uploadFiles(files);
+        e.target.value = '';  // reset so same file can be re-selected
+    }
+
+    async function uploadFiles(fileList) {
+        const statusEl = document.getElementById('upload-status');
+        const maxFiles = 10;
+        const maxSize = 10 * 1024 * 1024;
+        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+
+        const toUpload = [];
+        for (const f of fileList) {
+            if (state.uploadedFiles.length + toUpload.length >= maxFiles) {
+                if (statusEl) statusEl.textContent = `Maximum ${maxFiles} files allowed.`;
+                break;
+            }
+            if (!allowed.includes(f.type)) {
+                if (statusEl) statusEl.textContent = `${f.name}: unsupported type. Use JPEG, PNG, WebP, GIF, or PDF.`;
+                continue;
+            }
+            if (f.size > maxSize) {
+                if (statusEl) statusEl.textContent = `${f.name}: exceeds 10 MB limit.`;
+                continue;
+            }
+            toUpload.push(f);
+        }
+
+        if (!toUpload.length) return;
+
+        // Show pending items
+        const pendingIds = [];
+        for (const f of toUpload) {
+            const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            pendingIds.push(tempId);
+            state.uploadedFiles.push({
+                file_id: tempId,
+                filename: f.name,
+                content_type: f.type,
+                size: f.size,
+                status: 'uploading',
+                thumbUrl: f.type.startsWith('image/') ? URL.createObjectURL(f) : null,
+            });
+        }
+        renderUploadedFiles();
+
+        try {
+            const formData = new FormData();
+            for (const f of toUpload) formData.append('files', f);
+
+            if (statusEl) statusEl.textContent = `Uploading ${toUpload.length} file(s)...`;
+            const res = await apiFetch('/documents/upload', { method: 'POST', body: formData });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || `Upload failed: ${res.status}`);
+            }
+            const data = await res.json();
+
+            // Replace pending entries with server responses
+            for (let i = 0; i < data.files.length; i++) {
+                const srvFile = data.files[i];
+                const pendingIdx = state.uploadedFiles.findIndex(f => f.file_id === pendingIds[i]);
+                if (pendingIdx >= 0) {
+                    const thumbUrl = state.uploadedFiles[pendingIdx].thumbUrl;
+                    state.uploadedFiles[pendingIdx] = {
+                        ...srvFile,
+                        status: 'done',
+                        thumbUrl,
+                    };
+                }
+            }
+            if (statusEl) statusEl.textContent = `${data.files.length} file(s) uploaded successfully.`;
+        } catch (err) {
+            // Mark pending as error
+            for (const tid of pendingIds) {
+                const idx = state.uploadedFiles.findIndex(f => f.file_id === tid);
+                if (idx >= 0) state.uploadedFiles[idx].status = 'error';
+            }
+            if (statusEl) statusEl.textContent = `Upload error: ${err.message}`;
+        }
+        renderUploadedFiles();
+    }
+
+    async function removeUploadedFile(fileId) {
+        const idx = state.uploadedFiles.findIndex(f => f.file_id === fileId);
+        if (idx < 0) return;
+        const file = state.uploadedFiles[idx];
+        // Release object URL if any
+        if (file.thumbUrl) URL.revokeObjectURL(file.thumbUrl);
+        state.uploadedFiles.splice(idx, 1);
+        renderUploadedFiles();
+        // Delete from server if it was successfully uploaded
+        if (file.status === 'done') {
+            try { await apiFetch(`/documents/${fileId}`, { method: 'DELETE' }); } catch (_) {}
+        }
+    }
+
+    function renderUploadedFiles() {
+        const container = document.getElementById('upload-file-list');
+        if (!container) return;
+        container.innerHTML = state.uploadedFiles.map(f => {
+            const sizeStr = f.size < 1024 ? `${f.size} B`
+                : f.size < 1024 * 1024 ? `${(f.size / 1024).toFixed(1)} KB`
+                : `${(f.size / (1024 * 1024)).toFixed(1)} MB`;
+            const statusCls = f.status || 'done';
+            const statusText = statusCls === 'uploading' ? 'Uploading...'
+                : statusCls === 'error' ? 'Failed' : '✓';
+            const thumb = f.thumbUrl
+                ? `<img class="file-thumb" src="${f.thumbUrl}" alt="">`
+                : `<div class="file-thumb">${f.content_type === 'application/pdf' ? '📄' : '📎'}</div>`;
+            return `<div class="upload-file-item">
+                ${thumb}
+                <div class="file-info">
+                    <div class="file-name">${esc(f.filename)}</div>
+                    <div class="file-size">${sizeStr}</div>
+                </div>
+                <span class="file-status ${statusCls}">${statusText}</span>
+                <button type="button" onclick="App.removeUploadedFile('${esc(f.file_id)}')" title="Remove">✕</button>
+            </div>`;
+        }).join('');
+    }
+
+    function getCustomerControls() {
+        const tone = document.getElementById('ctrl-tone')?.value || '';
+        const cure = document.getElementById('ctrl-cure')?.value || '';
+        const comp = document.getElementById('ctrl-compensation')?.value || '';
+        const interest = document.getElementById('ctrl-interest')?.value || '';
+        return {
+            notice_tone: tone || null,
+            cure_period_days: cure ? parseInt(cure) : null,
+            compensation_amount: comp ? parseInt(comp) : null,
+            interest_rate_percent: interest ? parseFloat(interest) : null,
+            language: 'English',
+        };
+    }
+
+    function getUploadIds() {
+        return state.uploadedFiles
+            .filter(f => f.status === 'done')
+            .map(f => f.file_id);
     }
 
     function normalizeWebsite(raw) {
@@ -492,6 +673,7 @@ const App = (() => {
             timeline: state.timeline,
             evidence: state.evidence,
             previous_answers: Object.keys(state.followUpAnswers).length > 0 ? state.followUpAnswers : null,
+            upload_ids: getUploadIds(),
         };
 
         try {
@@ -676,6 +858,38 @@ const App = (() => {
         state.tier = tier;
         document.getElementById('tier-self').classList.toggle('selected', tier === 'self_send');
         document.getElementById('tier-lawyer').classList.toggle('selected', tier === 'lawyer');
+        
+        // Show personal info panel before generating
+        const backBtn = document.getElementById('tier-back-btn');
+        if (backBtn) backBtn.style.display = 'none';
+        
+        const panel = document.getElementById('final-details-panel');
+        if (panel) {
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            generateNotice();
+        }
+    }
+
+    // ── Confirm Final Details ───────────────────────────────────────
+    function confirmAndGenerate() {
+        const name = document.getElementById('fd-name').value.trim();
+        const email = document.getElementById('fd-email').value.trim();
+        const phone = document.getElementById('fd-phone').value.trim();
+        const address = document.getElementById('fd-address').value.trim();
+
+        if (!name || !email || !address) {
+            return showError('Please fill in all required fields (Name, Email, Address).');
+        }
+
+        state.complainant = {
+            full_name: name,
+            email: email,
+            phone: phone || null,
+            address: address,
+        };
+
         generateNotice();
     }
 
@@ -684,6 +898,7 @@ const App = (() => {
         goTo(7);
         animateStages(['gen-stage-1', 'gen-stage-2', 'gen-stage-3', 'gen-stage-4', 'gen-stage-5'], 8000);
 
+        const controls = getCustomerControls();
         const body = {
             complainant: state.complainant,
             issue_summary: state.issueSummary,
@@ -695,6 +910,12 @@ const App = (() => {
             tier: state.tier,
             follow_up_answers: Object.keys(state.followUpAnswers).length > 0
                 ? state.followUpAnswers : null,
+            upload_ids: getUploadIds(),
+            notice_tone: controls.notice_tone,
+            cure_period_days: controls.cure_period_days,
+            compensation_amount: controls.compensation_amount,
+            interest_rate_percent: controls.interest_rate_percent,
+            language: controls.language,
         };
 
         try {
@@ -736,6 +957,7 @@ const App = (() => {
 
     // ── PDF download ────────────────────────────────────────────────
     async function downloadPDF() {
+        const controls = getCustomerControls();
         const body = {
             complainant: state.complainant,
             issue_summary: state.issueSummary,
@@ -747,6 +969,12 @@ const App = (() => {
             tier: state.tier,
             follow_up_answers: Object.keys(state.followUpAnswers).length > 0
                 ? state.followUpAnswers : null,
+            upload_ids: getUploadIds(),
+            notice_tone: controls.notice_tone,
+            cure_period_days: controls.cure_period_days,
+            compensation_amount: controls.compensation_amount,
+            interest_rate_percent: controls.interest_rate_percent,
+            language: controls.language,
         };
 
         // If we have a stored notice_id, use the admin PDF endpoint
@@ -863,10 +1091,18 @@ const App = (() => {
         state.tier = 'self_send';
         state.noticeResult = null;
         state.noticeId = null;
+        // Release object URLs for uploaded files
+        for (const f of state.uploadedFiles) {
+            if (f.thumbUrl) URL.revokeObjectURL(f.thumbUrl);
+        }
+        state.uploadedFiles = [];
         // Clear forms
         document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+        document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
         document.getElementById('timeline-list').innerHTML = '';
         document.getElementById('evidence-list').innerHTML = '';
+        const uploadList = document.getElementById('upload-file-list');
+        if (uploadList) uploadList.innerHTML = '';
         goTo(0);
     }
 
@@ -894,11 +1130,13 @@ const App = (() => {
 
     // ── Public API ──────────────────────────────────────────────────
     return {
-        start, goTo, nextFromComplainant, nextFromCompany, analyzeCase,
-        selectTier, generateNotice, downloadPDF, renderNotice, upgradeTier,
+        start, goTo, nextFromCompany, analyzeCase,
+        selectTier, confirmAndGenerate, generateNotice, downloadPDF, renderNotice, upgradeTier,
         addTimeline, addEvidence, removeItem, saveAnswer,
         showError, dismissError, reset, saveApiBase,
-        startVoiceInput, stopVoiceInput,
+        startVoiceInput, stopVoiceInput, toggleVoiceInput,
         startSmartIntake, stopSmartIntake,
+        handleDragOver, handleDragLeave, handleDrop, handleFileSelect,
+        removeUploadedFile,
     };
 })();

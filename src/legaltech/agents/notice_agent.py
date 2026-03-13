@@ -36,6 +36,19 @@ TONE & STYLE:
 - Address the respondent in second person ("you", "your company")
 - Maintain legal formality throughout
 
+PERSONALIZATION RULES (CRITICAL — do NOT produce generic/templated text):
+- Reference the complainant's SPECIFIC facts, dates, amounts, order IDs, and names
+- Weave the complainant's unique narrative into every section — do not use boilerplate
+- When citing evidence, describe the ACTUAL documents and what they prove
+- In the demand section, use the complainant's EXACT desired resolution and amounts
+- Tailor statutory analysis to the SPECIFIC type of dispute (e-commerce, banking, telecom, etc.)
+- If the company has a specific grievance officer, name them; if there's a ticket/ref number, cite it
+- Make the chronology section read like a factual legal brief, not a generic timeline
+- Do NOT use placeholder language like "the said product" — name the actual product/service
+- Do NOT use generic phrases like "the complainant has suffered immense mental agony" without \
+  connecting it to specific facts provided in the brief
+- Every paragraph should contain at least one case-specific detail
+
 MANDATORY SECTIONS (numbered, in this order):
 1. Header: "LEGAL NOTICE" with date, addressee (company name, registered office, email), \
    respondent identification (CIN, LLPIN if available), sender details
@@ -79,6 +92,10 @@ CRITICAL RULES:
 - Include ALL escalation tactics provided in the brief — each one adds pressure
 - Include the arbitration rebuttal if an arbitration clause was found
 - Quantify the cure period as specified in the brief
+- If the brief includes UPLOADED DOCUMENT EVIDENCE ANALYSIS, treat those extracted facts, amounts, \
+  dates, and details as primary evidence. Reference them specifically in the facts, evidence, and \
+  demand sections.
+- If CUSTOMER PREFERENCES are provided, they MUST be respected (tone, compensation amount, interest rate)
 - The notice must be in ENGLISH only
 - Output ONLY the notice text — no preamble, no markdown, no explanations
 """
@@ -115,6 +132,8 @@ class NoticeDraftAgent:
         cure_rationale: str = "15 days (standard)",
         follow_up_answers: dict[str, str] | None = None,
         escalation_strategy: EscalationStrategy | None = None,
+        customer_controls: dict | None = None,
+        document_analysis: dict | None = None,
     ) -> str:
         brief = self._build_brief(
             complaint=complaint,
@@ -134,9 +153,33 @@ class NoticeDraftAgent:
             cure_rationale=cure_rationale,
             follow_up_answers=follow_up_answers,
             escalation_strategy=escalation_strategy,
+            customer_controls=customer_controls,
+            document_analysis=document_analysis,
         )
 
-        notice_text = await self.llm.complete_text(_SYSTEM_PROMPT, brief)
+        # Adjust system prompt based on customer controls
+        system_prompt = _SYSTEM_PROMPT
+        cc = customer_controls or {}
+        tone = cc.get("notice_tone")
+        lang = cc.get("language", "English")
+
+        tone_overrides = {
+            "firm": "Authoritative, firm, and legally precise — conveys seriousness without hostility",
+            "aggressive": "Aggressive, uncompromising, and confrontational — maximum legal pressure, treat as final warning before litigation",
+            "diplomatic": "Diplomatic, professional, and solution-oriented — firm on rights but invites amicable resolution first",
+        }
+        if tone and tone in tone_overrides:
+            system_prompt = system_prompt.replace(
+                "Authoritative, precise, and assertive — not aggressive or threatening",
+                tone_overrides[tone],
+            )
+        if lang and lang != "English":
+            system_prompt = system_prompt.replace(
+                "The notice must be in ENGLISH only",
+                f"The notice must be in {lang}",
+            )
+
+        notice_text = await self.llm.complete_text(system_prompt, brief)
         return self._sanitize_notice(notice_text)
 
     @staticmethod
@@ -218,6 +261,8 @@ class NoticeDraftAgent:
         cure_rationale: str,
         follow_up_answers: dict[str, str] | None = None,
         escalation_strategy: EscalationStrategy | None = None,
+        customer_controls: dict | None = None,
+        document_analysis: dict | None = None,
     ) -> str:
         """Build the comprehensive brief that Claude uses to draft the notice."""
         today = datetime.utcnow().date().isoformat()
@@ -435,5 +480,48 @@ class NoticeDraftAgent:
         b.append(f"\n## SPIRIT OF LAW")
         b.append(legal_analysis.spirit_of_law_view)
         b.append(legal_analysis.reasonableness_view)
+
+        # ── Customer preferences (override defaults) ────────────────
+        cc = customer_controls or {}
+        has_prefs = any(cc.get(k) for k in ("notice_tone", "compensation_amount", "interest_rate_percent", "language"))
+        if has_prefs:
+            b.append(f"\n## CUSTOMER PREFERENCES (MANDATORY — respect these)")
+            if cc.get("notice_tone"):
+                tone_map = {
+                    "firm": "firm, authoritative, legally precise",
+                    "aggressive": "aggressive, confrontational, maximum legal pressure",
+                    "diplomatic": "diplomatic, professional, solution-oriented while firm on rights",
+                }
+                b.append(f"Requested tone: {tone_map.get(cc['notice_tone'], cc['notice_tone'])}")
+            if cc.get("compensation_amount"):
+                b.append(f"Demanded compensation amount: ₹{cc['compensation_amount']:,} (use this EXACT amount in the demand section)")
+            if cc.get("interest_rate_percent"):
+                b.append(f"Interest rate on refund/dues: {cc['interest_rate_percent']}% per annum (include this in the demand)")
+            if cc.get("language") and cc["language"] != "English":
+                b.append(f"Output language: {cc['language']}")
+
+        # ── Document evidence analysis (from uploaded files) ─────────
+        if document_analysis and document_analysis.get("documents"):
+            b.append(f"\n## UPLOADED DOCUMENT EVIDENCE ANALYSIS")
+            b.append("The following documents were uploaded and analyzed by AI. Use their content to strengthen the notice.")
+            b.append("IMPORTANT: Reference specific facts, amounts, dates, and details extracted from these documents IN the notice text.")
+            for doc in document_analysis["documents"]:
+                b.append(f"\n### Document: {doc.get('filename', 'Unknown')}")
+                b.append(f"Type: {doc.get('document_type', 'Unknown')}")
+                b.append(f"Relevance: {doc.get('relevance', 'Unknown')}")
+                if doc.get("key_facts"):
+                    b.append("Key facts extracted:")
+                    for fact in doc["key_facts"]:
+                        b.append(f"  - {fact}")
+                if doc.get("amounts"):
+                    b.append("Amounts/values found:")
+                    for amt in doc["amounts"]:
+                        b.append(f"  - {amt}")
+                if doc.get("dates"):
+                    b.append("Dates found:")
+                    for d in doc["dates"]:
+                        b.append(f"  - {d}")
+                if doc.get("summary"):
+                    b.append(f"Summary: {doc['summary']}")
 
         return "\n".join(b)

@@ -17,6 +17,8 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.platypus import (
     BaseDocTemplate,
     Frame,
+    Image as RLImage,
+    PageBreak,
     PageTemplate,
     Paragraph,
     Spacer,
@@ -151,12 +153,19 @@ def _esc(text: str) -> str:
     )
 
 
-def generate_pdf(notice_text: str, *, is_lawyer_tier: bool = False) -> bytes:
+def generate_pdf(
+    notice_text: str,
+    *,
+    is_lawyer_tier: bool = False,
+    annexures: list[tuple[str, str, bytes]] | None = None,
+) -> bytes:
     """Convert the structured notice text into a professional PDF letter.
 
     Args:
         notice_text: The full notice text (newline-delimited sections).
         is_lawyer_tier: If True, adds lawyer attestation footer.
+        annexures: Optional list of (filename, content_type, data) tuples
+                   to append as annexure pages.
 
     Returns:
         PDF file content as bytes.
@@ -306,5 +315,67 @@ def generate_pdf(notice_text: str, *, is_lawyer_tier: bool = False) -> bytes:
         story.append(Paragraph("Date of Review: ___________________________", styles["body"]))
         story.append(Paragraph("Signature: ________________________________", styles["body"]))
 
+    # ── Annexures ────────────────────────────────────────────────
+    if annexures:
+        _append_annexures(story, styles, annexures)
+
     doc.build(story)
     return buf.getvalue()
+
+
+def _append_annexures(
+    story: list,
+    styles: dict[str, ParagraphStyle],
+    annexures: list[tuple[str, str, bytes]],
+) -> None:
+    """Append uploaded evidence as annexure pages."""
+    max_img_w = _PAGE_W - 2 * _MARGIN - 10 * mm
+    max_img_h = _PAGE_H - 2 * _MARGIN - 40 * mm  # room for header
+
+    story.append(PageBreak())
+    story.append(Paragraph("ANNEXURES", styles["title"]))
+    story.append(HRFlowable(
+        width="100%", thickness=0.5, color=HexColor("#2c3e50"),
+        spaceBefore=1 * mm, spaceAfter=4 * mm,
+    ))
+    story.append(Paragraph(
+        "The following documents are attached as supporting evidence "
+        "and form an integral part of this legal notice.",
+        styles["body"],
+    ))
+    story.append(Spacer(1, 4 * mm))
+
+    for idx, (filename, content_type, data) in enumerate(annexures, 1):
+        label = f"Annexure {idx}: {_esc(filename)}"
+
+        if content_type.startswith("image/"):
+            story.append(Paragraph(f"<b>{label}</b>", styles["heading"]))
+            try:
+                img = RLImage(io.BytesIO(data))
+                iw, ih = img.drawWidth, img.drawHeight
+                if iw > 0 and ih > 0:
+                    scale = min(max_img_w / iw, max_img_h / ih, 1.0)
+                    img.drawWidth = iw * scale
+                    img.drawHeight = ih * scale
+                story.append(img)
+            except Exception:
+                story.append(Paragraph(
+                    f"<i>[Image could not be embedded: {_esc(filename)}]</i>",
+                    styles["small"],
+                ))
+            story.append(Spacer(1, 6 * mm))
+        elif content_type == "application/pdf":
+            story.append(Paragraph(f"<b>{label}</b>", styles["heading"]))
+            story.append(Paragraph(
+                f"[Attached PDF document: {_esc(filename)} — "
+                f"{len(data):,} bytes]",
+                styles["body"],
+            ))
+            story.append(Spacer(1, 6 * mm))
+        else:
+            story.append(Paragraph(f"<b>{label}</b>", styles["heading"]))
+            story.append(Paragraph(
+                f"[Attached file: {_esc(filename)} — {content_type}]",
+                styles["body"],
+            ))
+            story.append(Spacer(1, 4 * mm))

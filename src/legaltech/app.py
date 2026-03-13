@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
 
@@ -10,6 +10,7 @@ from legaltech.pipeline import LegalNoticePipeline
 from legaltech.schemas import Complainant, ComplaintInput, IntakeMode, ServiceTier
 from legaltech.services.pdf_generator import generate_pdf
 from legaltech.services import store as notice_store
+from legaltech.services.upload_store import upload_store
 
 _STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
@@ -19,8 +20,10 @@ pipeline = LegalNoticePipeline()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://playtym.github.io",
-        "https://v5pah3m82k.ap-south-1.awsapprunner.com",
+        "https://lawly.store",
+        "https://www.lawly.store",
+        "https://d3ipaitzvby9v2.cloudfront.net",
+        "https://d1exs4vnzimint.cloudfront.net",
         "http://127.0.0.1:8000",
         "http://localhost:8000",
     ],
@@ -34,6 +37,14 @@ if _STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 
+_MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB per file
+_MAX_UPLOAD_FILES = 10
+_ALLOWED_TYPES = {
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "application/pdf",
+}
+
+
 class NoticeRequest(BaseModel):
     complainant: Complainant
     issue_summary: str
@@ -44,7 +55,14 @@ class NoticeRequest(BaseModel):
     evidence: list[str] = []
     jurisdiction: str = "India"
     tier: ServiceTier = ServiceTier.self_send
-    follow_up_answers: dict[str, str] | None = None  # answers to questions from /analyze
+    follow_up_answers: dict[str, str] | None = None
+    upload_ids: list[str] = []  # IDs from /documents/upload
+    # Customer controls
+    notice_tone: str | None = None        # "firm" | "aggressive" | "diplomatic"
+    cure_period_days: int | None = None    # override auto-detected cure period
+    compensation_amount: int | None = None # specific ₹ amount for compensation demand
+    interest_rate_percent: float | None = None  # annual interest rate on refund
+    language: str = "English"              # output language
 
 
 class AnalyzeRequest(BaseModel):
@@ -58,6 +76,7 @@ class AnalyzeRequest(BaseModel):
     evidence: list[str] = []
     jurisdiction: str = "India"
     previous_answers: dict[str, str] | None = None  # answers from a prior /analyze round
+    upload_ids: list[str] = []  # IDs from /documents/upload
 
 
 class VoiceNoticeRequest(NoticeRequest):
@@ -86,6 +105,42 @@ class SpeechRefineRequest(BaseModel):
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok", "model": pipeline.llm.model_name}
+
+
+@app.post("/documents/upload")
+async def upload_documents(files: list[UploadFile]):
+    """Upload evidence documents (images, PDFs). Returns file metadata with IDs."""
+    if len(files) > _MAX_UPLOAD_FILES:
+        raise HTTPException(status_code=400, detail=f"Maximum {_MAX_UPLOAD_FILES} files allowed")
+
+    results = []
+    for f in files:
+        ct = f.content_type or "application/octet-stream"
+        if ct not in _ALLOWED_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File type '{ct}' not allowed. Accepted: JPEG, PNG, GIF, WebP, PDF",
+            )
+        data = await f.read()
+        if len(data) > _MAX_UPLOAD_SIZE:
+            raise HTTPException(status_code=400, detail=f"File '{f.filename}' exceeds 10 MB limit")
+        stored = upload_store.store(filename=f.filename or "untitled", content_type=ct, data=data)
+        results.append({
+            "file_id": stored.file_id,
+            "filename": stored.filename,
+            "content_type": stored.content_type,
+            "size": stored.size,
+        })
+
+    return {"files": results}
+
+
+@app.delete("/documents/{file_id}")
+async def delete_document(file_id: str):
+    """Remove an uploaded document."""
+    if not upload_store.delete(file_id):
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"ok": True}
 
 
 @app.get("/pricing")
@@ -145,10 +200,26 @@ async def create_notice_typed(payload: NoticeRequest):
             desired_resolution=payload.desired_resolution,
             jurisdiction=payload.jurisdiction,
         )
+        # Analyze uploaded documents if any
+        doc_analysis = None
+        if payload.upload_ids:
+            files = upload_store.get_many(payload.upload_ids)
+            if files:
+                from legaltech.services.document_analyzer import analyze_documents
+                doc_analysis = await analyze_documents(pipeline.llm, files)
+
         packet = await pipeline.run(
             complaint,
             tier=payload.tier,
             follow_up_answers=payload.follow_up_answers,
+            customer_controls={
+                "notice_tone": payload.notice_tone,
+                "cure_period_days": payload.cure_period_days,
+                "compensation_amount": payload.compensation_amount,
+                "interest_rate_percent": payload.interest_rate_percent,
+                "language": payload.language,
+            },
+            document_analysis=doc_analysis,
         )
         result = packet.model_dump()
         company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
@@ -185,9 +256,18 @@ async def analyze_case(payload: AnalyzeRequest):
             desired_resolution=payload.desired_resolution,
             jurisdiction=payload.jurisdiction,
         )
+        # Analyze uploaded documents if any
+        doc_analysis = None
+        if payload.upload_ids:
+            files = upload_store.get_many(payload.upload_ids)
+            if files:
+                from legaltech.services.document_analyzer import analyze_documents
+                doc_analysis = await analyze_documents(pipeline.llm, files)
+
         result = await pipeline.analyze(
             complaint,
             previous_answers=payload.previous_answers,
+            document_analysis=doc_analysis,
         )
         return result.model_dump()
     except Exception as exc:
@@ -219,6 +299,13 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
             complaint,
             tier=payload.tier,
             follow_up_answers=payload.follow_up_answers,
+            customer_controls={
+                "notice_tone": payload.notice_tone,
+                "cure_period_days": payload.cure_period_days,
+                "compensation_amount": payload.compensation_amount,
+                "interest_rate_percent": payload.interest_rate_percent,
+                "language": payload.language,
+            },
         )
         return packet.model_dump()
     except Exception as exc:
@@ -395,13 +482,33 @@ async def create_notice_typed_pdf(payload: NoticeRequest):
             desired_resolution=payload.desired_resolution,
             jurisdiction=payload.jurisdiction,
         )
+        # Analyze uploaded documents if any
+        doc_analysis = None
+        if payload.upload_ids:
+            files = upload_store.get_many(payload.upload_ids)
+            if files:
+                from legaltech.services.document_analyzer import analyze_documents
+                doc_analysis = await analyze_documents(pipeline.llm, files)
+
         packet = await pipeline.run(
             complaint,
             tier=payload.tier,
             follow_up_answers=payload.follow_up_answers,
+            customer_controls={
+                "notice_tone": payload.notice_tone,
+                "cure_period_days": payload.cure_period_days,
+                "compensation_amount": payload.compensation_amount,
+                "interest_rate_percent": payload.interest_rate_percent,
+                "language": payload.language,
+            },
+            document_analysis=doc_analysis,
         )
         is_lawyer = payload.tier == ServiceTier.lawyer_assisted
-        pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
+        annexures = [
+            (sf.filename, sf.content_type, sf.data)
+            for sf in upload_store.get_many(payload.upload_ids)
+        ] if payload.upload_ids else []
+        pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer, annexures=annexures)
         company_label = packet.company.legal_name or packet.company.brand_name or "Company"
         filename = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
         return Response(
@@ -510,3 +617,301 @@ async def get_notice_pdf(notice_id: str):
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── SEO Settings API ────────────────────────────────────────────────
+
+class SEOSettingsUpdate(BaseModel):
+    site_title: str | None = None
+    meta_description: str | None = None
+    meta_keywords: str | None = None
+    og_title: str | None = None
+    og_description: str | None = None
+    canonical_url: str | None = None
+    google_analytics_id: str | None = None
+    google_search_console_verification: str | None = None
+    custom_head_tags: str | None = None
+
+
+@app.get("/api/admin/seo")
+async def get_seo():
+    return notice_store.get_seo_settings()
+
+
+@app.put("/api/admin/seo")
+async def save_seo(body: SEOSettingsUpdate):
+    data = {k: v for k, v in body.model_dump().items() if v is not None}
+    return notice_store.save_seo_settings(data)
+
+
+# ── Blog Posts API ───────────────────────────────────────────────────
+
+class BlogPostInput(BaseModel):
+    title: str
+    slug: str | None = None
+    meta_description: str | None = None
+    meta_keywords: str | None = None
+    content: str = ""
+    author: str = "Jago Grahak Jago"
+    status: str = "draft"
+
+
+@app.get("/api/admin/blog")
+async def list_blog_posts():
+    return notice_store.get_all_blog_posts()
+
+
+@app.get("/api/admin/blog/{slug}")
+async def get_blog_post(slug: str):
+    post = notice_store.get_blog_post(slug)
+    if not post:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    return post
+
+
+@app.post("/api/admin/blog")
+async def create_blog_post(body: BlogPostInput):
+    return notice_store.save_blog_post(body.model_dump())
+
+
+@app.put("/api/admin/blog/{slug}")
+async def update_blog_post(slug: str, body: BlogPostInput):
+    data = body.model_dump()
+    data["slug"] = slug
+    return notice_store.save_blog_post(data)
+
+
+@app.delete("/api/admin/blog/{slug}")
+async def delete_blog_post(slug: str):
+    if not notice_store.delete_blog_post(slug):
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    return {"ok": True}
+
+
+# ── Pages API ────────────────────────────────────────────────────────
+
+class PageInput(BaseModel):
+    path: str
+    title: str = ""
+    meta_description: str = ""
+    meta_keywords: str = ""
+    og_title: str = ""
+    og_description: str = ""
+    priority: float = 0.5
+    changefreq: str = "weekly"
+    include_in_sitemap: bool = True
+
+
+@app.get("/api/admin/pages")
+async def list_pages():
+    return notice_store.get_all_pages()
+
+
+@app.post("/api/admin/pages")
+async def create_page(body: PageInput):
+    return notice_store.save_page(body.model_dump())
+
+
+@app.put("/api/admin/pages/{path:path}")
+async def update_page(path: str, body: PageInput):
+    data = body.model_dump()
+    data["path"] = f"/{path}" if not path.startswith("/") else path
+    return notice_store.save_page(data)
+
+
+@app.delete("/api/admin/pages/{path:path}")
+async def delete_page(path: str):
+    key = f"/{path}" if not path.startswith("/") else path
+    if not notice_store.delete_page(key):
+        raise HTTPException(status_code=404, detail="Page not found")
+    return {"ok": True}
+
+
+# ── Dynamic Sitemap ──────────────────────────────────────────────────
+
+@app.get("/sitemap.xml")
+async def dynamic_sitemap():
+    from datetime import date
+    seo = notice_store.get_seo_settings()
+    base = seo.get("canonical_url", "https://lawly.store/").rstrip("/")
+    today = date.today().isoformat()
+
+    urls = []
+    # Home page
+    urls.append(f'  <url>\n    <loc>{base}/</loc>\n    <lastmod>{today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>')
+
+    # Custom pages
+    for page in notice_store.get_all_pages():
+        if not page.get("include_in_sitemap", True):
+            continue
+        p = page["path"].lstrip("/")
+        pri = page.get("priority", 0.5)
+        freq = page.get("changefreq", "weekly")
+        urls.append(f'  <url>\n    <loc>{base}/{p}</loc>\n    <lastmod>{today}</lastmod>\n    <changefreq>{freq}</changefreq>\n    <priority>{pri}</priority>\n  </url>')
+
+    # Published blog posts
+    for post in notice_store.get_published_blog_posts():
+        slug = post["slug"]
+        updated = post.get("updated_at", today)[:10]
+        urls.append(f'  <url>\n    <loc>{base}/blog/{slug}</loc>\n    <lastmod>{updated}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>')
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + '\n'.join(urls) + '\n</urlset>'
+    return Response(content=xml, media_type="application/xml")
+
+
+@app.get("/robots.txt")
+async def dynamic_robots():
+    seo = notice_store.get_seo_settings()
+    base = seo.get("canonical_url", "https://lawly.store/").rstrip("/")
+    body = f"User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin.html\n\nSitemap: {base}/sitemap.xml\n"
+    return Response(content=body, media_type="text/plain")
+
+
+# ── Blog rendering (SSR for crawlers) ────────────────────────────────
+
+def _render_blog_html(post: dict, seo: dict) -> str:
+    import html
+    title = html.escape(post.get("title", ""))
+    desc = html.escape(post.get("meta_description", ""))
+    keywords = html.escape(post.get("meta_keywords", ""))
+    author = html.escape(post.get("author", ""))
+    content = post.get("content", "")
+    date_str = (post.get("updated_at") or post.get("created_at", ""))[:10]
+    base = seo.get("canonical_url", "").rstrip("/")
+    slug = post.get("slug", "")
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} — Jago Grahak Jago</title>
+    <meta name="description" content="{desc}">
+    <meta name="keywords" content="{keywords}">
+    <meta name="author" content="{author}">
+    <link rel="canonical" href="{base}/blog/{slug}">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{title}">
+    <meta property="og:description" content="{desc}">
+    <meta property="og:url" content="{base}/blog/{slug}">
+    <meta property="og:site_name" content="Jago Grahak Jago">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{title}">
+    <meta name="twitter:description" content="{desc}">
+    <script type="application/ld+json">
+    {{
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "{title}",
+        "description": "{desc}",
+        "author": {{ "@type": "Person", "name": "{author}" }},
+        "datePublished": "{post.get('created_at', '')[:10]}",
+        "dateModified": "{date_str}",
+        "url": "{base}/blog/{slug}"
+    }}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .blog-article {{ max-width: 720px; margin: 32px auto; padding: 36px 32px; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }}
+        .blog-article h1 {{ font-size: 2rem; margin-bottom: 8px; color: #111827; }}
+        .blog-meta {{ color: #9CA3AF; font-size: .85rem; margin-bottom: 24px; }}
+        .blog-content {{ line-height: 1.8; color: #374151; }}
+        .blog-content h2 {{ font-size: 1.4rem; margin-top: 28px; margin-bottom: 10px; }}
+        .blog-content h3 {{ font-size: 1.15rem; margin-top: 22px; margin-bottom: 8px; }}
+        .blog-content p {{ margin-bottom: 14px; }}
+        .blog-content ul, .blog-content ol {{ margin-bottom: 14px; padding-left: 24px; }}
+        .blog-content li {{ margin-bottom: 6px; }}
+        .blog-content a {{ color: #DC2626; }}
+        .blog-nav {{ max-width: 720px; margin: 0 auto; padding: 16px 32px; }}
+        .blog-nav a {{ color: #DC2626; text-decoration: none; font-weight: 600; }}
+        .blog-cta {{ margin-top: 32px; padding: 20px; background: #FFF8E1; border-radius: 12px; border-left: 4px solid #F59E0B; text-align: center; }}
+        .blog-cta a {{ color: #DC2626; font-weight: 700; }}
+    </style>
+</head>
+<body>
+    <nav class="blog-nav"><a href="/">\u2190 Back to Jago Grahak Jago</a> &nbsp;|&nbsp; <a href="/blog">All Articles</a></nav>
+    <article class="blog-article">
+        <h1>{title}</h1>
+        <div class="blog-meta">By {author} &middot; {date_str}</div>
+        <div class="blog-content">{content}</div>
+        <div class="blog-cta">
+            <p><strong>Need to send a legal notice?</strong></p>
+            <p><a href="/">Generate your AI-powered legal notice in minutes \u2192</a></p>
+        </div>
+    </article>
+</body>
+</html>"""
+
+
+def _render_blog_index(posts: list[dict], seo: dict) -> str:
+    import html
+    base = seo.get("canonical_url", "").rstrip("/")
+    items = ""
+    for p in posts:
+        title = html.escape(p.get("title", ""))
+        desc = html.escape(p.get("meta_description", ""))
+        slug = p.get("slug", "")
+        date_str = (p.get("updated_at") or p.get("created_at", ""))[:10]
+        items += f'''<a href="/blog/{slug}" class="blog-card">
+            <h3>{title}</h3>
+            <p class="blog-card-desc">{desc}</p>
+            <span class="blog-card-date">{date_str}</span>
+        </a>\n'''
+
+    if not items:
+        items = '<p style="text-align:center;color:#9CA3AF;padding:40px;">No articles yet. Check back soon!</p>'
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog — Jago Grahak Jago</title>
+    <meta name="description" content="Consumer rights guides, legal tips, and how-to articles for Indian consumers.">
+    <link rel="canonical" href="{base}/blog">
+    <meta property="og:title" content="Blog — Jago Grahak Jago">
+    <meta property="og:description" content="Consumer rights guides, legal tips, and how-to articles.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .blog-hero {{ text-align: center; padding: 48px 24px; background: linear-gradient(170deg, #FFF8E1, #fff 60%); }}
+        .blog-hero h1 {{ font-size: 2rem; color: #111827; margin-bottom: 8px; }}
+        .blog-hero p {{ color: #6B7280; }}
+        .blog-grid {{ max-width: 720px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }}
+        .blog-card {{ display: block; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.1); text-decoration: none; color: inherit; transition: box-shadow .2s; }}
+        .blog-card:hover {{ box-shadow: 0 4px 12px rgba(0,0,0,.12); }}
+        .blog-card h3 {{ font-size: 1.2rem; color: #111827; margin-bottom: 6px; }}
+        .blog-card-desc {{ color: #6B7280; font-size: .9rem; margin-bottom: 6px; }}
+        .blog-card-date {{ color: #9CA3AF; font-size: .8rem; }}
+        .blog-nav {{ max-width: 720px; margin: 0 auto; padding: 16px 24px; }}
+        .blog-nav a {{ color: #DC2626; text-decoration: none; font-weight: 600; }}
+    </style>
+</head>
+<body>
+    <nav class="blog-nav"><a href="/">\u2190 Back to Jago Grahak Jago</a></nav>
+    <div class="blog-hero">
+        <h1>Consumer Rights Blog</h1>
+        <p>Guides, legal tips, and know-your-rights articles for Indian consumers</p>
+    </div>
+    <div class="blog-grid">{items}</div>
+</body>
+</html>"""
+
+
+@app.get("/blog")
+async def blog_index():
+    posts = notice_store.get_published_blog_posts()
+    seo = notice_store.get_seo_settings()
+    return HTMLResponse(content=_render_blog_index(posts, seo))
+
+
+@app.get("/blog/{slug}")
+async def blog_post_page(slug: str):
+    post = notice_store.get_blog_post(slug)
+    if not post or post.get("status") != "published":
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    seo = notice_store.get_seo_settings()
+    return HTMLResponse(content=_render_blog_html(post, seo))

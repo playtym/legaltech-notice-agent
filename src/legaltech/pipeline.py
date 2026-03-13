@@ -142,6 +142,7 @@ class LegalNoticePipeline:
         self,
         complaint: ComplaintInput,
         previous_answers: dict[str, str] | None = None,
+        document_analysis: dict | None = None,
     ) -> CaseAnalysisResponse:
         """Phase 1: Analyze the case and return follow-up questions if needed.
 
@@ -239,6 +240,8 @@ class LegalNoticePipeline:
         complaint: ComplaintInput,
         tier: ServiceTier = ServiceTier.self_send,
         follow_up_answers: dict[str, str] | None = None,
+        customer_controls: dict | None = None,
+        document_analysis: dict | None = None,
     ) -> NoticePacket:
         complaint_ctx = self._prepare_complaint_context(complaint, follow_up_answers)
 
@@ -327,11 +330,16 @@ class LegalNoticePipeline:
         )
 
         # ── Dynamic cure period ──────────────────────────────────────
-        cure_days, cure_rationale = await self.cure_period_agent.run(
-            issue_summary=complaint_ctx.issue_summary,
-            timeline_length=len(complaint_ctx.timeline),
-            timeline=complaint_ctx.timeline,
-        )
+        cc = customer_controls or {}
+        if cc.get("cure_period_days"):
+            cure_days = cc["cure_period_days"]
+            cure_rationale = f"{cure_days} days (as specified by complainant)"
+        else:
+            cure_days, cure_rationale = await self.cure_period_agent.run(
+                issue_summary=complaint_ctx.issue_summary,
+                timeline_length=len(complaint_ctx.timeline),
+                timeline=complaint_ctx.timeline,
+            )
 
         # ── Escalation strategy (pressure tactics) ────────────────
         escalation_result = await self.escalation.run(
@@ -364,6 +372,8 @@ class LegalNoticePipeline:
             cure_rationale=cure_rationale,
             follow_up_answers=follow_up_answers,
             escalation_strategy=escalation_result,
+            customer_controls=customer_controls,
+            document_analysis=document_analysis,
         )
 
         # ── Build output packet ──────────────────────────────────────
