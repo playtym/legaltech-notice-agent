@@ -412,7 +412,7 @@ const App = (() => {
                     const existing = target.value.trim();
                     target.value = [existing, translated].filter(Boolean).join('\n');
                 }
-                setVoiceStatus(fieldId, 'Done. Speech added in English script and translated English.');
+                setVoiceStatus(fieldId, 'Done.');
             } catch (_) {
                 const target = document.getElementById(fieldId);
                 if (target) {

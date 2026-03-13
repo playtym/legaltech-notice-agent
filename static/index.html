@@ -128,11 +128,6 @@
     <div class="card">
         <h2>🧠 Context & Evidence</h2>
         <p class="card-sub">Be as detailed as possible. More detail = stronger notice.</p>
-        <div class="smart-intake">
-            <button type="button" class="btn btn-primary" onclick="App.startSmartIntake()">🎙 Speak Once (Hindi + English)</button>
-            <button type="button" class="btn btn-ghost" onclick="App.stopSmartIntake()">Stop</button>
-            <small id="smart-intake-status" class="hint">Speak freely for 30-90 seconds. We will auto-fill details and pre-answer follow-up questions.</small>
-        </div>
         <form id="form-complaint" onsubmit="return false;">
             <div class="form-group prompt-composer-group">
                 <label for="issue-summary">What happened? <span class="req">*</span></label>
@@ -140,13 +135,18 @@
                     <textarea id="issue-summary" rows="4"
                         placeholder="Ask Lawly to draft your case from your facts..."
                         required minlength="20" maxlength="10000"></textarea>
-                    <div class="prompt-composer-actions" aria-hidden="true">
-                        <button type="button" class="prompt-icon-btn" title="Attach files" onclick="document.getElementById('file-input').click()">+</button>
+                    <div class="prompt-composer-actions">
+                        <button type="button" class="prompt-flat-btn" title="Attach files" onclick="document.getElementById('file-input').click()">Attach</button>
                         <div class="prompt-right-actions">
-                            <button type="button" class="prompt-icon-btn" title="Voice input" onclick="App.toggleVoiceInput()">🎤</button>
-                            <button type="button" class="prompt-send-btn" title="Analyze now" onclick="App.analyzeCase()">↑</button>
+                            <button type="button" class="prompt-flat-btn" title="Voice input" onclick="App.toggleVoiceInput()">Mic</button>
+                            <button type="button" class="prompt-flat-btn prompt-flat-btn-primary" title="Analyze now" onclick="App.analyzeCase()">Analyze</button>
                         </div>
                     </div>
+                    <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+                           onchange="App.handleFileSelect(event)" style="display:none;">
+                    <small class="hint upload-inline-hint">Attach JPEG, PNG, WebP, GIF, PDF (up to 10 files, 10 MB each)</small>
+                    <div id="upload-file-list" class="upload-file-list upload-inline-list"></div>
+                    <small class="hint" id="upload-status"></small>
                 </div>
             </div>
 
@@ -168,45 +168,11 @@
                 </div>
             </div>
 
-            <!-- Document Upload Section -->
-            <div class="form-group">
-                <label>Upload Evidence Documents</label>
-                <div class="upload-dropzone" id="upload-dropzone"
-                     ondrop="App.handleDrop(event)"
-                     ondragover="App.handleDragOver(event)"
-                     ondragleave="App.handleDragLeave(event)">
-                    <div class="upload-icon">📎</div>
-                    <p>Drag & drop files here, or <label for="file-input" class="upload-link">browse</label></p>
-                    <small class="hint">JPEG, PNG, WebP, GIF, PDF — max 10 MB each, up to 10 files</small>
-                    <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
-                           onchange="App.handleFileSelect(event)" style="display:none;">
-                </div>
-                <div id="upload-file-list" class="upload-file-list"></div>
-                <small class="hint" id="upload-status"></small>
-            </div>
-
             <div class="form-group">
                 <label for="desired-resolution">What resolution do you want? <span class="req">*</span></label>
                 <textarea id="desired-resolution" rows="3"
                     placeholder="e.g. Full refund of Rs. 78,999 with 18% interest plus Rs. 25,000 compensation for mental agony"
                     required maxlength="2000"></textarea>
-            </div>
-
-            <div class="voice-capture-panel">
-                <label for="voice-target">Voice Input</label>
-                <div class="voice-capture-row">
-                    <select id="voice-target" class="voice-lang" aria-label="Choose where voice text should be inserted">
-                        <option value="issue-summary" selected>Add speech to: What happened?</option>
-                        <option value="desired-resolution">Add speech to: Desired resolution</option>
-                    </select>
-                    <select id="voice-lang-shared" class="voice-lang" aria-label="Voice input language">
-                        <option value="auto-hinglish" selected>Auto Hinglish (Hindi + English)</option>
-                        <option value="hi-IN">Hindi (India)</option>
-                        <option value="en-IN">English (India)</option>
-                    </select>
-                    <button type="button" class="mic-icon-btn" id="voice-toggle-btn" onclick="App.toggleVoiceInput()" aria-label="Toggle microphone">🎤</button>
-                </div>
-                <small class="hint" id="voice-status-shared">Use the mic icon to dictate. Speech is translated and added to the selected field.</small>
             </div>
 
             <div class="btn-row">
