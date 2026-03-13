@@ -73,7 +73,19 @@
 
 <div class="admin-header">
     <h1>⚖️ Legal Notice Admin</h1>
-    <a href="/">← Back to Main Site</a>
+    <div style="display:flex;gap:12px;align-items:center;">
+        <a href="/blog" target="_blank">📝 View Blog</a>
+        <a href="/">← Back to Main Site</a>
+    </div>
+</div>
+
+<!-- ─── Tab navigation ───────────────────────────────────────────── -->
+<div class="admin-tabs">
+    <button class="admin-tab active" onclick="Admin.switchTab('notices')">📋 Notices</button>
+    <button class="admin-tab" onclick="Admin.switchTab('blog')">📝 Blog</button>
+    <button class="admin-tab" onclick="Admin.switchTab('pages')">📄 Pages</button>
+    <button class="admin-tab" onclick="Admin.switchTab('seo')">🔍 SEO Settings</button>
+    <button class="admin-tab" onclick="Admin.switchTab('lawyer')">👨‍⚖️ Lawyer</button>
 </div>
 
 <div class="admin-layout">
@@ -116,15 +128,106 @@
         </div>
     </div>
 
-    <!-- Notices Section -->
+    <!-- ═══ NOTICES TAB ═══ -->
+    <div class="tab-panel active" id="tab-notices">
     <div class="admin-section">
         <h2>📋 All Notices</h2>
         <div id="notices-container">
             <div class="empty-state">Loading notices...</div>
         </div>
     </div>
+    </div>
 
-</div>
+    <!-- ═══ BLOG TAB ═══ -->
+    <div class="tab-panel" id="tab-blog">
+    <div class="admin-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2>📝 Blog Posts</h2>
+            <button class="btn btn-primary" onclick="Admin.openBlogEditor()">+ New Post</button>
+        </div>
+        <div id="blog-list"><div class="empty-state">Loading...</div></div>
+    </div>
+    </div>
+
+    <!-- ═══ PAGES TAB ═══ -->
+    <div class="tab-panel" id="tab-pages">
+    <div class="admin-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2>📄 SEO Pages</h2>
+            <button class="btn btn-primary" onclick="Admin.openPageEditor()">+ Add Page</button>
+        </div>
+        <p style="color:var(--gray-400);font-size:.85rem;margin-bottom:16px;">
+            Manage which pages appear in sitemap.xml and set per-page meta tags.
+        </p>
+        <div id="pages-list"><div class="empty-state">Loading...</div></div>
+    </div>
+    </div>
+
+    <!-- ═══ SEO TAB ═══ -->
+    <div class="tab-panel" id="tab-seo">
+    <div class="admin-section">
+        <h2>🔍 Global SEO Settings</h2>
+        <div class="lawyer-form">
+            <form id="seo-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label>Site Title</label>
+                    <input type="text" id="seo-title" placeholder="Jago Grahak Jago — AI Legal Notice Generator">
+                </div>
+                <div class="form-group">
+                    <label>Meta Description <small style="color:var(--gray-400)">(max 160 chars)</small></label>
+                    <textarea id="seo-desc" rows="2" maxlength="160" placeholder="Generate a professional AI-powered legal notice..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Meta Keywords <small style="color:var(--gray-400)">(comma-separated)</small></label>
+                    <input type="text" id="seo-keywords" placeholder="legal notice generator, consumer complaint India...">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>OG Title</label>
+                        <input type="text" id="seo-og-title" placeholder="Open Graph title for social sharing">
+                    </div>
+                    <div class="form-group">
+                        <label>OG Description</label>
+                        <input type="text" id="seo-og-desc" placeholder="Open Graph description">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Canonical URL</label>
+                    <input type="url" id="seo-canonical" placeholder="https://lawly.store/">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Google Analytics ID</label>
+                        <input type="text" id="seo-ga" placeholder="G-XXXXXXXXXX">
+                    </div>
+                    <div class="form-group">
+                        <label>Search Console Verification</label>
+                        <input type="text" id="seo-gsc" placeholder="google-site-verification content">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Custom Head Tags <small style="color:var(--gray-400)">(raw HTML injected into &lt;head&gt;)</small></label>
+                    <textarea id="seo-custom-head" rows="3" placeholder='<meta name="author" content="...">'></textarea>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="Admin.saveSEO()">Save SEO Settings</button>
+                <div id="seo-save-status" class="lawyer-status hidden"></div>
+            </form>
+
+            <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--gray-200);">
+                <h3 style="font-size:.95rem;margin-bottom:8px;">Quick Actions</h3>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <a class="btn btn-outline btn-sm" href="/sitemap.xml" target="_blank">View Sitemap</a>
+                    <a class="btn btn-outline btn-sm" href="/robots.txt" target="_blank">View robots.txt</a>
+                    <a class="btn btn-outline btn-sm" href="/blog" target="_blank">View Blog</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- ═══ LAWYER TAB ═══ -->
+    <div class="tab-panel" id="tab-lawyer">
+    <!-- Lawyer Details Section -->
 
 <!-- Detail Modal -->
 <div class="modal-overlay hidden" id="modal-overlay">
@@ -150,9 +253,15 @@
 const Admin = (() => {
     let currentNoticeId = null;
 
+    const API_BACKEND = 'https://api.lawly.store';
+
+    function isLocalHost() {
+        return ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    }
+
     function apiUrl(path) {
         const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
-        const base = configured || window.location.origin;
+        const base = configured || (isLocalHost() ? window.location.origin : API_BACKEND);
         return `${base.replace(/\/$/, '')}${path}`;
     }
 

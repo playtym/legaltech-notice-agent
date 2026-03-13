@@ -16,7 +16,7 @@ class Settings(BaseModel):
     user_agent: str = Field(
         default=os.getenv(
             "LEGALTECH_USER_AGENT",
-            "LegalTech-Notice-Agent/0.1 (+https://example.com)",
+            "Lawly/0.2 (+https://lawly.store)",
         )
     )
 

@@ -12,6 +12,6 @@ services:
       - key: REQUEST_TIMEOUT_SECONDS
         value: "30"
       - key: LEGALTECH_USER_AGENT
-        value: LegalTech-Notice-Agent/0.2 (+https://playtym.github.io/legaltech-notice-agent)
+        value: Lawly/0.2 (+https://lawly.store)
       - key: PYTHON_VERSION
         value: "3.11.8"

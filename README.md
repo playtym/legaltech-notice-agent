@@ -134,6 +134,73 @@ curl http://127.0.0.1:8000/pricing
 - Replace SMTP with transactional email (AWS SES / SendGrid) for deliverability.
 - Add webhook for delivery/read-receipt status updates.
 
+## Host frontend on AWS (S3 + CloudFront) and keep API on App Runner
+
+Use this production layout:
+
+- Frontend: `https://lawly.store` and `https://www.lawly.store` on CloudFront (origin: S3 static site bucket)
+- API: `https://api.lawly.store` on App Runner custom domain
+
+### 1. Create S3 bucket for static frontend
+
+1. Open AWS S3 Console: https://console.aws.amazon.com/s3/
+2. Create bucket, name it `lawly.store` (or any unique name), region nearest your users.
+3. Keep Block Public Access ON (recommended when using CloudFront OAC).
+4. Upload contents of `static/` to the bucket root.
+
+### 2. Create CloudFront distribution for frontend
+
+1. Open CloudFront Console: https://console.aws.amazon.com/cloudfront/v4/home
+2. Create distribution with S3 bucket as origin.
+3. In "Viewer protocol policy", choose "Redirect HTTP to HTTPS".
+4. Set default root object to `index.html`.
+5. Add custom error responses for SPA fallback (optional):
+  - 403 -> `/index.html` with 200
+  - 404 -> `/index.html` with 200
+6. Add alternate domain names (CNAMEs): `lawly.store`, `www.lawly.store`.
+
+### 3. Issue SSL certificate in ACM (us-east-1)
+
+1. Open ACM Console in N. Virginia (`us-east-1`): https://console.aws.amazon.com/acm/home?region=us-east-1
+2. Request public certificate for:
+  - `lawly.store`
+  - `www.lawly.store`
+3. Validate with DNS (ACM gives CNAMEs).
+4. Attach this certificate to CloudFront distribution.
+
+### 4. Put API on App Runner custom domain
+
+1. Open App Runner Console: https://console.aws.amazon.com/apprunner/home
+2. Open your service -> Custom domains.
+3. Add `api.lawly.store`.
+4. Complete DNS validation CNAMEs shown by App Runner.
+
+### 5. Configure Namecheap DNS
+
+1. Open Namecheap Domain List: https://ap.www.namecheap.com/domains/list/
+2. Manage `lawly.store` -> Advanced DNS.
+3. Add records:
+  - `CNAME` host `www` -> CloudFront domain (for example `dxxxxx.cloudfront.net`)
+  - `CNAME` host `api` -> App Runner target domain
+  - `URL Redirect` host `@` -> `https://www.lawly.store` (301), if apex CNAME is not available
+4. Add ACM/App Runner validation CNAME records exactly as provided.
+
+### 6. Verify frontend -> API connectivity
+
+1. Open `https://lawly.store` and run full notice flow.
+2. Open `https://lawly.store/admin.html` and verify admin actions.
+3. Confirm API works at `https://api.lawly.store/health`.
+4. Confirm SEO files:
+  - `https://lawly.store/robots.txt`
+  - `https://lawly.store/sitemap.xml`
+
+### 7. Important code defaults already set
+
+- Frontend default API base is `https://api.lawly.store` in `static/app.js`.
+- Admin default API base is `https://api.lawly.store` in `static/admin.html`.
+- CORS includes `https://lawly.store` and `https://www.lawly.store` in `src/legaltech/app.py`.
+
+
 ## Implemented features
 
 - **Persuasive lawyerly argumentation**: Notice is drafted like a seasoned consumer lawyer — not a polite complaint letter. Uses assertive legal language, statutory framing, and credible litigation threat.

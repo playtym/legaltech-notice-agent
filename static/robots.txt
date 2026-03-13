@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 
-Sitemap: https://playtym.github.io/legaltech-notice-agent/sitemap.xml
+Sitemap: https://lawly.store/sitemap.xml

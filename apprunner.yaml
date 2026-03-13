@@ -20,4 +20,4 @@ run:
     - name: REQUEST_TIMEOUT_SECONDS
       value: "20"
     - name: LEGALTECH_USER_AGENT
-      value: "LegalTech-Notice-Agent/0.2"
+      value: "Lawly/0.2 (+https://lawly.store)"
