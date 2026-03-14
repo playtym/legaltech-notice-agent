@@ -1,16 +1,20 @@
 """Lightweight JSON-file store for notices and admin settings.
 
-Stores data under <project_root>/data/. Not a database — this is for
-MVP/demo purposes. Replace with Postgres/Mongo in production.
+When DATA_BUCKET is set every JSON file is persisted to S3 so data
+survives App Runner re-deploys. Falls back to local data/ for dev.
 """
 
 from __future__ import annotations
 
 import json
+import logging
+import os
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+_logger = logging.getLogger(__name__)
 
 _DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
 _NOTICES_FILE = _DATA_DIR / "notices.json"
@@ -22,6 +26,28 @@ _ACTIVITY_FILE = _DATA_DIR / "activity_log.json"
 _ADMIN_PW_FILE = _DATA_DIR / "admin_pw.json"
 _REDIRECTS_FILE = _DATA_DIR / "redirects.json"
 _AEO_FILE = _DATA_DIR / "aeo_settings.json"
+_EMAIL_SETTINGS_FILE = _DATA_DIR / "email_settings.json"
+_EMAIL_LOG_FILE = _DATA_DIR / "email_log.json"
+_ANALYTICS_FILE = _DATA_DIR / "analytics_events.json"
+_TICKETS_FILE = _DATA_DIR / "support_tickets.json"
+
+# ── S3 backend ───────────────────────────────────────────────────────
+
+_DATA_BUCKET: str | None = os.getenv("DATA_BUCKET")
+_S3_PREFIX = "data/"
+_s3 = None
+
+
+def _get_s3():
+    global _s3
+    if _s3 is None:
+        import boto3
+        _s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-south-1"))
+    return _s3
+
+
+def _s3_key(local_path: Path) -> str:
+    return _S3_PREFIX + local_path.name
 
 
 def _ensure_dir() -> None:
@@ -29,6 +55,8 @@ def _ensure_dir() -> None:
 
 
 def _read_json(path: Path) -> Any:
+    if _DATA_BUCKET:
+        return _read_json_s3(path)
     if not path.exists():
         return {}
     try:
@@ -38,8 +66,34 @@ def _read_json(path: Path) -> Any:
 
 
 def _write_json(path: Path, data: Any) -> None:
+    if _DATA_BUCKET:
+        _write_json_s3(path, data)
+        return
     _ensure_dir()
     path.write_text(json.dumps(data, indent=2, default=str))
+
+
+def _read_json_s3(path: Path) -> Any:
+    try:
+        resp = _get_s3().get_object(Bucket=_DATA_BUCKET, Key=_s3_key(path))
+        return json.loads(resp["Body"].read())
+    except _get_s3().exceptions.NoSuchKey:
+        return {}
+    except Exception:
+        _logger.exception("S3 read failed for %s", _s3_key(path))
+        return {}
+
+
+def _write_json_s3(path: Path, data: Any) -> None:
+    try:
+        _get_s3().put_object(
+            Bucket=_DATA_BUCKET,
+            Key=_s3_key(path),
+            Body=json.dumps(data, indent=2, default=str).encode(),
+            ContentType="application/json",
+        )
+    except Exception:
+        _logger.exception("S3 write failed for %s", _s3_key(path))
 
 
 # ── Lawyer settings ──────────────────────────────────────────────────
@@ -421,4 +475,274 @@ def get_dashboard_stats() -> dict:
         "published_posts": published_posts,
         "draft_posts": draft_posts,
         "notices_by_date": dict(sorted(date_counts.items())),
+    }
+
+
+# ── Email / Notification settings ────────────────────────────────────
+
+_DEFAULT_EMAIL_SETTINGS: dict = {
+    "smtp_host": "",
+    "smtp_port": 587,
+    "smtp_user": "",
+    "smtp_password": "",
+    "from_name": "Lawly",
+    "from_email": "",
+    "use_tls": True,
+    "admin_alert_email": "",
+    "templates": {
+        "notice_ready": {
+            "subject": "Your Legal Notice is Ready — Lawly",
+            "body": "Dear {{name}},\n\nYour legal notice regarding {{company}} is ready.\n\n{{notice_link}}\n\nRegards,\nLawly Team",
+        },
+        "payment_receipt": {
+            "subject": "Payment Receipt — Lawly #{{notice_id}}",
+            "body": "Dear {{name}},\n\nPayment of {{amount}} received for your legal notice against {{company}}.\n\nTier: {{tier}}\nNotice ID: {{notice_id}}\n\nRegards,\nLawly Team",
+        },
+        "follow_up": {
+            "subject": "Follow-up: Your Legal Notice Against {{company}}",
+            "body": "Dear {{name}},\n\nIt's been {{days}} days since your legal notice against {{company}} was sent.\n\nIf you haven't received a response within the cure period, you may consider:\n1. File a complaint at edaakhil.nic.in\n2. Escalate to the consumer forum\n\nNeed help? Reply to this email.\n\nRegards,\nLawly Team",
+        },
+        "admin_alert": {
+            "subject": "[Lawly Admin] New Notice Generated — {{company}}",
+            "body": "A new legal notice was generated.\n\nComplainant: {{name}} ({{email}})\nCompany: {{company}}\nTier: {{tier}}\nNotice ID: {{notice_id}}\nTime: {{time}}",
+        },
+    },
+    "auto_send_notice_ready": True,
+    "auto_send_admin_alert": True,
+    "follow_up_days": 15,
+}
+
+
+def get_email_settings() -> dict:
+    _ensure_dir()
+    data = _read_json(_EMAIL_SETTINGS_FILE)
+    if not data or not isinstance(data, dict):
+        return dict(_DEFAULT_EMAIL_SETTINGS)
+    merged = dict(_DEFAULT_EMAIL_SETTINGS)
+    for k, v in data.items():
+        if k == "templates" and isinstance(v, dict):
+            merged["templates"] = {**_DEFAULT_EMAIL_SETTINGS["templates"], **v}
+        else:
+            merged[k] = v
+    return merged
+
+
+def save_email_settings(data: dict) -> dict:
+    _ensure_dir()
+    current = get_email_settings()
+    for k, v in data.items():
+        if k == "templates" and isinstance(v, dict):
+            current["templates"] = {**current.get("templates", {}), **v}
+        else:
+            current[k] = v
+    _write_json(_EMAIL_SETTINGS_FILE, current)
+    return current
+
+
+def log_email(entry: dict) -> dict:
+    """Append a sent/failed email record to the email log."""
+    _ensure_dir()
+    log = _read_json(_EMAIL_LOG_FILE)
+    if not isinstance(log, list):
+        log = []
+    record = {
+        "id": uuid.uuid4().hex[:8],
+        "to": entry.get("to", ""),
+        "subject": entry.get("subject", ""),
+        "template": entry.get("template", "custom"),
+        "status": entry.get("status", "sent"),
+        "error": entry.get("error", ""),
+        "notice_id": entry.get("notice_id", ""),
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+    log.insert(0, record)
+    log = log[:1000]  # keep last 1000
+    _write_json(_EMAIL_LOG_FILE, log)
+    return record
+
+
+def get_email_log(limit: int = 50) -> list[dict]:
+    log = _read_json(_EMAIL_LOG_FILE)
+    if not isinstance(log, list):
+        return []
+    return log[:limit]
+
+
+# ── Analytics / Events ───────────────────────────────────────────────
+
+def track_event(event_type: str, data: dict | None = None) -> dict:
+    """Track a funnel event (page_view, notice_started, notice_generated, pdf_downloaded, payment)."""
+    _ensure_dir()
+    events = _read_json(_ANALYTICS_FILE)
+    if not isinstance(events, list):
+        events = []
+    entry = {
+        "id": uuid.uuid4().hex[:8],
+        "event": event_type,
+        "data": data or {},
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+    events.insert(0, entry)
+    events = events[:10000]  # keep last 10k
+    _write_json(_ANALYTICS_FILE, events)
+    return entry
+
+
+def get_analytics_events(limit: int = 5000) -> list[dict]:
+    events = _read_json(_ANALYTICS_FILE)
+    if not isinstance(events, list):
+        return []
+    return events[:limit]
+
+
+def get_analytics_summary() -> dict:
+    """Compute funnel, daily trends, category breakdown from raw events."""
+    events = get_analytics_events(10000)
+    now = datetime.utcnow()
+
+    # Funnel counts
+    funnel = {"page_view": 0, "notice_started": 0, "notice_generated": 0, "pdf_downloaded": 0, "payment": 0}
+    # Daily counts (last 30 days)
+    daily: dict[str, dict[str, int]] = {}
+    # Category breakdown
+    categories: dict[str, int] = {}
+    # Revenue
+    revenue_total = 0.0
+    revenue_daily: dict[str, float] = {}
+    # Tier counts for funnel
+    tier_counts: dict[str, int] = {}
+
+    for e in events:
+        evt = e.get("event", "")
+        ts = e.get("timestamp", "")[:10]
+        data = e.get("data", {})
+
+        if evt in funnel:
+            funnel[evt] += 1
+
+        # Daily
+        if ts:
+            if ts not in daily:
+                daily[ts] = {}
+            daily[ts][evt] = daily[ts].get(evt, 0) + 1
+
+        # Categories
+        cat = data.get("category", "")
+        if cat and evt == "notice_generated":
+            categories[cat] = categories.get(cat, 0) + 1
+
+        # Revenue
+        if evt == "payment":
+            amt = float(data.get("amount", 0))
+            revenue_total += amt
+            if ts:
+                revenue_daily[ts] = revenue_daily.get(ts, 0) + amt
+
+        # Tiers
+        if evt == "notice_generated":
+            t = data.get("tier", "self_send")
+            tier_counts[t] = tier_counts.get(t, 0) + 1
+
+    # Sort daily by date, last 30
+    sorted_days = sorted(daily.keys())[-30:]
+    daily_trend = {d: daily[d] for d in sorted_days}
+
+    return {
+        "funnel": funnel,
+        "daily_trend": daily_trend,
+        "categories": dict(sorted(categories.items(), key=lambda x: -x[1])),
+        "revenue_total": revenue_total,
+        "revenue_daily": dict(sorted(revenue_daily.items())[-30:]),
+        "tier_counts": tier_counts,
+        "total_events": len(events),
+    }
+
+
+# ── Support Tickets ──────────────────────────────────────────────────
+
+def create_ticket(data: dict) -> dict:
+    _ensure_dir()
+    tickets = _read_json(_TICKETS_FILE)
+    if not isinstance(tickets, dict):
+        tickets = {}
+    ticket_id = uuid.uuid4().hex[:8]
+    now = datetime.utcnow().isoformat()
+    ticket = {
+        "id": ticket_id,
+        "name": data.get("name", ""),
+        "email": data.get("email", ""),
+        "subject": data.get("subject", ""),
+        "message": data.get("message", ""),
+        "category": data.get("category", "general"),
+        "notice_id": data.get("notice_id", ""),
+        "status": "open",
+        "priority": data.get("priority", "normal"),
+        "admin_notes": "",
+        "replies": [],
+        "created_at": now,
+        "updated_at": now,
+    }
+    tickets[ticket_id] = ticket
+    _write_json(_TICKETS_FILE, tickets)
+    return ticket
+
+
+def get_all_tickets() -> list[dict]:
+    tickets = _read_json(_TICKETS_FILE)
+    if not isinstance(tickets, dict):
+        return []
+    return sorted(tickets.values(), key=lambda t: t.get("created_at", ""), reverse=True)
+
+
+def get_ticket(ticket_id: str) -> dict | None:
+    tickets = _read_json(_TICKETS_FILE)
+    if not isinstance(tickets, dict):
+        return None
+    return tickets.get(ticket_id)
+
+
+def update_ticket(ticket_id: str, updates: dict) -> dict | None:
+    tickets = _read_json(_TICKETS_FILE)
+    if not isinstance(tickets, dict) or ticket_id not in tickets:
+        return None
+    ticket = tickets[ticket_id]
+    for k in ("status", "priority", "admin_notes"):
+        if k in updates:
+            ticket[k] = updates[k]
+    ticket["updated_at"] = datetime.utcnow().isoformat()
+    tickets[ticket_id] = ticket
+    _write_json(_TICKETS_FILE, tickets)
+    return ticket
+
+
+def add_ticket_reply(ticket_id: str, reply: dict) -> dict | None:
+    tickets = _read_json(_TICKETS_FILE)
+    if not isinstance(tickets, dict) or ticket_id not in tickets:
+        return None
+    ticket = tickets[ticket_id]
+    ticket["replies"].append({
+        "id": uuid.uuid4().hex[:6],
+        "from": reply.get("from", "admin"),
+        "message": reply.get("message", ""),
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+    ticket["updated_at"] = datetime.utcnow().isoformat()
+    tickets[ticket_id] = ticket
+    _write_json(_TICKETS_FILE, tickets)
+    return ticket
+
+
+def get_ticket_stats() -> dict:
+    tickets = get_all_tickets()
+    total = len(tickets)
+    open_count = sum(1 for t in tickets if t.get("status") == "open")
+    in_progress = sum(1 for t in tickets if t.get("status") == "in_progress")
+    resolved = sum(1 for t in tickets if t.get("status") == "resolved")
+    closed = sum(1 for t in tickets if t.get("status") == "closed")
+    return {
+        "total": total,
+        "open": open_count,
+        "in_progress": in_progress,
+        "resolved": resolved,
+        "closed": closed,
     }

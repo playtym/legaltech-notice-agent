@@ -21,6 +21,7 @@ class Settings(BaseModel):
         )
     )
     admin_password: str = Field(default=os.getenv("ADMIN_PASSWORD", "lawly2024"))
+    data_bucket: str | None = Field(default=os.getenv("DATA_BUCKET"))
 
 
 @lru_cache(maxsize=1)

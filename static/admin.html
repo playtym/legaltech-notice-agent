@@ -351,6 +351,73 @@
         }
 
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .admin-layout { padding: 16px; } .redirect-row { grid-template-columns: 1fr; } .aeo-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        /* ── Email / Notifications ─────────────────── */
+        .email-template-card {
+            background: var(--gray-50); border-radius: 8px; padding: 16px; margin-bottom: 12px;
+        }
+        .email-template-card h4 { font-size: .85rem; margin-bottom: 8px; color: var(--gray-600); }
+        .email-log-row {
+            display: grid; grid-template-columns: 100px 1fr 140px 80px 120px; gap: 8px;
+            padding: 8px 0; border-bottom: 1px solid var(--gray-100); font-size: .82rem;
+            align-items: center;
+        }
+        .email-log-row:first-child { border-top: 1px solid var(--gray-100); }
+        .email-status-sent { color: var(--green); font-weight: 600; }
+        .email-status-failed { color: var(--primary); font-weight: 600; }
+        .smtp-test-row { display: flex; gap: 8px; align-items: end; margin-top: 12px; }
+        .smtp-test-row input { flex: 1; }
+
+        /* ── Analytics ─────────────────────────────── */
+        .funnel-bar {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+        }
+        .funnel-label { width: 140px; font-size: .82rem; font-weight: 600; color: var(--gray-600); text-align: right; }
+        .funnel-track { flex: 1; height: 28px; background: var(--gray-100); border-radius: 14px; overflow: hidden; position: relative; }
+        .funnel-fill { height: 100%; border-radius: 14px; transition: width .6s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-size: .75rem; font-weight: 700; color: #fff; min-width: 40px; }
+        .funnel-fill.lv0 { background: var(--blue); }
+        .funnel-fill.lv1 { background: var(--orange); }
+        .funnel-fill.lv2 { background: var(--primary); }
+        .funnel-fill.lv3 { background: var(--green); }
+        .funnel-fill.lv4 { background: #7C3AED; }
+        .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .analytics-kpi { background: var(--white); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); text-align: center; }
+        .analytics-kpi .kpi-val { font-size: 1.8rem; font-weight: 800; }
+        .analytics-kpi .kpi-label { font-size: .78rem; color: var(--gray-400); margin-top: 4px; }
+        .category-list { list-style: none; }
+        .category-list li {
+            display: flex; justify-content: space-between; padding: 6px 0;
+            border-bottom: 1px solid var(--gray-100); font-size: .85rem;
+        }
+        .category-list li:last-child { border-bottom: none; }
+
+        /* ── Support Tickets ───────────────────────── */
+        .ticket-stat-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .ticket-stat {
+            background: var(--white); padding: 12px 20px; border-radius: var(--radius);
+            box-shadow: var(--shadow); text-align: center; min-width: 100px;
+        }
+        .ticket-stat .ts-num { font-size: 1.4rem; font-weight: 800; }
+        .ticket-stat .ts-label { font-size: .72rem; color: var(--gray-400); margin-top: 2px; }
+        .ticket-detail-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;
+        }
+        .ticket-detail-grid .td-card {
+            background: var(--gray-50); padding: 12px; border-radius: 8px;
+        }
+        .ticket-detail-grid .td-card h4 { font-size: .75rem; color: var(--gray-400); margin-bottom: 4px; }
+        .reply-thread { margin-top: 16px; }
+        .reply-bubble {
+            padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: .85rem;
+            max-width: 80%;
+        }
+        .reply-bubble.admin { background: var(--blue-light); margin-left: auto; }
+        .reply-bubble.customer { background: var(--gray-100); }
+        .reply-bubble .reply-meta { font-size: .72rem; color: var(--gray-400); margin-top: 4px; }
+        .badge-open { background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 10px; font-size: .72rem; font-weight: 600; }
+        .badge-in-progress { background: var(--blue-light); color: #1D4ED8; padding: 2px 8px; border-radius: 10px; font-size: .72rem; font-weight: 600; }
+        .badge-resolved { background: var(--green-light); color: #065F46; padding: 2px 8px; border-radius: 10px; font-size: .72rem; font-weight: 600; }
+        .badge-closed { background: var(--gray-200); color: var(--gray-500); padding: 2px 8px; border-radius: 10px; font-size: .72rem; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -392,6 +459,9 @@
     <button class="admin-tab" data-tab="pages">📄 Pages</button>
     <button class="admin-tab" data-tab="seo">🔍 SEO</button>
     <button class="admin-tab" data-tab="aeo">🤖 AEO</button>
+    <button class="admin-tab" data-tab="email">📧 Email</button>
+    <button class="admin-tab" data-tab="analytics">📈 Analytics</button>
+    <button class="admin-tab" data-tab="support">🎫 Support</button>
     <button class="admin-tab" data-tab="activity">🕐 Activity</button>
     <button class="admin-tab" data-tab="lawyer">👨‍⚖️ Lawyer</button>
     <button class="admin-tab" data-tab="settings">⚙️ Settings</button>
@@ -790,6 +860,138 @@
     </div>
 </div>
 
+<!-- ═══ EMAIL / NOTIFICATIONS TAB ═══ -->
+<div class="tab-panel" id="tab-email">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">📧 Email & Notifications</h2>
+
+    <!-- SMTP Configuration -->
+    <div class="form-card" style="margin-bottom:20px;">
+        <h3 style="font-size:.95rem;margin-bottom:12px;">SMTP Configuration</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">Configure email delivery. Supports Gmail, AWS SES, SendGrid, or any SMTP provider.</p>
+        <div class="form-row">
+            <div class="form-group"><label>SMTP Host</label><input type="text" id="em-smtp-host" placeholder="smtp.gmail.com"></div>
+            <div class="form-group"><label>SMTP Port</label><input type="number" id="em-smtp-port" placeholder="587"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>SMTP User</label><input type="text" id="em-smtp-user" placeholder="your@gmail.com"></div>
+            <div class="form-group"><label>SMTP Password</label><input type="password" id="em-smtp-pass" placeholder="App password"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>From Name</label><input type="text" id="em-from-name" placeholder="Lawly"></div>
+            <div class="form-group"><label>From Email</label><input type="email" id="em-from-email" placeholder="notices@lawly.store"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Admin Alert Email</label><input type="email" id="em-admin-alert" placeholder="admin@lawly.store"></div>
+            <div class="form-group" style="display:flex;align-items:end;gap:16px;padding-bottom:4px;">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="em-use-tls"> Use TLS</label>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.85rem;"><input type="checkbox" id="em-auto-notice"> Auto-send "Notice Ready" email</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.85rem;"><input type="checkbox" id="em-auto-admin"> Auto-send admin alerts</label>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+            <label>Follow-up Reminder (days)</label>
+            <input type="number" id="em-followup-days" placeholder="15" style="max-width:120px;">
+        </div>
+    </div>
+
+    <!-- Send Test Email -->
+    <div class="form-card" style="margin-bottom:20px;">
+        <h3 style="font-size:.95rem;margin-bottom:8px;">Send Test Email</h3>
+        <div class="smtp-test-row">
+            <div class="form-group" style="flex:1;margin:0;"><input type="email" id="em-test-to" placeholder="test@example.com"></div>
+            <select id="em-test-template" style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:.85rem;">
+                <option value="notice_ready">Notice Ready</option>
+                <option value="payment_receipt">Payment Receipt</option>
+                <option value="follow_up">Follow-up Reminder</option>
+                <option value="admin_alert">Admin Alert</option>
+            </select>
+            <button type="button" class="btn btn-primary btn-sm" onclick="Admin.sendTestEmail()">📨 Send Test</button>
+        </div>
+    </div>
+
+    <!-- Email Templates -->
+    <div class="form-card" style="margin-bottom:20px;">
+        <h3 style="font-size:.95rem;margin-bottom:12px;">📋 Email Templates</h3>
+        <p style="color:var(--gray-400);font-size:.78rem;margin-bottom:12px;">Variables: <code>{{name}}</code> <code>{{company}}</code> <code>{{notice_id}}</code> <code>{{amount}}</code> <code>{{tier}}</code> <code>{{days}}</code> <code>{{email}}</code> <code>{{time}}</code> <code>{{notice_link}}</code></p>
+        <div id="email-templates-area"></div>
+    </div>
+
+    <button type="button" class="btn btn-primary" onclick="Admin.saveEmailSettings()" style="margin-bottom:20px;">💾 Save Email Settings</button>
+
+    <!-- Email Log -->
+    <div class="form-card">
+        <h3 style="font-size:.95rem;margin-bottom:12px;">📜 Email Log</h3>
+        <div id="email-log-area"><div class="empty-state">Loading...</div></div>
+    </div>
+</div>
+
+<!-- ═══ ANALYTICS TAB ═══ -->
+<div class="tab-panel" id="tab-analytics">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">📈 Analytics Dashboard</h2>
+
+    <!-- KPIs -->
+    <div class="analytics-grid" id="analytics-kpis">
+        <div class="analytics-kpi"><div class="kpi-val" id="ak-views">—</div><div class="kpi-label">Page Views</div></div>
+        <div class="analytics-kpi"><div class="kpi-val" id="ak-started">—</div><div class="kpi-label">Notices Started</div></div>
+        <div class="analytics-kpi"><div class="kpi-val" id="ak-generated">—</div><div class="kpi-label">Notices Generated</div></div>
+        <div class="analytics-kpi"><div class="kpi-val" id="ak-revenue">—</div><div class="kpi-label">Total Revenue</div></div>
+    </div>
+
+    <!-- Conversion Funnel -->
+    <div class="card" style="margin-bottom:20px;">
+        <h3 style="font-size:.95rem;margin-bottom:16px;">🔄 Conversion Funnel</h3>
+        <div id="funnel-area"><div class="empty-state">No data yet</div></div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="chart-grid" style="margin-bottom:20px;">
+        <div class="chart-card"><h3>Daily Events (Last 30 days)</h3><canvas id="analytics-chart-daily"></canvas></div>
+        <div class="chart-card"><h3>Revenue Trend</h3><canvas id="analytics-chart-revenue"></canvas></div>
+    </div>
+
+    <!-- Category & Tier Breakdown -->
+    <div class="chart-grid">
+        <div class="card">
+            <h3 style="font-size:.9rem;margin-bottom:12px;">📂 Complaint Categories</h3>
+            <ul class="category-list" id="analytics-categories"><li class="empty-state">No data yet</li></ul>
+        </div>
+        <div class="card">
+            <h3 style="font-size:.9rem;margin-bottom:12px;">📊 Tier Breakdown</h3>
+            <canvas id="analytics-chart-tiers"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SUPPORT / TICKETS TAB ═══ -->
+<div class="tab-panel" id="tab-support">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">🎫 Support Tickets</h2>
+
+    <!-- Stats bar -->
+    <div class="ticket-stat-bar" id="ticket-stats-bar">
+        <div class="ticket-stat"><div class="ts-num" id="ts-total">—</div><div class="ts-label">Total</div></div>
+        <div class="ticket-stat"><div class="ts-num" id="ts-open" style="color:var(--orange);">—</div><div class="ts-label">Open</div></div>
+        <div class="ticket-stat"><div class="ts-num" id="ts-progress" style="color:var(--blue);">—</div><div class="ts-label">In Progress</div></div>
+        <div class="ticket-stat"><div class="ts-num" id="ts-resolved" style="color:var(--green);">—</div><div class="ts-label">Resolved</div></div>
+        <div class="ticket-stat"><div class="ts-num" id="ts-closed">—</div><div class="ts-label">Closed</div></div>
+    </div>
+
+    <!-- Filter -->
+    <div class="search-bar" style="margin-bottom:16px;">
+        <select id="ticket-filter" onchange="Admin.filterTickets()" style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:.85rem;">
+            <option value="all">All Tickets</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+        </select>
+    </div>
+
+    <!-- Tickets list -->
+    <div id="tickets-list-area"><div class="empty-state">Loading...</div></div>
+</div>
+
 <!-- ═══ ACTIVITY TAB ═══ -->
 <div class="tab-panel" id="tab-activity">
     <h2 style="font-size:1.15rem;margin-bottom:16px;">🕐 Activity Log</h2>
@@ -1028,6 +1230,53 @@
     </div>
 </div>
 
+<!-- Ticket Detail Modal -->
+<div class="modal-overlay hidden" id="ticket-modal">
+    <div class="modal-box" style="max-width:700px;">
+        <h3 id="ticket-modal-title">Ticket Detail</h3>
+        <div class="ticket-detail-grid" id="ticket-detail-grid"></div>
+        <div class="form-card" style="margin-bottom:12px;">
+            <h4 style="font-size:.82rem;margin-bottom:6px;color:var(--gray-400);">Message</h4>
+            <p id="ticket-message" style="font-size:.88rem;white-space:pre-wrap;"></p>
+        </div>
+        <div class="form-row" style="margin-bottom:12px;">
+            <div class="form-group">
+                <label>Status</label>
+                <select id="ticket-status" style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:.85rem;">
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <select id="ticket-priority" style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:.85rem;">
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+            <label>Admin Notes</label>
+            <textarea id="ticket-admin-notes" rows="2" placeholder="Internal notes (not visible to customer)"></textarea>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="Admin.updateTicket()" style="margin-bottom:16px;">💾 Update Ticket</button>
+        <hr style="border:none;border-top:1px solid var(--gray-200);margin-bottom:12px;">
+        <h4 style="font-size:.88rem;margin-bottom:8px;">Replies</h4>
+        <div id="ticket-replies" class="reply-thread"></div>
+        <div class="form-group" style="margin-top:12px;">
+            <textarea id="ticket-reply-text" rows="3" placeholder="Type your reply..."></textarea>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" onclick="Admin.closeTicketModal()">Close</button>
+            <button type="button" class="btn btn-primary" onclick="Admin.sendTicketReply()">📩 Send Reply</button>
+        </div>
+    </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- CDN SCRIPTS                                                     -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -1139,6 +1388,9 @@ const Admin = (() => {
             pages: loadPages,
             seo: loadSEO,
             aeo: loadAEO,
+            email: loadEmail,
+            analytics: loadAnalytics,
+            support: loadSupport,
             activity: loadActivity,
             lawyer: loadLawyer,
             settings: loadSettings,
@@ -2343,14 +2595,335 @@ const Admin = (() => {
         } catch (err) { showToast('Failed to download PDF', 'error'); }
     }
 
+    /* ── Email / Notifications ────────────────────────── */
+    let emailSettings = {};
+
+    async function loadEmail() {
+        try {
+            const [settingsRes, logRes] = await Promise.all([
+                apiFetch('/api/admin/email/settings'),
+                apiFetch('/api/admin/email/log?limit=50'),
+            ]);
+            emailSettings = await settingsRes.json();
+            const log = await logRes.json();
+            renderEmailSettings(emailSettings);
+            renderEmailTemplates(emailSettings.templates || {});
+            renderEmailLog(log);
+        } catch (err) { showToast('Failed to load email settings', 'error'); }
+    }
+
+    function renderEmailSettings(s) {
+        qs('#em-smtp-host').value = s.smtp_host || '';
+        qs('#em-smtp-port').value = s.smtp_port || 587;
+        qs('#em-smtp-user').value = s.smtp_user || '';
+        qs('#em-smtp-pass').value = s.smtp_password || '';
+        qs('#em-from-name').value = s.from_name || '';
+        qs('#em-from-email').value = s.from_email || '';
+        qs('#em-admin-alert').value = s.admin_alert_email || '';
+        qs('#em-use-tls').checked = s.use_tls !== false;
+        qs('#em-auto-notice').checked = s.auto_send_notice_ready !== false;
+        qs('#em-auto-admin').checked = s.auto_send_admin_alert !== false;
+        qs('#em-followup-days').value = s.follow_up_days || 15;
+    }
+
+    function renderEmailTemplates(templates) {
+        const area = qs('#email-templates-area');
+        const names = { notice_ready: '📬 Notice Ready', payment_receipt: '🧾 Payment Receipt', follow_up: '🔔 Follow-up Reminder', admin_alert: '🚨 Admin Alert' };
+        area.innerHTML = Object.entries(names).map(([key, label]) => {
+            const t = templates[key] || {};
+            return `<div class="email-template-card">
+                <h4>${label}</h4>
+                <div class="form-group"><label>Subject</label><input type="text" id="tpl-${key}-subject" value="${esc(t.subject || '')}"></div>
+                <div class="form-group"><label>Body</label><textarea rows="4" id="tpl-${key}-body" style="font-family:monospace;font-size:.82rem;">${esc(t.body || '')}</textarea></div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderEmailLog(log) {
+        const area = qs('#email-log-area');
+        if (!log || !log.length) { area.innerHTML = '<div class="empty-state">No emails sent yet</div>'; return; }
+        area.innerHTML = '<div class="email-log-row" style="font-weight:600;color:var(--gray-400);font-size:.75rem;"><div>Template</div><div>To</div><div>Subject</div><div>Status</div><div>Time</div></div>' +
+            log.map(e => `<div class="email-log-row">
+                <div>${esc(e.template || '')}</div>
+                <div>${esc(e.to || '')}</div>
+                <div>${esc((e.subject || '').substring(0, 40))}</div>
+                <div><span class="email-status-${e.status === 'sent' ? 'sent' : 'failed'}">${e.status}</span></div>
+                <div>${formatDate(e.timestamp)}</div>
+            </div>`).join('');
+    }
+
+    async function saveEmailSettings() {
+        const templates = {};
+        for (const key of ['notice_ready', 'payment_receipt', 'follow_up', 'admin_alert']) {
+            const subEl = qs(`#tpl-${key}-subject`);
+            const bodyEl = qs(`#tpl-${key}-body`);
+            if (subEl && bodyEl) {
+                templates[key] = { subject: subEl.value, body: bodyEl.value };
+            }
+        }
+        const payload = {
+            smtp_host: qs('#em-smtp-host').value,
+            smtp_port: parseInt(qs('#em-smtp-port').value) || 587,
+            smtp_user: qs('#em-smtp-user').value,
+            smtp_password: qs('#em-smtp-pass').value,
+            from_name: qs('#em-from-name').value,
+            from_email: qs('#em-from-email').value,
+            admin_alert_email: qs('#em-admin-alert').value,
+            use_tls: qs('#em-use-tls').checked,
+            auto_send_notice_ready: qs('#em-auto-notice').checked,
+            auto_send_admin_alert: qs('#em-auto-admin').checked,
+            follow_up_days: parseInt(qs('#em-followup-days').value) || 15,
+            templates,
+        };
+        try {
+            const res = await apiFetch('/api/admin/email/settings', { method: 'PUT', body: JSON.stringify(payload) });
+            if (res.ok) { showToast('Email settings saved', 'success'); }
+            else { showToast('Failed to save', 'error'); }
+        } catch (err) { showToast('Error saving email settings', 'error'); }
+    }
+
+    async function sendTestEmail() {
+        const to = qs('#em-test-to').value.trim();
+        const template = qs('#em-test-template').value;
+        if (!to) { showToast('Enter a recipient email', 'error'); return; }
+        try {
+            const res = await apiFetch('/api/admin/email/test', { method: 'POST', body: JSON.stringify({ to_email: to, template }) });
+            const data = await res.json();
+            if (res.ok) { showToast(data.message || 'Test email sent!', 'success'); loadEmail(); }
+            else { showToast(data.detail || 'Failed to send test email', 'error'); }
+        } catch (err) { showToast('Failed to send test email', 'error'); }
+    }
+
+    /* ── Analytics ──────────────────────────────────────── */
+    let analyticsChartDaily = null, analyticsChartRevenue = null, analyticsChartTiers = null;
+
+    async function loadAnalytics() {
+        try {
+            const res = await apiFetch('/api/admin/analytics');
+            const data = await res.json();
+            renderAnalyticsKPIs(data);
+            renderFunnel(data.funnel);
+            renderAnalyticsCharts(data);
+            renderCategories(data.categories);
+        } catch (err) { showToast('Failed to load analytics', 'error'); }
+    }
+
+    function renderAnalyticsKPIs(d) {
+        qs('#ak-views').textContent = (d.funnel?.page_view || 0).toLocaleString();
+        qs('#ak-started').textContent = (d.funnel?.notice_started || 0).toLocaleString();
+        qs('#ak-generated').textContent = (d.funnel?.notice_generated || 0).toLocaleString();
+        qs('#ak-revenue').textContent = '₹' + (d.revenue_total || 0).toLocaleString();
+    }
+
+    function renderFunnel(f) {
+        const area = qs('#funnel-area');
+        if (!f) { area.innerHTML = '<div class="empty-state">No data yet</div>'; return; }
+        const steps = [
+            ['Page Views', f.page_view || 0, 'lv0'],
+            ['Notices Started', f.notice_started || 0, 'lv1'],
+            ['Notices Generated', f.notice_generated || 0, 'lv2'],
+            ['PDFs Downloaded', f.pdf_downloaded || 0, 'lv3'],
+            ['Payments', f.payment || 0, 'lv4'],
+        ];
+        const max = Math.max(...steps.map(s => s[1]), 1);
+        area.innerHTML = steps.map(([label, count, cls]) => {
+            const pct = Math.max((count / max) * 100, 4);
+            return `<div class="funnel-bar">
+                <div class="funnel-label">${label}</div>
+                <div class="funnel-track"><div class="funnel-fill ${cls}" style="width:${pct}%">${count}</div></div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderAnalyticsCharts(data) {
+        if (typeof Chart === 'undefined') return;
+        const daily = data.daily_trend || {};
+        const dates = Object.keys(daily);
+        const generated = dates.map(d => (daily[d]?.notice_generated || 0));
+        const views = dates.map(d => (daily[d]?.page_view || 0));
+
+        if (analyticsChartDaily) analyticsChartDaily.destroy();
+        analyticsChartDaily = new Chart(qs('#analytics-chart-daily'), {
+            type: 'bar',
+            data: {
+                labels: dates.length ? dates : ['No data'],
+                datasets: [
+                    { label: 'Page Views', data: views.length ? views : [0], backgroundColor: 'rgba(37,99,235,.3)', borderColor: '#2563EB', borderWidth: 1 },
+                    { label: 'Notices', data: generated.length ? generated : [0], backgroundColor: 'rgba(220,38,38,.3)', borderColor: '#DC2626', borderWidth: 1 },
+                ],
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } },
+        });
+
+        // Revenue chart
+        const revDaily = data.revenue_daily || {};
+        const revDates = Object.keys(revDaily);
+        const revVals = Object.values(revDaily);
+        if (analyticsChartRevenue) analyticsChartRevenue.destroy();
+        analyticsChartRevenue = new Chart(qs('#analytics-chart-revenue'), {
+            type: 'line',
+            data: {
+                labels: revDates.length ? revDates : ['No data'],
+                datasets: [{ label: 'Revenue (₹)', data: revVals.length ? revVals : [0], borderColor: '#059669', backgroundColor: 'rgba(5,150,105,.1)', fill: true, tension: 0.3 }],
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+        });
+
+        // Tier doughnut
+        const tiers = data.tier_counts || {};
+        if (analyticsChartTiers) analyticsChartTiers.destroy();
+        analyticsChartTiers = new Chart(qs('#analytics-chart-tiers'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(tiers).length ? Object.keys(tiers).map(t => t === 'lawyer' ? '₹599 Lawyer' : '₹199 Self') : ['No data'],
+                datasets: [{ data: Object.values(tiers).length ? Object.values(tiers) : [1], backgroundColor: ['#DC2626', '#F59E0B', '#2563EB'] }],
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+        });
+    }
+
+    function renderCategories(cats) {
+        const ul = qs('#analytics-categories');
+        const entries = Object.entries(cats || {});
+        if (!entries.length) { ul.innerHTML = '<li class="empty-state">No categories recorded yet</li>'; return; }
+        ul.innerHTML = entries.slice(0, 15).map(([cat, count]) =>
+            `<li><span>${esc(cat)}</span><strong>${count}</strong></li>`
+        ).join('');
+    }
+
+    /* ── Support Tickets ────────────────────────────────── */
+    let ticketsCache = [];
+    let currentTicketId = null;
+
+    async function loadSupport() {
+        try {
+            const [ticketsRes, statsRes] = await Promise.all([
+                apiFetch('/api/admin/tickets'),
+                apiFetch('/api/admin/tickets/stats'),
+            ]);
+            ticketsCache = await ticketsRes.json();
+            const stats = await statsRes.json();
+            renderTicketStats(stats);
+            renderTicketsList(ticketsCache);
+        } catch (err) { showToast('Failed to load tickets', 'error'); }
+    }
+
+    function renderTicketStats(s) {
+        qs('#ts-total').textContent = s.total || 0;
+        qs('#ts-open').textContent = s.open || 0;
+        qs('#ts-progress').textContent = s.in_progress || 0;
+        qs('#ts-resolved').textContent = s.resolved || 0;
+        qs('#ts-closed').textContent = s.closed || 0;
+    }
+
+    function ticketBadge(status) {
+        const cls = { open: 'badge-open', in_progress: 'badge-in-progress', resolved: 'badge-resolved', closed: 'badge-closed' };
+        const labels = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' };
+        return `<span class="${cls[status] || 'badge-open'}">${labels[status] || status}</span>`;
+    }
+
+    function renderTicketsList(tickets) {
+        const area = qs('#tickets-list-area');
+        if (!tickets || !tickets.length) { area.innerHTML = '<div class="empty-state">No support tickets yet</div>'; return; }
+        area.innerHTML = `<table class="data-table"><thead><tr>
+            <th>ID</th><th>Subject</th><th>From</th><th>Category</th><th>Status</th><th>Priority</th><th>Date</th>
+        </tr></thead><tbody>` +
+            tickets.map(t => `<tr style="cursor:pointer" onclick="Admin.openTicket('${t.id}')">
+                <td style="font-family:monospace;font-size:.78rem;">${t.id}</td>
+                <td>${esc(t.subject)}</td>
+                <td>${esc(t.name)}<br><small style="color:var(--gray-400)">${esc(t.email)}</small></td>
+                <td>${esc(t.category)}</td>
+                <td>${ticketBadge(t.status)}</td>
+                <td>${esc(t.priority || 'normal')}</td>
+                <td>${formatDate(t.created_at)}</td>
+            </tr>`).join('') +
+            '</tbody></table>';
+    }
+
+    function filterTickets() {
+        const f = qs('#ticket-filter').value;
+        const filtered = f === 'all' ? ticketsCache : ticketsCache.filter(t => t.status === f);
+        renderTicketsList(filtered);
+    }
+
+    async function openTicket(ticketId) {
+        try {
+            const res = await apiFetch(`/api/admin/tickets/${ticketId}`);
+            const t = await res.json();
+            currentTicketId = ticketId;
+            qs('#ticket-modal-title').textContent = `🎫 Ticket #${t.id}`;
+            qs('#ticket-detail-grid').innerHTML = `
+                <div class="td-card"><h4>From</h4><p>${esc(t.name)}<br>${esc(t.email)}</p></div>
+                <div class="td-card"><h4>Category</h4><p>${esc(t.category)}</p></div>
+                <div class="td-card"><h4>Notice ID</h4><p>${t.notice_id ? esc(t.notice_id) : '—'}</p></div>
+            `;
+            qs('#ticket-message').textContent = t.message || '';
+            qs('#ticket-status').value = t.status || 'open';
+            qs('#ticket-priority').value = t.priority || 'normal';
+            qs('#ticket-admin-notes').value = t.admin_notes || '';
+            renderTicketReplies(t.replies || []);
+            qs('#ticket-reply-text').value = '';
+            qs('#ticket-modal').classList.remove('hidden');
+        } catch (err) { showToast('Failed to load ticket', 'error'); }
+    }
+
+    function renderTicketReplies(replies) {
+        const el = qs('#ticket-replies');
+        if (!replies.length) { el.innerHTML = '<div class="empty-state" style="font-size:.82rem;">No replies yet</div>'; return; }
+        el.innerHTML = replies.map(r =>
+            `<div class="reply-bubble ${r.from === 'admin' ? 'admin' : 'customer'}">
+                <div>${esc(r.message)}</div>
+                <div class="reply-meta">${r.from === 'admin' ? '👨‍💼 Admin' : '👤 Customer'} · ${formatDate(r.timestamp)}</div>
+            </div>`
+        ).join('');
+    }
+
+    async function updateTicket() {
+        if (!currentTicketId) return;
+        const payload = {
+            status: qs('#ticket-status').value,
+            priority: qs('#ticket-priority').value,
+            admin_notes: qs('#ticket-admin-notes').value,
+        };
+        try {
+            const res = await apiFetch(`/api/admin/tickets/${currentTicketId}`, { method: 'PUT', body: JSON.stringify(payload) });
+            if (res.ok) { showToast('Ticket updated', 'success'); loadSupport(); }
+            else { showToast('Failed to update', 'error'); }
+        } catch (err) { showToast('Error updating ticket', 'error'); }
+    }
+
+    async function sendTicketReply() {
+        if (!currentTicketId) return;
+        const msg = qs('#ticket-reply-text').value.trim();
+        if (!msg) { showToast('Type a reply first', 'error'); return; }
+        try {
+            const res = await apiFetch(`/api/admin/tickets/${currentTicketId}/reply`, {
+                method: 'POST', body: JSON.stringify({ message: msg, from_who: 'admin' }),
+            });
+            if (res.ok) {
+                const t = await res.json();
+                renderTicketReplies(t.replies || []);
+                qs('#ticket-reply-text').value = '';
+                showToast('Reply sent', 'success');
+            } else { showToast('Failed to send reply', 'error'); }
+        } catch (err) { showToast('Error sending reply', 'error'); }
+    }
+
+    function closeTicketModal() {
+        qs('#ticket-modal').classList.add('hidden');
+        currentTicketId = null;
+    }
+
     /* ── Modal helpers (Escape key + backdrop click) ────── */
     function closeAllModals() {
         qs('#notice-modal')?.classList.add('hidden');
         qs('#blog-modal')?.classList.add('hidden');
         qs('#page-modal')?.classList.add('hidden');
+        qs('#ticket-modal')?.classList.add('hidden');
         currentNoticeId = null;
         editingSlug = null;
         editingPage = null;
+        currentTicketId = null;
     }
 
     /* ── Init ────────────────────────────────────────────── */
@@ -2399,6 +2972,8 @@ const Admin = (() => {
         saveLawyer,
         changePassword, saveApiBase, clearApiBase,
         downloadDbPdf,
+        saveEmailSettings, sendTestEmail,
+        filterTickets, openTicket, updateTicket, sendTicketReply, closeTicketModal,
     };
 })();
 </script>

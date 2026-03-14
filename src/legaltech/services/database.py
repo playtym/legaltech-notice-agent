@@ -1,13 +1,17 @@
 """SQLite database for persisting users, notices, analysis outputs, and activity.
 
-Uses aiosqlite for async access. The DB file is stored at <project_root>/data/lawly.db.
-All existing JSON-file store functionality is preserved — this adds structured persistence
-for the full pipeline output including all interim model results.
+Uses aiosqlite for async access.  When DATA_BUCKET is set the DB file is
+downloaded from S3 on first connect and flushed back after every mutating
+commit so data survives App Runner re-deploys.
+
+Locally the DB lives at <project_root>/data/lawly.db.
 """
 
 from __future__ import annotations
 
 import json
+import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,10 +19,58 @@ from typing import Any
 
 import aiosqlite
 
+_logger = logging.getLogger(__name__)
+
 _DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
 _DB_PATH = _DATA_DIR / "lawly.db"
 
 _db: aiosqlite.Connection | None = None
+
+# ── S3 persistence ───────────────────────────────────────────────────
+
+_DATA_BUCKET: str | None = os.getenv("DATA_BUCKET")
+_S3_DB_KEY = "data/lawly.db"
+_s3 = None
+
+
+def _get_s3():
+    global _s3
+    if _s3 is None:
+        import boto3
+        _s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-south-1"))
+    return _s3
+
+
+def _download_db_from_s3() -> None:
+    """Download the SQLite DB from S3 into the local data dir (cold start)."""
+    if not _DATA_BUCKET:
+        return
+    _DATA_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        _get_s3().download_file(_DATA_BUCKET, _S3_DB_KEY, str(_DB_PATH))
+        _logger.info("Downloaded DB from s3://%s/%s", _DATA_BUCKET, _S3_DB_KEY)
+    except _get_s3().exceptions.ClientError as exc:
+        if exc.response["Error"]["Code"] == "404":
+            _logger.info("No existing DB in S3 — will create fresh")
+        else:
+            _logger.exception("S3 download failed")
+    except Exception:
+        _logger.exception("S3 download failed")
+
+
+def _upload_db_to_s3() -> None:
+    """Checkpoint WAL into the main DB file, then upload to S3."""
+    if not _DATA_BUCKET:
+        return
+    try:
+        # Checkpoint merges WAL data into the main .db so we only upload one file
+        import sqlite3
+        conn = sqlite3.connect(str(_DB_PATH))
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        conn.close()
+        _get_s3().upload_file(str(_DB_PATH), _DATA_BUCKET, _S3_DB_KEY)
+    except Exception:
+        _logger.exception("S3 upload failed for DB")
 
 
 def _now() -> str:
@@ -30,6 +82,7 @@ async def get_db() -> aiosqlite.Connection:
     global _db
     if _db is None:
         _DATA_DIR.mkdir(parents=True, exist_ok=True)
+        _download_db_from_s3()          # pull latest from S3 on cold start
         _db = await aiosqlite.connect(str(_DB_PATH))
         _db.row_factory = aiosqlite.Row
         await _db.execute("PRAGMA journal_mode=WAL")
@@ -38,9 +91,16 @@ async def get_db() -> aiosqlite.Connection:
     return _db
 
 
+async def _commit_and_sync(db: aiosqlite.Connection) -> None:
+    """Commit the current transaction and upload the DB to S3."""
+    await db.commit()
+    _upload_db_to_s3()
+
+
 async def close_db() -> None:
     global _db
     if _db is not None:
+        _upload_db_to_s3()              # final flush
         await _db.close()
         _db = None
 
@@ -165,7 +225,7 @@ async def _init_tables(db: aiosqlite.Connection) -> None:
     await db.executescript(_SCHEMA)
     # Migration: add generated_pdfs table if upgrading from old schema
     # (handled by CREATE TABLE IF NOT EXISTS in _SCHEMA)
-    await db.commit()
+    await _commit_and_sync(db)
 
 
 # ── Users ────────────────────────────────────────────────────────────
@@ -180,14 +240,14 @@ async def upsert_user(full_name: str, email: str, phone: str | None = None, addr
             "UPDATE users SET full_name=?, phone=?, address=? WHERE id=?",
             (full_name, phone, address, user_id),
         )
-        await db.commit()
+        await _commit_and_sync(db)
         return user_id
     user_id = uuid.uuid4().hex[:12]
     await db.execute(
         "INSERT INTO users (id, full_name, email, phone, address, created_at) VALUES (?,?,?,?,?,?)",
         (user_id, full_name, email, phone, address, _now()),
     )
-    await db.commit()
+    await _commit_and_sync(db)
     return user_id
 
 
@@ -247,7 +307,7 @@ async def save_analysis(
             _now(),
         ),
     )
-    await db.commit()
+    await _commit_and_sync(db)
     return aid
 
 
@@ -307,7 +367,7 @@ async def save_notice_full(
             packet.get("generated_at"),
         ),
     )
-    await db.commit()
+    await _commit_and_sync(db)
     return nid
 
 
@@ -356,7 +416,7 @@ async def update_notice_status_db(notice_id: str, status: str, reviewer_notes: s
         "UPDATE notices SET status=?, reviewed_at=?, reviewer_notes=? WHERE id=?",
         (status, _now(), reviewer_notes, notice_id),
     )
-    await db.commit()
+    await _commit_and_sync(db)
     return await get_notice_db(notice_id)
 
 
@@ -372,7 +432,7 @@ async def save_document(
         "INSERT INTO documents (id, notice_id, user_id, filename, content_type, size_bytes, uploaded_at) VALUES (?,?,?,?,?,?,?)",
         (doc_id, notice_id, user_id, filename, content_type, size_bytes, _now()),
     )
-    await db.commit()
+    await _commit_and_sync(db)
     return doc_id
 
 
@@ -393,7 +453,7 @@ async def store_pdf(notice_id: str, pdf_bytes: bytes, filename: str = "Legal_Not
     await db.execute(
         "UPDATE notices SET pdf_stored=1 WHERE id=?", (notice_id,),
     )
-    await db.commit()
+    await _commit_and_sync(db)
     return pid
 
 
@@ -433,7 +493,7 @@ async def log_activity_db(action: str, details: str = "", entity_type: str = "",
         "INSERT INTO activity_log (id, action, details, entity_type, entity_id, created_at) VALUES (?,?,?,?,?,?)",
         (lid, action, details, entity_type, entity_id, _now()),
     )
-    await db.commit()
+    await _commit_and_sync(db)
     return lid
 
 

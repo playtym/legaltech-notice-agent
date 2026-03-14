@@ -21,3 +21,5 @@ run:
       value: "30"
     - name: LEGALTECH_USER_AGENT
       value: "Lawly/0.2 (+https://lawly.store)"
+    - name: DATA_BUCKET
+      value: "lawly-data-prod"

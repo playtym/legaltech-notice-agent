@@ -374,6 +374,17 @@ async def create_notice_typed(payload: NoticeRequest):
             import logging
             logging.getLogger(__name__).warning("DB save failed (non-fatal)", exc_info=True)
 
+        # ── Track analytics event ────────────────────────────────
+        try:
+            notice_store.track_event("notice_generated", {
+                "notice_id": notice_id,
+                "tier": tier_val,
+                "company": company_label,
+                "category": getattr(packet, "category", "") or "",
+            })
+        except Exception:
+            pass
+
         return result
     except Exception as exc:
         logger.exception("Pipeline failed")
@@ -1783,6 +1794,226 @@ async def download_db_pdf(notice_id: str, _=Depends(require_admin)):
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── Email / Notification Management ─────────────────────────────────
+
+class EmailSettingsUpdate(BaseModel):
+    smtp_host: str | None = None
+    smtp_port: int | None = None
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    from_name: str | None = None
+    from_email: str | None = None
+    use_tls: bool | None = None
+    admin_alert_email: str | None = None
+    templates: dict | None = None
+    auto_send_notice_ready: bool | None = None
+    auto_send_admin_alert: bool | None = None
+    follow_up_days: int | None = None
+
+
+class SendTestEmailRequest(BaseModel):
+    to_email: str
+    template: str = "notice_ready"
+
+
+@app.get("/api/admin/email/settings")
+async def get_email_settings(_=Depends(require_admin)):
+    settings = notice_store.get_email_settings()
+    # Mask password for security
+    if settings.get("smtp_password"):
+        settings["smtp_password"] = "••••••••"
+    return settings
+
+
+@app.put("/api/admin/email/settings")
+async def save_email_settings(body: EmailSettingsUpdate, _=Depends(require_admin)):
+    data = {k: v for k, v in body.model_dump().items() if v is not None}
+    # Don't save masked password
+    if data.get("smtp_password") == "••••••••":
+        del data["smtp_password"]
+    result = notice_store.save_email_settings(data)
+    notice_store.log_activity("Updated email settings", "", "email")
+    # Mask in response
+    if result.get("smtp_password"):
+        result["smtp_password"] = "••••••••"
+    return result
+
+
+@app.get("/api/admin/email/log")
+async def get_email_log(limit: int = 100, _=Depends(require_admin)):
+    return notice_store.get_email_log(limit)
+
+
+@app.post("/api/admin/email/test")
+async def send_test_email(body: SendTestEmailRequest, _=Depends(require_admin)):
+    """Send a test email using current SMTP settings."""
+    settings = notice_store.get_email_settings()
+    if not settings.get("smtp_user") or not settings.get("from_email"):
+        raise HTTPException(status_code=400, detail="SMTP not configured. Set host, user, password, from_email first.")
+    try:
+        from legaltech.services.email_service import send_notice_email
+        # Use stored SMTP settings by setting env vars temporarily
+        import os
+        os.environ["SMTP_HOST"] = settings.get("smtp_host", "")
+        os.environ["SMTP_PORT"] = str(settings.get("smtp_port", 587))
+        os.environ["SMTP_USER"] = settings.get("smtp_user", "")
+        os.environ["SMTP_PASSWORD"] = settings.get("smtp_password", "")
+        os.environ["NOTICE_FROM_NAME"] = settings.get("from_name", "Lawly")
+        os.environ["NOTICE_FROM_EMAIL"] = settings.get("from_email", "")
+        os.environ["SMTP_USE_TLS"] = "true" if settings.get("use_tls", True) else "false"
+
+        template = settings.get("templates", {}).get(body.template, {})
+        subject = template.get("subject", f"Test Email — {body.template}").replace("{{name}}", "Test User").replace("{{company}}", "Test Co")
+        body_text = template.get("body", "This is a test email from Lawly admin.").replace("{{name}}", "Test User").replace("{{company}}", "Test Co").replace("{{notice_id}}", "TEST123").replace("{{amount}}", "₹199").replace("{{tier}}", "self_send").replace("{{days}}", "15").replace("{{time}}", "now").replace("{{email}}", body.to_email).replace("{{notice_link}}", "https://lawly.store")
+
+        result = send_notice_email(
+            to_email=body.to_email,
+            to_name="Test User",
+            subject=subject,
+            body_text=body_text,
+            pdf_bytes=b"",
+            pdf_filename="",
+        )
+        status = "sent" if result.success else "failed"
+        notice_store.log_email({
+            "to": body.to_email,
+            "subject": subject,
+            "template": f"test_{body.template}",
+            "status": status,
+            "error": "" if result.success else result.message,
+        })
+        if result.success:
+            return {"ok": True, "message": f"Test email sent to {body.to_email}"}
+        raise HTTPException(status_code=500, detail=result.message)
+    except HTTPException:
+        raise
+    except Exception as e:
+        notice_store.log_email({
+            "to": body.to_email,
+            "subject": "Test email",
+            "template": f"test_{body.template}",
+            "status": "failed",
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500, detail=f"Failed to send: {e}")
+
+
+# ── Analytics ────────────────────────────────────────────────────────
+
+class TrackEventRequest(BaseModel):
+    event: str
+    data: dict | None = None
+
+
+@app.post("/api/track")
+async def track_event(body: TrackEventRequest):
+    """Public endpoint to track funnel events from the frontend."""
+    allowed = {"page_view", "notice_started", "notice_generated", "pdf_downloaded", "payment"}
+    if body.event not in allowed:
+        raise HTTPException(status_code=400, detail="Invalid event type")
+    return notice_store.track_event(body.event, body.data or {})
+
+
+@app.get("/api/admin/analytics")
+async def get_analytics(_=Depends(require_admin)):
+    """Return analytics summary for the admin dashboard."""
+    return notice_store.get_analytics_summary()
+
+
+@app.get("/api/admin/analytics/events")
+async def get_analytics_events(limit: int = 200, _=Depends(require_admin)):
+    return notice_store.get_analytics_events(limit)
+
+
+# ── Support / Contact Tickets ────────────────────────────────────────
+
+class CreateTicketRequest(BaseModel):
+    name: str
+    email: str
+    subject: str
+    message: str
+    category: str = "general"
+    notice_id: str = ""
+
+
+class UpdateTicketRequest(BaseModel):
+    status: str | None = None
+    priority: str | None = None
+    admin_notes: str | None = None
+
+
+class TicketReplyRequest(BaseModel):
+    message: str
+    from_who: str = "admin"
+
+
+@app.post("/api/contact")
+async def create_support_ticket(body: CreateTicketRequest):
+    """Public endpoint — anyone can submit a support ticket."""
+    ticket = notice_store.create_ticket(body.model_dump())
+    notice_store.log_activity("New support ticket", f"{body.subject} from {body.email}", "ticket", ticket["id"])
+    # Send admin alert email if configured
+    email_settings = notice_store.get_email_settings()
+    if email_settings.get("admin_alert_email") and email_settings.get("smtp_user"):
+        try:
+            from legaltech.services.email_service import send_notice_email
+            import os
+            os.environ["SMTP_HOST"] = email_settings.get("smtp_host", "")
+            os.environ["SMTP_PORT"] = str(email_settings.get("smtp_port", 587))
+            os.environ["SMTP_USER"] = email_settings.get("smtp_user", "")
+            os.environ["SMTP_PASSWORD"] = email_settings.get("smtp_password", "")
+            os.environ["NOTICE_FROM_NAME"] = email_settings.get("from_name", "Lawly")
+            os.environ["NOTICE_FROM_EMAIL"] = email_settings.get("from_email", "")
+            send_notice_email(
+                to_email=email_settings["admin_alert_email"],
+                to_name="Admin",
+                subject=f"[Lawly Support] {body.subject}",
+                body_text=f"New support ticket from {body.name} ({body.email}):\n\nCategory: {body.category}\n\n{body.message}",
+                pdf_bytes=b"",
+                pdf_filename="",
+            )
+        except Exception:
+            logger.warning("Admin alert email failed", exc_info=True)
+    return {"ok": True, "ticket_id": ticket["id"], "message": "Ticket submitted successfully"}
+
+
+@app.get("/api/admin/tickets")
+async def list_tickets(_=Depends(require_admin)):
+    return notice_store.get_all_tickets()
+
+
+@app.get("/api/admin/tickets/stats")
+async def ticket_stats(_=Depends(require_admin)):
+    return notice_store.get_ticket_stats()
+
+
+@app.get("/api/admin/tickets/{ticket_id}")
+async def get_ticket(ticket_id: str, _=Depends(require_admin)):
+    ticket = notice_store.get_ticket(ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    return ticket
+
+
+@app.put("/api/admin/tickets/{ticket_id}")
+async def update_ticket(ticket_id: str, body: UpdateTicketRequest, _=Depends(require_admin)):
+    data = {k: v for k, v in body.model_dump().items() if v is not None}
+    ticket = notice_store.update_ticket(ticket_id, data)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    notice_store.log_activity("Updated ticket", f"#{ticket_id} → {data.get('status', '')}", "ticket", ticket_id)
+    return ticket
+
+
+@app.post("/api/admin/tickets/{ticket_id}/reply")
+async def reply_to_ticket(ticket_id: str, body: TicketReplyRequest, _=Depends(require_admin)):
+    ticket = notice_store.add_ticket_reply(ticket_id, {"from": body.from_who, "message": body.message})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    notice_store.log_activity("Replied to ticket", f"#{ticket_id}", "ticket", ticket_id)
+    return ticket
 
 
 # ── 301 Redirect handler (catch-all, must be last) ──────────────────
