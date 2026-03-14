@@ -11,6 +11,7 @@ import os
 from typing import Any
 
 import anthropic
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +33,17 @@ class LLMService:
 
         if use_bedrock:
             self.model_name = os.getenv("BEDROCK_MODEL_ID", _BEDROCK_MODEL)
-            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
+            self.client = anthropic.AsyncAnthropicBedrock(
+                aws_region=aws_region,
+                timeout=httpx.Timeout(120.0, connect=10.0),
+            )
             logger.info("LLM: using Bedrock in %s, model=%s", aws_region, self.model_name)
         else:
             self.model_name = model_name or _DEFAULT_MODEL
-            self.client = anthropic.AsyncAnthropic(api_key=api_key)
+            self.client = anthropic.AsyncAnthropic(
+                api_key=api_key,
+                timeout=httpx.Timeout(120.0, connect=10.0),
+            )
             logger.info("LLM: using direct Anthropic API, model=%s", self.model_name)
 
     def fast_copy(self, fast_model: str | None = None) -> "LLMService":

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from datetime import datetime
@@ -174,32 +175,45 @@ class LegalNoticePipeline:
 
         if complaint_ctx.website:
             website = str(complaint_ctx.website)
-            try:
-                contacts = await self.contacts.run(website=website, web=self.web)
-                contacts_found = [c.email or c.phone or "" for c in contacts if c.email or c.phone]
-            except Exception as exc:
-                logger.warning("Contact discovery failed (non-fatal): %s", exc)
-            try:
-                policies = await self.policy.run(
-                    website=website,
-                    web=self.web,
-                    issue_summary=complaint_ctx.issue_summary,
-                    company_name_hint=complaint_ctx.company_name_hint,
-                )
-                policies_found = [p.title for p in policies]
-            except Exception as exc:
-                logger.warning("Policy scraping failed (non-fatal): %s", exc)
-            try:
-                respondent_identity = await self.respondent_id.run(
-                    website=website,
-                    company_name_hint=complaint_ctx.company_name_hint,
-                    web=self.web,
-                )
-                respondent_found = bool(
-                    respondent_identity and (respondent_identity.cin or respondent_identity.registered_name)
-                )
-            except Exception as exc:
-                logger.warning("Respondent ID lookup failed (non-fatal): %s", exc)
+
+            async def _fetch_contacts():
+                try:
+                    contacts = await self.contacts.run(website=website, web=self.web)
+                    return [c.email or c.phone or "" for c in contacts if c.email or c.phone]
+                except Exception as exc:
+                    logger.warning("Contact discovery failed (non-fatal): %s", exc)
+                    return []
+
+            async def _fetch_policies():
+                try:
+                    policies = await self.policy.run(
+                        website=website,
+                        web=self.web,
+                        issue_summary=complaint_ctx.issue_summary,
+                        company_name_hint=complaint_ctx.company_name_hint,
+                    )
+                    return [p.title for p in policies]
+                except Exception as exc:
+                    logger.warning("Policy scraping failed (non-fatal): %s", exc)
+                    return []
+
+            async def _fetch_respondent():
+                try:
+                    return await self.respondent_id.run(
+                        website=website,
+                        company_name_hint=complaint_ctx.company_name_hint,
+                        web=self.web,
+                    )
+                except Exception as exc:
+                    logger.warning("Respondent ID lookup failed (non-fatal): %s", exc)
+                    return None
+
+            contacts_found, policies_found, respondent_identity = await asyncio.gather(
+                _fetch_contacts(), _fetch_policies(), _fetch_respondent(),
+            )
+            respondent_found = bool(
+                respondent_identity and (respondent_identity.cin or respondent_identity.registered_name)
+            )
 
         # Run Claude-powered gap analysis
         gap_result = await self.gap_analysis.run(
@@ -264,27 +278,40 @@ class LegalNoticePipeline:
         respondent_identity = None
         if complaint_ctx.website:
             website = str(complaint_ctx.website)
-            try:
-                contacts = await self.contacts.run(website=website, web=self.web)
-            except Exception as exc:
-                logger.warning("Contact discovery failed (non-fatal): %s", exc)
-            try:
-                policies = await self.policy.run(
-                    website=website,
-                    web=self.web,
-                    issue_summary=complaint_ctx.issue_summary,
-                    company_name_hint=complaint_ctx.company_name_hint,
-                )
-            except Exception as exc:
-                logger.warning("Policy scraping failed (non-fatal): %s", exc)
-            try:
-                respondent_identity = await self.respondent_id.run(
-                    website=website,
-                    company_name_hint=complaint_ctx.company_name_hint,
-                    web=self.web,
-                )
-            except Exception as exc:
-                logger.warning("Respondent ID lookup failed (non-fatal): %s", exc)
+
+            async def _fetch_contacts():
+                try:
+                    return await self.contacts.run(website=website, web=self.web)
+                except Exception as exc:
+                    logger.warning("Contact discovery failed (non-fatal): %s", exc)
+                    return []
+
+            async def _fetch_policies():
+                try:
+                    return await self.policy.run(
+                        website=website,
+                        web=self.web,
+                        issue_summary=complaint_ctx.issue_summary,
+                        company_name_hint=complaint_ctx.company_name_hint,
+                    )
+                except Exception as exc:
+                    logger.warning("Policy scraping failed (non-fatal): %s", exc)
+                    return []
+
+            async def _fetch_respondent():
+                try:
+                    return await self.respondent_id.run(
+                        website=website,
+                        company_name_hint=complaint_ctx.company_name_hint,
+                        web=self.web,
+                    )
+                except Exception as exc:
+                    logger.warning("Respondent ID lookup failed (non-fatal): %s", exc)
+                    return None
+
+            contacts, policies, respondent_identity = await asyncio.gather(
+                _fetch_contacts(), _fetch_policies(), _fetch_respondent(),
+            )
 
         legal_analysis = await self.legal.run(
             complaint=complaint_ctx,
@@ -292,7 +319,7 @@ class LegalNoticePipeline:
             normalized_issue=intake.normalized_issue,
         )
 
-        # ── Element-by-element claim checks ──────────────────────────
+        # ── Run independent analysis agents in parallel ────────────────
         corpus = " ".join([
             complaint.issue_summary,
             complaint_ctx.desired_resolution,
@@ -301,64 +328,86 @@ class LegalNoticePipeline:
             " ".join(complaint_ctx.evidence),
             " ".join(e.excerpt for e in policies),
         ])
-        claim_results = await self.claim_elements.run(
-            plausible_sections=legal_analysis.plausible_sections,
-            corpus=corpus,
-        )
 
-        # ── Evidence consistency scoring ─────────────────────────────
-        evidence_score = await self.evidence_scoring.run(
-            complaint=complaint_ctx,
-            normalized_issue=intake.normalized_issue,
-        )
-
-        # ── Limitation period check ──────────────────────────────────
-        limitation_result = await self.limitation_agent.run(
-            timeline=complaint_ctx.timeline,
-            issue_summary=complaint_ctx.issue_summary,
-        )
-
-        # ── Arbitration clause detection ─────────────────────────────
-        arbitration_result = await self.arbitration.run(policy_evidence=policies)
-
-        # ── T&C counter-arguments (preemptive defense rebuttal) ──────
-        tc_counter_result = await self.tc_counter.run(
-            policy_evidence=policies,
-            issue_summary=complaint_ctx.issue_summary,
-        )
-
-        # ── Jurisdiction / forum determination ───────────────────────
-        jurisdiction_result = await self.jurisdiction_agent.run(
-            complainant_address=complaint_ctx.complainant.address,
-            issue_summary=complaint_ctx.issue_summary,
-            desired_resolution=complaint_ctx.desired_resolution,
-            timeline=complaint_ctx.timeline,
-            evidence=complaint_ctx.evidence,
-        )
-
-        # ── Dynamic cure period ──────────────────────────────────────
         cc = customer_controls or {}
-        if cc.get("cure_period_days"):
-            cure_days = cc["cure_period_days"]
-            cure_rationale = f"{cure_days} days (as specified by complainant)"
-        else:
-            cure_days, cure_rationale = await self.cure_period_agent.run(
+
+        async def _claim():
+            return await self.claim_elements.run(
+                plausible_sections=legal_analysis.plausible_sections,
+                corpus=corpus,
+            )
+
+        async def _evidence():
+            return await self.evidence_scoring.run(
+                complaint=complaint_ctx,
+                normalized_issue=intake.normalized_issue,
+            )
+
+        async def _limitation():
+            return await self.limitation_agent.run(
+                timeline=complaint_ctx.timeline,
+                issue_summary=complaint_ctx.issue_summary,
+            )
+
+        async def _arbitration():
+            return await self.arbitration.run(policy_evidence=policies)
+
+        async def _tc_counter():
+            return await self.tc_counter.run(
+                policy_evidence=policies,
+                issue_summary=complaint_ctx.issue_summary,
+            )
+
+        async def _jurisdiction():
+            return await self.jurisdiction_agent.run(
+                complainant_address=complaint_ctx.complainant.address,
+                issue_summary=complaint_ctx.issue_summary,
+                desired_resolution=complaint_ctx.desired_resolution,
+                timeline=complaint_ctx.timeline,
+                evidence=complaint_ctx.evidence,
+            )
+
+        async def _cure_period():
+            if cc.get("cure_period_days"):
+                return cc["cure_period_days"], f"{cc['cure_period_days']} days (as specified by complainant)"
+            return await self.cure_period_agent.run(
                 issue_summary=complaint_ctx.issue_summary,
                 timeline_length=len(complaint_ctx.timeline),
                 timeline=complaint_ctx.timeline,
             )
 
-        # ── Escalation strategy (pressure tactics) ────────────────
-        escalation_result = await self.escalation.run(
-            complaint=complaint_ctx,
-            company=company,
-            policies=policies,
-            contacts_found=len(contacts),
-            respondent_identity_found=bool(
-                respondent_identity and (respondent_identity.cin or respondent_identity.registered_name)
-            ),
-            evidence_count=len(complaint_ctx.evidence),
+        async def _escalation():
+            return await self.escalation.run(
+                complaint=complaint_ctx,
+                company=company,
+                policies=policies,
+                contacts_found=len(contacts),
+                respondent_identity_found=bool(
+                    respondent_identity and (respondent_identity.cin or respondent_identity.registered_name)
+                ),
+                evidence_count=len(complaint_ctx.evidence),
+            )
+
+        (
+            claim_results,
+            evidence_score,
+            limitation_result,
+            arbitration_result,
+            tc_counter_result,
+            jurisdiction_result,
+            cure_result,
+            escalation_result,
+        ) = await asyncio.gather(
+            _claim(),
+            _evidence(),
+            _limitation(),
+            _arbitration(),
+            _tc_counter(),
+            _jurisdiction(),
+            _cure_period(),
+            _escalation(),
         )
+        cure_days, cure_rationale = cure_result
 
         # ── Notice draft ─────────────────────────────────────────────
         legal_notice = await self.notice.run(

@@ -127,9 +127,6 @@ const App = (() => {
             candidates.push(window.location.origin.replace(/\/$/, ''));
         } else {
             candidates.push(API_BACKEND.replace(/\/$/, ''));
-            // Direct CloudFront proxy fallback in case DNS hasn't propagated
-            candidates.push('https://d1exs4vnzimint.cloudfront.net');
-            candidates.push(window.location.origin.replace(/\/$/, ''));
         }
 
         return [...new Set(candidates)];
@@ -193,16 +190,18 @@ const App = (() => {
         for (const base of candidates) {
             try {
                 const res = await fetch(`${base}${path}`, options);
+
+                // Even on 200, reject if response is clearly not from the API
+                // (e.g. S3/CloudFront SPA fallback returning index.html).
+                if (isWrongOriginResponse(base, path, res)) {
+                    lastResponse = res;
+                    continue;
+                }
+
                 if (res.ok) {
                     // Persist the working origin so subsequent calls are fast.
                     localStorage.setItem('legaltech_api_base', base);
                     return res;
-                }
-
-                // Wrong-origin signatures: keep trying next candidate.
-                if (isWrongOriginResponse(base, path, res)) {
-                    lastResponse = res;
-                    continue;
                 }
 
                 // For valid API-origin client errors (e.g. 400/422), return response.
@@ -213,12 +212,7 @@ const App = (() => {
 
                 // 500+ server errors from the right origin: return immediately,
                 // don't waste time trying other candidates.
-                if (!isWrongOriginResponse(base, path, res)) {
-                    return res;
-                }
-
-                lastResponse = res;
-                lastError = new Error(`Server error: ${res.status} from ${base}`);
+                return res;
             } catch (err) {
                 lastError = err;
             }
@@ -635,12 +629,17 @@ const App = (() => {
             upload_ids: getUploadIds(),
         };
 
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 180000); // 3 min
+
         try {
             const res = await apiFetch('/notice/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
+                signal: controller.signal,
             });
+            clearTimeout(timeout);
             if (!res.ok) {
                 const msg = await responseErrorMessage(res, `Analyze failed (${res.status})`);
                 throw new Error(msg);
@@ -649,8 +648,18 @@ const App = (() => {
             renderAnalysis();
             goTo(5);
         } catch (err) {
+            clearTimeout(timeout);
             goTo(3);
-            showError(err?.message || 'Could not analyze your case right now. Please try again.');
+            if (err?.name === 'AbortError') {
+                showError('Analysis timed out — the server is under heavy load. Please try again.');
+            } else {
+                const msg = err?.message || '';
+                if (/expected pattern|unexpected token|timeout|504|502/i.test(msg)) {
+                    showError('Analysis is taking longer than expected. Our servers are processing complex legal research — please try again in a moment.');
+                } else {
+                    showError(msg || 'Could not analyze your case right now. Please try again.');
+                }
+            }
         }
     }
 
