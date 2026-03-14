@@ -3,215 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lawly AI — Autonomous Legal Agent</title>
-    <meta name="description" content="Generate a professional AI-powered legal notice in minutes. Backed by 15+ Indian consumer protection statutes. No lawyer needed for the first step. Starting at ₹199.">
-    <meta name="keywords" content="legal notice generator, consumer complaint India, CPA 2019, consumer protection, legal notice online, consumer court notice, AI legal notice">
+    <title>Lawly — AI Legal Notice Generator</title>
+    <meta name="description" content="Generate a professional AI-powered legal notice in minutes. Backed by 15+ Indian consumer protection statutes. Starting at ₹199.">
+    <meta name="keywords" content="legal notice generator, consumer complaint India, CPA 2019, consumer protection, legal notice online, AI legal notice">
     <link rel="canonical" href="https://lawly.store/">
-
-    <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Jago Grahak Jago — AI Legal Notice Generator">
+    <meta property="og:title" content="Lawly — AI Legal Notice Generator">
     <meta property="og:description" content="Generate a professional consumer legal notice in minutes. Backed by Indian law. Starting at ₹199.">
     <meta property="og:url" content="https://lawly.store/">
-    <meta property="og:site_name" content="Jago Grahak Jago">
+    <meta property="og:site_name" content="Lawly">
     <meta property="og:locale" content="en_IN">
-
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Jago Grahak Jago — AI Legal Notice Generator">
-    <meta name="twitter:description" content="Generate a professional consumer legal notice in minutes. Backed by Indian law. Starting at ₹199.">
-
-    <!-- Structured Data -->
+    <meta name="twitter:title" content="Lawly — AI Legal Notice Generator">
+    <meta name="twitter:description" content="Generate a professional consumer legal notice in minutes. Starting at ₹199.">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "LegalService",
-        "name": "Jago Grahak Jago",
-        "description": "AI-powered legal notice generator for Indian consumer disputes. Generates court-ready notices citing 15+ Indian statutes.",
+        "name": "Lawly",
+        "description": "AI-powered legal notice generator for Indian consumer disputes.",
         "url": "https://lawly.store/",
         "areaServed": { "@type": "Country", "name": "India" },
         "serviceType": "Legal Notice Generation",
         "priceRange": "₹199 - ₹599",
         "offers": [
-            {
-                "@type": "Offer",
-                "name": "Self-Send",
-                "price": "199",
-                "priceCurrency": "INR",
-                "description": "AI-generated legal notice with statutory citations. You email it yourself."
-            },
-            {
-                "@type": "Offer",
-                "name": "Lawyer-Assisted",
-                "price": "599",
-                "priceCurrency": "INR",
-                "description": "Reviewed by a licensed advocate, attested on letterhead, and served to the company."
-            }
+            { "@type": "Offer", "name": "Self-Send", "price": "199", "priceCurrency": "INR" },
+            { "@type": "Offer", "name": "Lawyer-Assisted", "price": "599", "priceCurrency": "INR" }
         ]
     }
     </script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- ─── Progress Bar ─────────────────────────────────────────────── -->
-<div id="progress-bar" class="progress-bar hidden">
+<!-- ── Progress ───────────────────────────────────────────── -->
+<nav id="progress-bar" class="progress-bar hidden">
     <div class="progress-steps">
         <div class="p-step active" data-step="2"><span>1</span><small>Company</small></div>
-        <div class="p-step" data-step="3"><span>2</span><small>Complaint</small></div>
+        <div class="p-step" data-step="3"><span>2</span><small>Details</small></div>
         <div class="p-step" data-step="4"><span>3</span><small>Analysis</small></div>
         <div class="p-step" data-step="5"><span>4</span><small>Review</small></div>
         <div class="p-step" data-step="6"><span>5</span><small>Plan</small></div>
-        <div class="p-step" data-step="7"><span>6</span><small>Notice</small></div>
+        <div class="p-step" data-step="7"><span>6</span><small>Generate</small></div>
     </div>
-</div>
+</nav>
 
-<!-- ─── Step 0: Welcome ──────────────────────────────────────────── -->
+<!-- ── Step 0 : Landing ───────────────────────────────────── -->
 <section class="step active" id="step-0">
-    <div class="hero">
-        <div class="agent-badge" style="display:inline-flex; align-items:center; gap:8px; padding:6px 16px; background:rgba(99,102,241,0.1); color:#4f46e5; border-radius:20px; font-size:0.85rem; font-weight:600; margin-bottom:1.5rem; border: 1px solid rgba(99,102,241,0.2);">
-            <span class="pulse-dot" style="width:8px; height:8px; background:#4f46e5; border-radius:50%; display:inline-block; box-shadow: 0 0 8px #4f46e5; animation:pulse 2s infinite;"></span>
-            AI Legal Agent v2.0
+    <div class="landing">
+        <div class="landing-content">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                AI-Powered Legal Agent
+            </div>
+            <h1>Draft a court-ready<br>legal notice in minutes</h1>
+            <p class="landing-sub">Upload evidence, describe what happened, and our AI agent maps your case to Indian consumer protection statutes&nbsp;&mdash; then drafts a professional legal notice you can send today.</p>
+
+            <button class="btn btn-primary btn-lg" onclick="App.goTo(2)">
+                Start your notice
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+
+            <div class="landing-proof">
+                <div class="proof-item"><strong>2,500+</strong><span>notices generated</span></div>
+                <div class="proof-item"><strong>15+</strong><span>statutes cited</span></div>
+                <div class="proof-item"><strong>₹199</strong><span>starting price</span></div>
+            </div>
+
+            <div class="jago-banner">
+                <img src="img/jago-grahak-jago.png" alt="Jago Grahak Jago — Consumer Awareness" class="jago-img">
+            </div>
+
+            <div class="landing-badges">
+                <span>CPA 2019 Compliant</span>
+                <span>Court-Ready Format</span>
+                <span>Advocate Review Option</span>
+            </div>
         </div>
-        <h1 style="line-height:1.1; margin-bottom:1rem; font-weight:800;">Consumer Justice,<br>Engineered by AI.</h1>
-        <p class="hero-sub" style="font-size:1.15rem; max-width:600px; margin:0 auto 2.5rem; color:#6b7280; line-height:1.6;">
-            Upload your evidence. Our autonomous agent analyzes facts, maps them to Indian statutes, and drafts a court-ready legal notice in minutes.
-        </p>
-        <div class="hero-stats">
-            <div class="stat"><strong>2,500+</strong><span>Notices Generated</span></div>
-            <div class="stat"><strong>15+</strong><span>Indian Statutes</span></div>
-            <div class="stat"><strong>₹199</strong><span>Starting at</span></div>
-        </div>
-        <button class="btn btn-primary btn-lg" onclick="App.goTo(2)" style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:1.1rem; margin:0 auto;">Initialize Agent <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
-        <div class="trust-badges">
-            <span class="trust-badge">⚖️ CPA 2019 Compliant</span>
-            <span class="trust-badge">🛡️ Advocate-Reviewed Option</span>
-            <span class="trust-badge">📄 Court-Ready Format</span>
-        </div>
-        <div class="hero-testimonial">
-            <p class="testimonial-text">"I sent the notice on Monday. Amazon refunded ₹78,999 by Thursday. This actually works."</p>
-            <p class="testimonial-author">— Priya S., Bengaluru</p>
-        </div>
-        <p class="hero-note">Civil/consumer disputes only. English output. Works for any company in India.</p>
     </div>
 </section>
 
-<!-- ─── Step 2: Company Details ──────────────────────────────────── -->
+<!-- ── Step 2 : Company ───────────────────────────────────── -->
 <section class="step" id="step-2">
     <div class="card">
-        <h2>🎯 Identify Target Entity</h2>
-        <p class="card-sub">Who do you have a complaint against?</p>
+        <div class="card-header">
+            <h2>Who is this against?</h2>
+            <p class="card-sub">Enter the company or brand you have a complaint against.</p>
+        </div>
         <form id="form-company" onsubmit="return false;">
             <div class="form-group">
                 <label for="company-name">Company / Brand Name <span class="req">*</span></label>
-                <input type="text" id="company-name" placeholder="e.g. Example E-commerce Pvt Ltd" required maxlength="200">
+                <input type="text" id="company-name" placeholder="e.g. Flipkart, Amazon, Ola Electric" required maxlength="200">
             </div>
             <div class="form-group">
-                <label for="company-website">Company Website</label>
+                <label for="company-website">Website <span class="opt">(optional)</span></label>
                 <input type="url" id="company-website" placeholder="https://www.example.com">
-                <small class="hint">AI agent will scan for entity contacts, policies, and MCA registration data.</small>
+                <small class="hint">Add the website so our AI agent can look up the legal entity, CIN, and grievance contacts.</small>
             </div>
-            <div class="btn-row">
-                <button type="button" class="btn btn-ghost" onclick="App.goTo(0)">← Back</button>
-                <button type="button" class="btn btn-primary" onclick="App.nextFromCompany()">Continue →</button>
+
+            <!-- Agent lookup result -->
+            <div id="company-lookup-result" class="lookup-result hidden">
+                <div class="lookup-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <span class="lookup-title">Legal entity found</span>
+                </div>
+                <div class="lookup-body">
+                    <div class="lookup-row" id="lookup-registered-name"></div>
+                    <div class="lookup-row" id="lookup-cin"></div>
+                    <div class="lookup-row" id="lookup-office"></div>
+                    <div class="lookup-row" id="lookup-grievance"></div>
+                </div>
+            </div>
+            <div id="company-lookup-loading" class="lookup-loading hidden">
+                <div class="loader-sm"></div>
+                <span>Agent searching for legal entity&hellip;</span>
+            </div>
+
+            <div class="card-actions">
+                <button type="button" class="btn btn-ghost" onclick="App.goTo(0)">&larr; Back</button>
+                <button type="button" class="btn btn-primary" onclick="App.nextFromCompany()">Continue &rarr;</button>
             </div>
         </form>
     </div>
 </section>
 
-<!-- ─── Step 3: Complaint Details ────────────────────────────────── -->
+<!-- ── Step 3 : Complaint ─────────────────────────────────── -->
 <section class="step" id="step-3">
-    <div class="card">
-        <h2>🧠 Context & Evidence</h2>
-        <p class="card-sub">Be as detailed as possible. More detail = stronger notice.</p>
+    <div class="card card-flush">
+        <div class="step-header">
+            <h2 class="step-title">What happened?</h2>
+        </div>
         <form id="form-complaint" onsubmit="return false;">
-            <div class="form-group prompt-composer-group">
-                <label for="issue-summary">What happened? <span class="req">*</span></label>
-                <div class="prompt-composer light">
-                    <textarea id="issue-summary" rows="4"
-                        placeholder="Ask Lawly to draft your case from your facts..."
-                        required minlength="20" maxlength="10000"></textarea>
-                    <div class="prompt-composer-actions">
-                        <button type="button" class="prompt-flat-btn" title="Attach files" onclick="document.getElementById('file-input').click()">Attach</button>
-                        <div class="prompt-right-actions">
-                            <button type="button" class="prompt-flat-btn" title="Voice input" onclick="App.toggleVoiceInput()">Mic</button>
-                            <button type="button" class="prompt-flat-btn prompt-flat-btn-primary" title="Analyze now" onclick="App.analyzeCase()">Analyze</button>
+
+            <!-- ── Complaint composer ── -->
+            <div class="form-section">
+                <div class="composer composer-hero">
+                    <textarea id="issue-summary" rows="5" placeholder="What happened? Include what you ordered or signed up for, what went wrong, how the company responded (or didn't), and what you want them to do about it..." required minlength="20" maxlength="10000"></textarea>
+                    <div class="composer-bar">
+                        <button type="button" class="composer-btn" title="Attach files" onclick="document.getElementById('file-input').click()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            Attach
+                        </button>
+                        <div class="composer-right">
+                            <button type="button" class="composer-btn" id="voice-toggle-btn" title="Voice input" onclick="App.toggleVoiceInput()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                                Mic
+                            </button>
+                            <button type="button" class="composer-btn composer-btn-primary" title="Analyze" onclick="App.analyzeCase()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                                Analyze
+                            </button>
                         </div>
                     </div>
-                    <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
-                           onchange="App.handleFileSelect(event)" style="display:none;">
-                    <small class="hint upload-inline-hint">Attach JPEG, PNG, WebP, GIF, PDF (up to 10 files, 10 MB each)</small>
-                    <div id="upload-file-list" class="upload-file-list upload-inline-list"></div>
+                    <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onchange="App.handleFileSelect(event)" hidden>
+                    <div id="upload-file-list" class="upload-file-list"></div>
                     <small class="hint" id="upload-status"></small>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Timeline of Events</label>
-                <div id="timeline-list" class="dynamic-list"></div>
-                <div class="add-row">
-                    <input type="text" id="timeline-input" placeholder="e.g. 05 Feb 2026: Ordered laptop, paid Rs. 78,999" maxlength="500">
-                    <button type="button" class="btn btn-sm" onclick="App.addTimeline()">+ Add</button>
+            <hr class="section-divider">
+
+            <!-- ── Supporting details ── -->
+            <div class="form-section">
+                <p class="section-eyebrow">Supporting details <span class="opt">optional</span></p>
+
+                <div class="form-group">
+                    <label class="field-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Timeline of events
+                    </label>
+                    <div id="timeline-list" class="dynamic-list"></div>
+                    <div class="add-row">
+                        <input type="text" id="timeline-input" class="add-row-input" placeholder="e.g. 05 Feb 2026 — Ordered laptop, paid ₹78,999" maxlength="500">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="App.addTimeline()">+ Add</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Evidence you have
+                    </label>
+                    <div id="evidence-list" class="dynamic-list"></div>
+                    <div class="add-row">
+                        <input type="text" id="evidence-input" class="add-row-input" placeholder="e.g. Order confirmation screenshot, chat transcripts" maxlength="500">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="App.addEvidence()">+ Add</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Evidence You Have</label>
-                <div id="evidence-list" class="dynamic-list"></div>
-                <div class="add-row">
-                    <input type="text" id="evidence-input" placeholder="e.g. Order IDs, screenshots, specific communication logs" maxlength="500">
-                    <button type="button" class="btn btn-sm" onclick="App.addEvidence()">+ Add</button>
-                </div>
+            <hr class="section-divider">
+
+            <!-- ── Resolution ── -->
+            <div class="form-section">
+                <label for="desired-resolution" class="section-label">Desired resolution <span class="req">*</span></label>
+                <textarea id="desired-resolution" class="resolution-textarea" rows="3" placeholder="e.g. Full refund of ₹78,999 with 18% interest plus ₹25,000 compensation for mental harassment" required maxlength="2000"></textarea>
             </div>
 
-            <div class="form-group">
-                <label for="desired-resolution">What resolution do you want? <span class="req">*</span></label>
-                <textarea id="desired-resolution" rows="3"
-                    placeholder="e.g. Full refund of Rs. 78,999 with 18% interest plus Rs. 25,000 compensation for mental agony"
-                    required maxlength="2000"></textarea>
-            </div>
-
-            <div class="btn-row">
-                <button type="button" class="btn btn-ghost" onclick="App.goTo(2)">← Back</button>
-                <button type="button" class="btn btn-primary" onclick="App.analyzeCase()">Initialize Legal Agent →</button>
+            <div class="card-actions">
+                <button type="button" class="btn btn-ghost" onclick="App.goTo(2)">&larr; Back</button>
+                <button type="button" class="btn btn-primary btn-lg" onclick="App.analyzeCase()">Analyze &amp; build case &rarr;</button>
             </div>
         </form>
     </div>
 </section>
 
-<!-- ─── Step 4: Analyzing (loading) ──────────────────────────────── -->
+<!-- ── Step 4 : Analyzing ─────────────────────────────────── -->
 <section class="step" id="step-4">
     <div class="card loading-card">
-        <div class="spinner"></div>
-        <h2>Agent Processing Workload</h2>
+        <div class="loader"></div>
+        <h2>Analyzing your case</h2>
+        <p class="card-sub">Our AI agent is building the legal logic graph.</p>
         <div class="loading-stages">
-            <div class="stage" id="stage-company">🔍 Querying entity graph...</div>
-            <div class="stage" id="stage-contacts">📞 Resolving grievance nodes...</div>
-            <div class="stage" id="stage-policies">📄 Extracting semantic commitments...</div>
-            <div class="stage" id="stage-legal">⚖️ Mapping statutory violations...</div>
-            <div class="stage" id="stage-strength">💪 Computing legal leverage...</div>
+            <div class="stage" id="stage-company">Querying entity graph&hellip;</div>
+            <div class="stage" id="stage-contacts">Resolving grievance contacts&hellip;</div>
+            <div class="stage" id="stage-policies">Extracting policy commitments&hellip;</div>
+            <div class="stage" id="stage-legal">Mapping statutory violations&hellip;</div>
+            <div class="stage" id="stage-strength">Computing legal leverage&hellip;</div>
         </div>
         <div class="loading-tip" id="loading-tip-4"></div>
-        <p class="loading-note">Agent is constructing the legal logic graph. This takes 30-60 seconds.</p>
     </div>
 </section>
 
-<!-- ─── Step 5: Review + Questions ───────────────────────────────── -->
+<!-- ── Step 5 : Review ────────────────────────────────────── -->
 <section class="step" id="step-5">
-    <div class="card">
-        <h2>⚡ Intelligence Extraction</h2>
+    <div class="card card-flush">
+        <div class="step-header">
+            <h2 class="step-title">Case analysis</h2>
+        </div>
 
-        <!-- Fetched data cards -->
         <div class="found-grid" id="found-data"></div>
 
-        <!-- Case strength -->
         <div class="case-strength-box" id="case-strength-box"></div>
 
-        <!-- Strength nudge bar -->
         <div class="strength-nudge" id="strength-nudge">
             <div class="strength-nudge-bar">
                 <div class="strength-nudge-fill" id="strength-nudge-fill"></div>
@@ -219,77 +247,68 @@
             <p class="strength-nudge-text" id="strength-nudge-text">Answer questions below to strengthen your notice</p>
         </div>
 
-        <!-- Follow-up questions -->
+        <hr class="section-divider">
+
         <div id="questions-section" class="questions-section">
-            <h3>Agent Queries (Missing Context)</h3>
-            <p class="card-sub">Each answer adds legal weight — companies respond faster to well-documented notices.</p>
+            <p class="section-eyebrow">Follow-up questions</p>
             <div id="questions-list"></div>
         </div>
 
-        <!-- Value preview: what the notice will contain -->
+        <hr class="section-divider">
+
         <div class="value-preview" id="value-preview">
-            <h3>📋 What Your Notice Will Include</h3>
+            <p class="section-eyebrow">Notice contents</p>
             <div class="value-preview-grid" id="value-preview-grid"></div>
         </div>
 
-        <!-- Customer Controls: Customize Your Notice -->
-        <div class="customer-controls" id="customer-controls">
-            <h3>⚙️ Customize Your Notice</h3>
-            <p class="card-sub">Fine-tune how your legal notice is written. Defaults work well, but you can override.</p>
+        <hr class="section-divider">
 
+        <div class="customer-controls" id="customer-controls">
+            <p class="section-eyebrow">Customize</p>
             <div class="controls-grid">
                 <div class="form-group">
-                    <label for="ctrl-tone">Notice Tone</label>
+                    <label for="ctrl-tone">Tone</label>
                     <select id="ctrl-tone">
-                        <option value="">Auto (Firm & Assertive)</option>
-                        <option value="firm">Firm — Authoritative & precise</option>
-                        <option value="aggressive">Aggressive — Maximum legal pressure</option>
-                        <option value="diplomatic">Diplomatic — Professional, invites resolution</option>
+                        <option value="">Auto (Firm &amp; Assertive)</option>
+                        <option value="firm">Firm &mdash; Authoritative</option>
+                        <option value="aggressive">Aggressive &mdash; Max pressure</option>
+                        <option value="diplomatic">Diplomatic &mdash; Invites resolution</option>
                     </select>
-                    <small class="hint">How the notice should read to the company</small>
                 </div>
-
                 <div class="form-group">
-                    <label for="ctrl-cure">Time to Respond (Cure Period)</label>
+                    <label for="ctrl-cure">Response deadline</label>
                     <select id="ctrl-cure">
-                        <option value="">Auto-detect (recommended)</option>
-                        <option value="7">7 days — Urgent / financial fraud</option>
-                        <option value="15">15 days — Standard refund / service issue</option>
-                        <option value="21">21 days — Product defect / replacement</option>
-                        <option value="30">30 days — Complex / data breach</option>
+                        <option value="">Auto-detect</option>
+                        <option value="7">7 days</option>
+                        <option value="15">15 days</option>
+                        <option value="21">21 days</option>
+                        <option value="30">30 days</option>
                     </select>
-                    <small class="hint">How many days the company gets before you can escalate</small>
                 </div>
-
                 <div class="form-group">
-                    <label for="ctrl-compensation">Compensation Demand (₹)</label>
+                    <label for="ctrl-compensation">Compensation</label>
                     <input type="number" id="ctrl-compensation" placeholder="e.g. 25000" min="0" step="1000">
-                    <small class="hint">Specific ₹ amount for mental agony / harassment compensation</small>
                 </div>
-
                 <div class="form-group">
-                    <label for="ctrl-interest">Interest Rate (% per annum)</label>
+                    <label for="ctrl-interest">Interest (% p.a.)</label>
                     <input type="number" id="ctrl-interest" placeholder="e.g. 18" min="0" max="36" step="0.5">
-                    <small class="hint">Annual interest on refund amount (18% is standard in consumer cases)</small>
                 </div>
             </div>
         </div>
 
-        <div class="btn-row">
-            <button type="button" class="btn btn-ghost" onclick="App.goTo(3)">← Back to Editing</button>
-            <button type="button" class="btn btn-primary btn-lg" onclick="App.goTo(6)">Get Your Legal Notice →</button>
+        <div class="card-actions">
+            <button type="button" class="btn btn-ghost" onclick="App.goTo(3)">&larr; Edit complaint</button>
+            <button type="button" class="btn btn-primary btn-lg" onclick="App.goTo(6)">Choose plan &rarr;</button>
         </div>
     </div>
 </section>
 
-<!-- ─── Step 6: Choose Plan ──────────────────────────────────────── -->
+<!-- ── Step 6 : Plan ──────────────────────────────────────── -->
 <section class="step" id="step-6">
     <div class="card">
-        <h2>You're Almost There!</h2>
-        <p class="card-sub">Your legal notice is ready to be generated. Choose how you want it delivered.</p>
-
-        <div class="tier-social-proof">
-            <span>🔥 85% of users choose Lawyer-Assisted</span>
+        <div class="card-header">
+            <h2>Choose your plan</h2>
+            <p class="card-sub">Your notice is ready to generate. Pick how you want it delivered.</p>
         </div>
 
         <div class="tier-grid">
@@ -298,31 +317,32 @@
                 <div class="tier-name">Self-Send</div>
                 <p class="tier-desc">You email the notice yourself</p>
                 <ul class="tier-features">
-                    <li>✓ AI-generated legal notice</li>
-                    <li>✓ Full statutory citations</li>
-                    <li>✓ T&C counter-arguments</li>
-                    <li>✓ Escalation strategy</li>
-                    <li>✓ PDF download</li>
-                    <li class="tier-feature-dim">✗ No lawyer review</li>
-                    <li class="tier-feature-dim">✗ No letterhead attestation</li>
-                    <li class="tier-feature-dim">✗ You handle delivery</li>
+                    <li>AI-generated legal notice</li>
+                    <li>Full statutory citations</li>
+                    <li>T&amp;C counter-arguments</li>
+                    <li>Escalation strategy</li>
+                    <li>PDF download</li>
+                    <li class="tier-feature-dim">No lawyer review</li>
+                    <li class="tier-feature-dim">No letterhead</li>
+                    <li class="tier-feature-dim">You handle delivery</li>
                 </ul>
-                <button class="btn btn-outline">Select Self-Send</button>
+                <button class="btn btn-outline btn-block">Select Self-Send</button>
             </div>
+
             <div class="tier-card recommended" id="tier-lawyer" onclick="App.selectTier('lawyer')">
-                <div class="tier-badge">MOST POPULAR</div>
+                <div class="tier-badge">RECOMMENDED</div>
                 <div class="tier-price">₹599</div>
                 <div class="tier-name">Lawyer-Assisted</div>
-                <p class="tier-desc">An advocate reviews, attests & sends it for you</p>
+                <p class="tier-desc">An advocate reviews, attests &amp; serves</p>
                 <ul class="tier-features">
-                    <li>✓ Everything in Self-Send, plus:</li>
-                    <li><strong>✓ Reviewed by a licensed advocate</strong></li>
-                    <li><strong>✓ Attested on advocate's letterhead</strong></li>
-                    <li><strong>✓ Served to the company for you</strong></li>
-                    <li><strong>✓ Read-receipt tracking</strong></li>
-                    <li><strong>✓ 10x more pressure on company</strong></li>
+                    <li>Everything in Self-Send, plus:</li>
+                    <li><strong>Reviewed by licensed advocate</strong></li>
+                    <li><strong>Attested on letterhead</strong></li>
+                    <li><strong>Served to the company</strong></li>
+                    <li><strong>Read-receipt tracking</strong></li>
+                    <li><strong>10x more pressure</strong></li>
                 </ul>
-                <button class="btn btn-primary btn-lg">Select Lawyer-Assisted ⭐</button>
+                <button class="btn btn-primary btn-block">Select Lawyer-Assisted</button>
                 <p class="tier-nudge">Only ₹400 more for professional delivery</p>
             </div>
         </div>
@@ -330,16 +350,17 @@
         <div class="tier-urgency" id="tier-urgency"></div>
 
         <div class="tier-comparison">
-            <h4>Why does delivery method matter?</h4>
-            <p>Companies take notices on <strong>advocate's letterhead</strong> significantly more seriously. Self-sent emails are often ignored or routed to a complaints queue. An advocate-served notice signals real legal intent and gets executive attention.</p>
+            <h4>Why does delivery matter?</h4>
+            <p>Companies take notices on an <strong>advocate's letterhead</strong> significantly more seriously. Self-sent emails are often ignored. An advocate-served notice signals real legal intent.</p>
         </div>
 
-        <div class="final-details-panel" id="final-details-panel" style="margin-top: 30px; display: none;">
-            <h4>👤 Tell Us About Yourself</h4>
-            <p class="card-sub">Your details will appear as the complainant on the legal notice.</p>
+        <!-- Complainant form (shown after tier selection) -->
+        <div class="final-details-panel" id="final-details-panel" style="display:none;">
+            <h4>Your details</h4>
+            <p class="card-sub">These appear as the complainant on the legal notice.</p>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="fd-name">Full Name <span class="req">*</span></label>
+                    <label for="fd-name">Full name <span class="req">*</span></label>
                     <input type="text" id="fd-name" maxlength="200" required>
                 </div>
                 <div class="form-group">
@@ -357,102 +378,108 @@
                     <input type="text" id="fd-address" maxlength="500" required>
                 </div>
             </div>
-            
             <input type="hidden" id="fd-company" value="">
             <input type="hidden" id="fd-website" value="">
-            <input type="checkbox" id="fd-confirm" checked style="display:none;">
+            <input type="checkbox" id="fd-confirm" checked hidden>
 
-            <button type="button" class="btn btn-primary btn-lg" onclick="App.confirmAndGenerate()" style="margin-top:20px; width: 100%;">Continue & Generate Notice →</button>
+            <div class="card-actions">
+                <button type="button" class="btn btn-ghost" onclick="App.resetTierSelection()">Change plan</button>
+                <button type="button" class="btn btn-primary" onclick="App.confirmAndGenerate()">Generate notice &rarr;</button>
+            </div>
         </div>
 
-        <div class="btn-row" id="tier-back-btn">
-            <button type="button" class="btn btn-ghost" onclick="App.goTo(5)">← Back</button>
+        <div class="card-actions" id="tier-back-btn">
+            <button type="button" class="btn btn-ghost" onclick="App.goTo(5)">&larr; Back</button>
         </div>
     </div>
 </section>
 
-<!-- ─── Step 7: Generating (loading) ─────────────────────────────── -->
+<!-- ── Step 7 : Generating ────────────────────────────────── -->
 <section class="step" id="step-7">
     <div class="card loading-card">
-        <div class="spinner"></div>
-        <h2>Generating Your Legal Notice</h2>
-        <div class="gen-progress-wrap" aria-live="polite">
+        <div class="loader"></div>
+        <h2>Generating your legal notice</h2>
+        <div class="gen-progress-wrap">
             <div class="gen-progress-track">
                 <div class="gen-progress-fill" id="gen-progress-fill"></div>
             </div>
             <div class="gen-progress-meta">
-                <span id="gen-progress-label">Preparing your draft...</span>
+                <span id="gen-progress-label">Preparing draft&hellip;</span>
                 <strong id="gen-progress-pct">0%</strong>
             </div>
         </div>
         <div class="loading-stages">
-            <div class="stage" id="gen-stage-1">⚖️ Building statutory arguments...</div>
-            <div class="stage" id="gen-stage-2">🛡️ Dismantling T&C defenses...</div>
-            <div class="stage" id="gen-stage-3">🔥 Assembling escalation strategy...</div>
-            <div class="stage" id="gen-stage-4">📄 Drafting formal legal notice...</div>
-            <div class="stage" id="gen-stage-5">📑 Generating PDF...</div>
+            <div class="stage" id="gen-stage-1">Building statutory arguments&hellip;</div>
+            <div class="stage" id="gen-stage-2">Dismantling T&amp;C defenses&hellip;</div>
+            <div class="stage" id="gen-stage-3">Assembling escalation strategy&hellip;</div>
+            <div class="stage" id="gen-stage-4">Drafting formal legal notice&hellip;</div>
+            <div class="stage" id="gen-stage-5">Generating PDF&hellip;</div>
         </div>
         <div class="loading-tip" id="loading-tip-7"></div>
-        <p class="loading-note">Your legal notice is being drafted like a seasoned lawyer would.</p>
     </div>
 </section>
 
-<!-- ─── Step 8a: Notice Ready (self-send) ────────────────────────── -->
+<!-- ── Step 8 : Result ────────────────────────────────────── -->
 <section class="step" id="step-8">
-    <div class="card success-card">
-        <div class="success-icon">✅</div>
-        <h2>Your Legal Notice is Ready!</h2>
-        <p class="card-sub" id="notice-id-display"></p>
+    <div class="card">
+        <div class="result-header">
+            <div class="result-check">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+            </div>
+            <h2>Your legal notice is ready</h2>
+            <p class="card-sub" id="notice-id-display"></p>
+        </div>
 
-        <!-- Self-send instructions -->
+        <!-- Self-send -->
         <div id="self-send-info" class="info-box">
-            <h3>📧 What to do next</h3>
+            <h3>What to do next</h3>
             <ol>
                 <li>Download the PDF below</li>
-                <li>Email it to the company's official grievance email with <strong>read receipt</strong> enabled</li>
+                <li>Email it to the company&rsquo;s grievance email with <strong>read receipt</strong></li>
                 <li>CC the regulatory stakeholders mentioned in the notice</li>
-                <li>Save all sent-email confirmations as proof of service</li>
-                <li>If no response within the cure period, file on <a href="https://edaakhil.nic.in" target="_blank">e-daakhil.nic.in</a></li>
+                <li>Save all sent-email confirmations as proof</li>
+                <li>No response? File on <a href="https://edaakhil.nic.in" target="_blank" rel="noopener">e-daakhil.nic.in</a></li>
             </ol>
             <div class="upsell-box" id="upsell-box">
-                <h4>💡 Want 10x more impact?</h4>
-                <p>Companies respond <strong>3x faster</strong> to notices on an advocate's letterhead. Upgrade to <strong>Lawyer-Assisted</strong> for just <strong>₹400 more</strong> — an advocate will review, attest, and serve the notice directly.</p>
-                <button class="btn btn-primary" onclick="App.upgradeTier()">Upgrade to Lawyer-Assisted — ₹599</button>
+                <h4>Want 10x more impact?</h4>
+                <p>Companies respond <strong>3x faster</strong> to notices on an advocate&rsquo;s letterhead. Upgrade for just <strong>₹400 more</strong>.</p>
+                <button class="btn btn-primary btn-block" onclick="App.upgradeTier()">Upgrade to Lawyer-Assisted &mdash; ₹599</button>
             </div>
         </div>
 
-        <!-- Lawyer-sent info -->
+        <!-- Lawyer-sent -->
         <div id="lawyer-send-info" class="info-box hidden">
-            <div class="lawyer-status">
-                <h3>👨‍⚖️ Sent for Lawyer Review</h3>
-                <p>Your notice has been submitted for review by a licensed advocate.</p>
-                <div class="status-timeline">
-                    <div class="status-step done"><span class="dot"></span> Notice Generated</div>
-                    <div class="status-step active"><span class="dot"></span> Under Lawyer Review</div>
-                    <div class="status-step"><span class="dot"></span> Approved & Attested</div>
-                    <div class="status-step"><span class="dot"></span> Served to Company</div>
-                </div>
-                <p class="lawyer-note">We'll email you at <strong id="notify-email"></strong> when the notice is reviewed and served.</p>
+            <h3>Sent for lawyer review</h3>
+            <p>Your notice has been submitted for review by a licensed advocate.</p>
+            <div class="status-timeline">
+                <div class="status-step done"><span class="dot"></span> Notice generated</div>
+                <div class="status-step active"><span class="dot"></span> Under lawyer review</div>
+                <div class="status-step"><span class="dot"></span> Approved &amp; attested</div>
+                <div class="status-step"><span class="dot"></span> Served to company</div>
             </div>
+            <p class="lawyer-note">We&rsquo;ll email you at <strong id="notify-email"></strong> when the notice is served.</p>
         </div>
 
-        <!-- Notice preview -->
+        <!-- Preview -->
         <details class="notice-preview">
-            <summary>📄 Preview Notice Text</summary>
+            <summary>Preview notice text</summary>
             <pre id="notice-text"></pre>
         </details>
 
-        <div class="btn-row">
-            <button class="btn btn-primary" id="btn-download-pdf" onclick="App.downloadPDF()">⬇ Download PDF</button>
-            <button class="btn btn-ghost" onclick="App.reset()">Start New Notice</button>
+        <div class="card-actions">
+            <button class="btn btn-primary" id="btn-download-pdf" onclick="App.downloadPDF()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Download PDF
+            </button>
+            <button class="btn btn-ghost" onclick="App.reset()">Start new notice</button>
         </div>
     </div>
 </section>
 
-<!-- ─── Error overlay ────────────────────────────────────────────── -->
+<!-- ── Error overlay ──────────────────────────────────────── -->
 <div id="error-overlay" class="error-overlay hidden">
     <div class="error-box">
-        <h3>⚠️ Something went wrong</h3>
+        <h3>Something went wrong</h3>
         <p id="error-message"></p>
         <button class="btn btn-primary" onclick="App.dismissError()">OK</button>
     </div>

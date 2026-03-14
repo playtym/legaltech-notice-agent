@@ -1,20 +1,39 @@
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import FastAPI, HTTPException, UploadFile, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
+
+import hashlib
+import hmac
+import secrets
+import time
+
+from contextlib import asynccontextmanager
 
 from legaltech.pipeline import LegalNoticePipeline
 from legaltech.schemas import Complainant, ComplaintInput, IntakeMode, ServiceTier
 from legaltech.services.pdf_generator import generate_pdf
 from legaltech.services import store as notice_store
 from legaltech.services.upload_store import upload_store
+from legaltech.services import database as db
+from legaltech.config.settings import get_settings
 
 _STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
-app = FastAPI(title="Indian Legal Notice Agent", version="0.4.0")
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    # Startup: initialize the database
+    await db.get_db()
+    yield
+    # Shutdown: close the database connection
+    await db.close_db()
+
+
+app = FastAPI(title="Indian Legal Notice Agent", version="0.4.0", lifespan=lifespan)
 pipeline = LegalNoticePipeline()
 
 app.add_middleware(
@@ -35,6 +54,47 @@ app.add_middleware(
 # Serve static files
 if _STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+
+# ── Admin authentication ─────────────────────────────────────────────
+# Simple token-based auth: login with password → get token → pass as Bearer header
+
+_admin_tokens: dict[str, float] = {}  # token → expiry timestamp
+_TOKEN_TTL = 24 * 60 * 60  # 24 hours
+
+
+class AdminLoginRequest(BaseModel):
+    password: str
+
+
+@app.post("/api/admin/login")
+async def admin_login(body: AdminLoginRequest):
+    settings = get_settings()
+    stored_pw = notice_store.get_stored_password()
+    expected = stored_pw if stored_pw else settings.admin_password
+    if not hmac.compare_digest(body.password, expected):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    token = secrets.token_urlsafe(32)
+    _admin_tokens[token] = time.time() + _TOKEN_TTL
+    # Cleanup expired tokens
+    now = time.time()
+    expired = [t for t, exp in _admin_tokens.items() if exp < now]
+    for t in expired:
+        _admin_tokens.pop(t, None)
+    notice_store.log_activity("Admin login", "", "auth")
+    return {"token": token, "expires_in": _TOKEN_TTL}
+
+
+async def require_admin(authorization: str | None = Header(None)):
+    """Dependency that validates the admin Bearer token."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    token = authorization[7:]
+    expiry = _admin_tokens.get(token)
+    if not expiry or expiry < time.time():
+        _admin_tokens.pop(token, None)
+        raise HTTPException(status_code=401, detail="Token expired or invalid")
+    return True
 
 
 _MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB per file
@@ -67,7 +127,7 @@ class NoticeRequest(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     """Request body for /notice/analyze — same complaint fields, plus optional previous answers."""
-    complainant: Complainant
+    complainant: Complainant | dict | None = None
     issue_summary: str
     desired_resolution: str
     company_name_hint: str | None = None
@@ -107,6 +167,41 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "model": pipeline.llm.model_name}
 
 
+class CompanyLookupRequest(BaseModel):
+    brand_name: str
+    website: HttpUrl | None = None
+
+
+@app.post("/company/lookup")
+async def company_lookup(req: CompanyLookupRequest):
+    """Look up legal entity details (CIN, registered name, office) from brand name + website."""
+    import logging
+    logger = logging.getLogger(__name__)
+    result: dict[str, str | None] = {
+        "registered_name": None,
+        "cin": None,
+        "registered_office": None,
+        "grievance_officer_name": None,
+        "grievance_officer_email": None,
+    }
+    if not req.website:
+        return result
+    try:
+        identity = await pipeline.respondent_id.run(
+            website=str(req.website),
+            company_name_hint=req.brand_name,
+            web=pipeline.web,
+        )
+        result["registered_name"] = identity.registered_name
+        result["cin"] = identity.cin
+        result["registered_office"] = identity.registered_office
+        result["grievance_officer_name"] = identity.grievance_officer_name
+        result["grievance_officer_email"] = identity.grievance_officer_email
+    except Exception as e:
+        logger.warning("Company lookup failed: %s", e)
+    return result
+
+
 @app.post("/documents/upload")
 async def upload_documents(files: list[UploadFile]):
     """Upload evidence documents (images, PDFs). Returns file metadata with IDs."""
@@ -125,6 +220,16 @@ async def upload_documents(files: list[UploadFile]):
         if len(data) > _MAX_UPLOAD_SIZE:
             raise HTTPException(status_code=400, detail=f"File '{f.filename}' exceeds 10 MB limit")
         stored = upload_store.store(filename=f.filename or "untitled", content_type=ct, data=data)
+
+        # Persist document metadata to DB
+        try:
+            await db.save_document(
+                notice_id=None, user_id=None,
+                filename=stored.filename, content_type=ct, size_bytes=len(data),
+            )
+        except Exception:
+            pass  # non-fatal
+
         results.append({
             "file_id": stored.file_id,
             "filename": stored.filename,
@@ -223,14 +328,49 @@ async def create_notice_typed(payload: NoticeRequest):
         )
         result = packet.model_dump()
         company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
+        tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
         notice_id = notice_store.save_notice(
             complainant_name=payload.complainant.full_name,
             complainant_email=payload.complainant.email,
             company_name=company_label,
-            tier=payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier),
+            tier=tier_val,
             legal_notice=packet.legal_notice,
         )
         result["notice_id"] = notice_id
+
+        # ── Persist to database ──────────────────────────────────
+        try:
+            user_id = await db.upsert_user(
+                full_name=payload.complainant.full_name,
+                email=payload.complainant.email,
+                phone=getattr(payload.complainant, "phone", None),
+                address=getattr(payload.complainant, "address", None),
+            )
+            db_notice_id = await db.save_notice_full(
+                user_id=user_id,
+                company_name=company_label,
+                tier=tier_val,
+                packet=result,
+                customer_controls={
+                    "notice_tone": payload.notice_tone,
+                    "cure_period_days": payload.cure_period_days,
+                    "compensation_amount": payload.compensation_amount,
+                    "interest_rate_percent": payload.interest_rate_percent,
+                    "language": payload.language,
+                },
+                follow_up_answers=payload.follow_up_answers,
+            )
+            result["db_notice_id"] = db_notice_id
+            result["db_user_id"] = user_id
+            # Store generated PDF
+            is_lawyer = tier_val == "lawyer"
+            pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
+            pdf_fn = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
+            await db.store_pdf(db_notice_id, pdf_bytes, pdf_fn)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning("DB save failed (non-fatal)", exc_info=True)
+
         return result
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc
@@ -245,9 +385,28 @@ async def analyze_case(payload: AnalyzeRequest):
     /notice/analyze again with previous_answers until ready.
     """
     try:
+        raw_complainant = payload.complainant
+        if isinstance(raw_complainant, Complainant):
+            analyze_complainant = raw_complainant
+        elif isinstance(raw_complainant, dict):
+            name = (raw_complainant.get("full_name") or "").strip()
+            email = (raw_complainant.get("email") or "").strip()
+            analyze_complainant = Complainant(
+                full_name=name or "Pending Customer",
+                email=email or "pending@lawly.store",
+                phone=(raw_complainant.get("phone") or None),
+                address=(raw_complainant.get("address") or "India"),
+            )
+        else:
+            analyze_complainant = Complainant(
+                full_name="Pending Customer",
+                email="pending@lawly.store",
+                address="India",
+            )
+
         complaint = ComplaintInput(
             mode=IntakeMode.typed,
-            complainant=payload.complainant,
+            complainant=analyze_complainant,
             company_name_hint=payload.company_name_hint,
             website=payload.website,
             issue_summary=payload.issue_summary,
@@ -269,7 +428,29 @@ async def analyze_case(payload: AnalyzeRequest):
             previous_answers=payload.previous_answers,
             document_analysis=doc_analysis,
         )
-        return result.model_dump()
+        result_dict = result.model_dump()
+
+        # ── Persist analysis to database ─────────────────────────
+        try:
+            user_id = None
+            if analyze_complainant.email and analyze_complainant.email != "pending@lawly.store":
+                user_id = await db.upsert_user(
+                    full_name=analyze_complainant.full_name,
+                    email=analyze_complainant.email,
+                    phone=getattr(analyze_complainant, "phone", None),
+                    address=getattr(analyze_complainant, "address", None),
+                )
+            analysis_id = await db.save_analysis(
+                user_id=user_id,
+                complaint=complaint.model_dump(),
+                result=result_dict,
+            )
+            result_dict["db_analysis_id"] = analysis_id
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning("DB analysis save failed (non-fatal)", exc_info=True)
+
+        return result_dict
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}") from exc
 
@@ -307,7 +488,37 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
                 "language": payload.language,
             },
         )
-        return packet.model_dump()
+        result = packet.model_dump()
+
+        # ── Persist to database ──────────────────────────────────
+        try:
+            user_id = await db.upsert_user(
+                full_name=payload.complainant.full_name,
+                email=payload.complainant.email,
+                phone=getattr(payload.complainant, "phone", None),
+                address=getattr(payload.complainant, "address", None),
+            )
+            tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
+            company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
+            db_nid = await db.save_notice_full(
+                user_id=user_id,
+                company_name=company_label,
+                tier=tier_val,
+                packet=result,
+                follow_up_answers=payload.follow_up_answers,
+            )
+            result["db_notice_id"] = db_nid
+            result["db_user_id"] = user_id
+            # Store generated PDF
+            is_lawyer = tier_val == "lawyer"
+            pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
+            pdf_fn = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
+            await db.store_pdf(db_nid, pdf_bytes, pdf_fn)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning("DB save failed (non-fatal)", exc_info=True)
+
+        return result
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc
 
@@ -319,7 +530,7 @@ async def translate_to_english(payload: TranslateRequest):
         return {"translated_text": ""}
 
     try:
-        translated = await pipeline.llm.complete_text(
+        translated = await pipeline.llm_fast.complete_text(
             system_prompt=(
                 "You are a precise translation engine for Indian consumer complaints. "
                 "Translate Hindi/English mixed text to clear professional English. "
@@ -340,7 +551,7 @@ async def intake_from_transcript(payload: TranscriptIntakeRequest):
         raise HTTPException(status_code=400, detail="Transcript is empty")
 
     try:
-        extraction = await pipeline.llm.complete_json(
+        extraction = await pipeline.llm_fast.complete_json(
             system_prompt=(
                 "You extract Indian consumer complaint facts from a spoken transcript. "
                 "Return strict JSON with keys: issue_summary (string), desired_resolution (string), "
@@ -389,7 +600,7 @@ async def intake_from_transcript(payload: TranscriptIntakeRequest):
                 }
                 for q in first.questions
             ]
-            answer_obj = await pipeline.llm.complete_json(
+            answer_obj = await pipeline.llm_fast.complete_json(
                 system_prompt=(
                     "You answer follow-up legal intake questions ONLY from provided transcript/facts. "
                     "Return strict JSON object: {\"answers\": {question_id: answer_or_empty}}. "
@@ -440,7 +651,7 @@ async def refine_speech_transcript(payload: SpeechRefineRequest):
         }
 
     try:
-        refined = await pipeline.llm.complete_json(
+        refined = await pipeline.llm_fast.complete_json(
             system_prompt=(
                 "You are an ASR post-processor for Indian Hinglish consumer complaints. "
                 "Input may contain Hindi words, English words, misspellings, and mixed scripts. "
@@ -511,6 +722,36 @@ async def create_notice_typed_pdf(payload: NoticeRequest):
         pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer, annexures=annexures)
         company_label = packet.company.legal_name or packet.company.brand_name or "Company"
         filename = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
+
+        # ── Persist to database ──────────────────────────────────────
+        try:
+            user_id = await db.upsert_user(
+                full_name=payload.complainant.full_name,
+                email=payload.complainant.email,
+                phone=getattr(payload.complainant, "phone", None),
+                address=getattr(payload.complainant, "address", None),
+            )
+            tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
+            db_nid = await db.save_notice_full(
+                user_id=user_id,
+                company_name=company_label,
+                tier=tier_val,
+                packet=packet.model_dump(),
+                customer_controls={
+                    "notice_tone": payload.notice_tone,
+                    "cure_period_days": payload.cure_period_days,
+                    "compensation_amount": payload.compensation_amount,
+                    "interest_rate_percent": payload.interest_rate_percent,
+                    "language": payload.language,
+                },
+                follow_up_answers=payload.follow_up_answers,
+            )
+            # Store the generated PDF
+            await db.store_pdf(db_nid, pdf_bytes, filename)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning("DB save failed (non-fatal)", exc_info=True)
+
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
@@ -522,9 +763,147 @@ async def create_notice_typed_pdf(payload: NoticeRequest):
 
 # ── Root redirect ────────────────────────────────────────────────────
 
+
+class RenderPDFRequest(BaseModel):
+    notice_text: str
+    company_name: str = "Company"
+    is_lawyer_tier: bool = False
+
+
+@app.post("/notice/render-pdf")
+async def render_pdf(payload: RenderPDFRequest):
+    """Convert already-generated notice text into a PDF (no pipeline re-run)."""
+    if not payload.notice_text or not payload.notice_text.strip():
+        raise HTTPException(status_code=400, detail="notice_text is required")
+    try:
+        pdf_bytes = generate_pdf(
+            payload.notice_text,
+            is_lawyer_tier=payload.is_lawyer_tier,
+        )
+        filename = f"Legal_Notice_{payload.company_name.replace(' ', '_')}.pdf"
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"PDF rendering failed: {exc}") from exc
+
+
 @app.get("/")
 async def root():
-    return FileResponse(str(_STATIC_DIR / "index.html"))
+    """Serve index.html with injected FAQ schema and hreflang tags if configured."""
+    index_path = _STATIC_DIR / "index.html"
+    html_content = index_path.read_text(encoding="utf-8")
+
+    seo = notice_store.get_seo_settings()
+    inject = ""
+
+    # FAQ structured data
+    faq_items = seo.get("faq_schema", [])
+    if faq_items:
+        import json as json_mod
+        import html as html_mod
+        faq_ld = {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": item.get("question", ""),
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": item.get("answer", ""),
+                    },
+                }
+                for item in faq_items
+                if item.get("question") and item.get("answer")
+            ],
+        }
+        inject += f'\n    <script type="application/ld+json">{json_mod.dumps(faq_ld)}</script>'
+
+    # Hreflang tags
+    for entry in seo.get("hreflang_entries", []):
+        import html as html_mod
+        lang = html_mod.escape(entry.get("lang", ""))
+        href = html_mod.escape(entry.get("href", ""))
+        if lang and href:
+            inject += f'\n    <link rel="alternate" hreflang="{lang}" href="{href}">'
+
+    # OG image
+    og_image = seo.get("og_image", "")
+    if og_image:
+        import html as html_mod
+        inject += f'\n    <meta property="og:image" content="{html_mod.escape(og_image)}">'
+
+    # Bing verification
+    bing = seo.get("bing_verification", "")
+    if bing:
+        import html as html_mod
+        inject += f'\n    <meta name="msvalidate.01" content="{html_mod.escape(bing)}">'
+
+    # AEO: Organization JSON-LD
+    aeo = notice_store.get_aeo_settings()
+    org = aeo.get("org_schema", {})
+    if org.get("name"):
+        import json as json_mod
+        org_ld = {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": org["name"],
+            "url": org.get("url", ""),
+        }
+        if org.get("logo"):
+            org_ld["logo"] = org["logo"]
+        if org.get("description"):
+            org_ld["description"] = org["description"]
+        if org.get("founding_date"):
+            org_ld["foundingDate"] = org["founding_date"]
+        if org.get("contact_email"):
+            org_ld["contactPoint"] = {"@type": "ContactPoint", "email": org["contact_email"]}
+            if org.get("contact_phone"):
+                org_ld["contactPoint"]["telephone"] = org["contact_phone"]
+        same_as = [s.get("url", s) if isinstance(s, dict) else s for s in org.get("same_as", []) if s]
+        if same_as:
+            org_ld["sameAs"] = same_as
+        inject += f'\n    <script type="application/ld+json">{json_mod.dumps(org_ld)}</script>'
+
+    # AEO: HowTo schemas
+    for howto in aeo.get("howto_schemas", []):
+        if howto.get("name") and howto.get("steps"):
+            import json as json_mod
+            howto_ld = {
+                "@context": "https://schema.org",
+                "@type": "HowTo",
+                "name": howto["name"],
+                "step": [
+                    {"@type": "HowToStep", "position": i + 1, "text": step}
+                    for i, step in enumerate(howto["steps"])
+                    if step
+                ],
+            }
+            if howto.get("description"):
+                howto_ld["description"] = howto["description"]
+            inject += f'\n    <script type="application/ld+json">{json_mod.dumps(howto_ld)}</script>'
+
+    # AEO: Speakable
+    speakable_sels = aeo.get("speakable_selectors", [])
+    if speakable_sels:
+        import json as json_mod
+        speak_ld = {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "speakable": {
+                "@type": "SpeakableSpecification",
+                "cssSelector": speakable_sels,
+            },
+        }
+        inject += f'\n    <script type="application/ld+json">{json_mod.dumps(speak_ld)}</script>'
+
+    if inject:
+        html_content = html_content.replace("</head>", f"{inject}\n</head>", 1)
+
+    return HTMLResponse(content=html_content)
 
 
 @app.get("/favicon.ico")
@@ -572,24 +951,64 @@ class NoticeStatusUpdate(BaseModel):
     reviewer_notes: str | None = None
 
 
+@app.get("/api/admin/stats")
+async def get_dashboard_stats(_=Depends(require_admin)):
+    # Merge JSON-file stats with DB stats
+    json_stats = notice_store.get_dashboard_stats()
+    try:
+        db_stats = await db.get_dashboard_stats_db()
+        json_stats["db_total_users"] = db_stats.get("total_users", 0)
+        json_stats["db_total_analyses"] = db_stats.get("total_analyses", 0)
+        json_stats["db_total_notices"] = db_stats.get("total_notices", 0)
+    except Exception:
+        pass
+    return json_stats
+
+
+@app.get("/api/admin/activity")
+async def get_activity_log(limit: int = 50, _=Depends(require_admin)):
+    return notice_store.get_activity_log(limit)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@app.put("/api/admin/password")
+async def change_admin_password(body: ChangePasswordRequest, _=Depends(require_admin)):
+    settings = get_settings()
+    stored_pw = notice_store.get_stored_password()
+    expected = stored_pw if stored_pw else settings.admin_password
+    if not hmac.compare_digest(body.current_password, expected):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    notice_store.set_stored_password(body.new_password)
+    notice_store.log_activity("Changed admin password", "", "auth")
+    return {"ok": True}
+
+
 @app.get("/api/admin/lawyer")
-async def get_lawyer():
+async def get_lawyer(_=Depends(require_admin)):
     data = notice_store.get_lawyer()
     return data or {}
 
 
 @app.put("/api/admin/lawyer")
-async def save_lawyer(details: LawyerDetails):
-    return notice_store.save_lawyer(details.model_dump())
+async def save_lawyer(details: LawyerDetails, _=Depends(require_admin)):
+    result = notice_store.save_lawyer(details.model_dump())
+    notice_store.log_activity("Updated lawyer details", f"Lawyer: {details.name}", "lawyer")
+    return result
 
 
 @app.get("/api/admin/notices")
-async def get_notices():
+async def get_notices(_=Depends(require_admin)):
     return notice_store.get_all_notices()
 
 
 @app.get("/api/admin/notices/{notice_id}")
-async def get_notice_detail(notice_id: str):
+async def get_notice_detail(notice_id: str, _=Depends(require_admin)):
     notice = notice_store.get_notice(notice_id)
     if not notice:
         raise HTTPException(status_code=404, detail="Notice not found")
@@ -597,15 +1016,21 @@ async def get_notice_detail(notice_id: str):
 
 
 @app.put("/api/admin/notices/{notice_id}/status")
-async def update_notice_status(notice_id: str, body: NoticeStatusUpdate):
+async def update_notice_status(notice_id: str, body: NoticeStatusUpdate, _=Depends(require_admin)):
     result = notice_store.update_notice_status(notice_id, body.status, body.reviewer_notes)
     if not result:
         raise HTTPException(status_code=404, detail="Notice not found")
+    notice_store.log_activity(
+        f"Notice {body.status}",
+        body.reviewer_notes or "",
+        "notice",
+        notice_id,
+    )
     return result
 
 
 @app.get("/api/admin/notices/{notice_id}/pdf")
-async def get_notice_pdf(notice_id: str):
+async def get_notice_pdf(notice_id: str, _=Depends(require_admin)):
     notice = notice_store.get_notice(notice_id)
     if not notice:
         raise HTTPException(status_code=404, detail="Notice not found")
@@ -627,21 +1052,361 @@ class SEOSettingsUpdate(BaseModel):
     meta_keywords: str | None = None
     og_title: str | None = None
     og_description: str | None = None
+    og_image: str | None = None
     canonical_url: str | None = None
     google_analytics_id: str | None = None
     google_search_console_verification: str | None = None
+    bing_verification: str | None = None
     custom_head_tags: str | None = None
+    default_robots: str | None = None
+    hreflang_entries: list[dict] | None = None
+    faq_schema: list[dict] | None = None
 
 
 @app.get("/api/admin/seo")
-async def get_seo():
+async def get_seo(_=Depends(require_admin)):
     return notice_store.get_seo_settings()
 
 
 @app.put("/api/admin/seo")
-async def save_seo(body: SEOSettingsUpdate):
+async def save_seo(body: SEOSettingsUpdate, _=Depends(require_admin)):
     data = {k: v for k, v in body.model_dump().items() if v is not None}
-    return notice_store.save_seo_settings(data)
+    result = notice_store.save_seo_settings(data)
+    notice_store.log_activity("Updated SEO settings", "", "seo")
+    return result
+
+
+# ── SEO Audit ────────────────────────────────────────────────────────
+
+@app.get("/api/admin/seo/audit")
+async def seo_audit(_=Depends(require_admin)):
+    """Run an automated SEO health check and return a scored report."""
+    seo = notice_store.get_seo_settings()
+    pages = notice_store.get_all_pages()
+    blog_posts = notice_store.get_all_blog_posts()
+    published = [p for p in blog_posts if p.get("status") == "published"]
+
+    checks: list[dict] = []
+    score = 0
+    total = 0
+
+    def check(name: str, passed: bool, tip: str, weight: int = 1):
+        nonlocal score, total
+        total += weight
+        if passed:
+            score += weight
+        checks.append({"name": name, "passed": passed, "tip": tip, "weight": weight})
+
+    title = seo.get("site_title", "")
+    desc = seo.get("meta_description", "")
+    keywords = seo.get("meta_keywords", "")
+    canonical = seo.get("canonical_url", "")
+
+    # Core meta
+    check("Title length (50-60 chars)", 50 <= len(title) <= 60,
+          f"Currently {len(title)} chars. Aim for 50-60 for best SERP display.", 2)
+    check("Meta description (120-160 chars)", 120 <= len(desc) <= 160,
+          f"Currently {len(desc)} chars. Aim for 120-160.", 2)
+    check("Keywords defined", len(keywords) > 0,
+          "Add target keywords for density tracking.", 1)
+    check("Canonical URL set", len(canonical) > 4,
+          "Set a canonical URL to prevent duplicate content issues.", 2)
+
+    # OG tags
+    check("OG title set", bool(seo.get("og_title")),
+          "Set OG title for better social sharing.", 1)
+    check("OG description set", bool(seo.get("og_description")),
+          "Set OG description for better social sharing.", 1)
+    check("OG image set", bool(seo.get("og_image")),
+          "Add an OG image (1200x630px recommended) for social cards.", 2)
+
+    # Verification
+    check("Google Search Console verified", bool(seo.get("google_search_console_verification")),
+          "Verify with Google Search Console for indexing insights.", 2)
+    check("Google Analytics configured", bool(seo.get("google_analytics_id")),
+          "Add GA ID to track organic traffic.", 1)
+    check("Bing Webmaster verified", bool(seo.get("bing_verification")),
+          "Verify with Bing Webmaster Tools for additional search coverage.", 1)
+
+    # Content
+    check("Blog posts published (3+)", len(published) >= 3,
+          f"You have {len(published)} published posts. Aim for 3+ to build topical authority.", 2)
+    check("Blog posts with meta descriptions", all(p.get("meta_description") for p in published),
+          "Ensure every published blog post has a meta description.", 2)
+    check("Blog posts with keywords", all(p.get("meta_keywords") for p in published),
+          "Add meta keywords to each blog post.", 1)
+
+    # Sitemap
+    check("Sitemap has pages", len(pages) >= 1,
+          "Add PAGES to your sitemap for better crawl coverage.", 1)
+
+    # Structured data
+    check("FAQ schema configured", len(seo.get("faq_schema", [])) > 0,
+          "Add FAQ schema — FAQs can appear as rich snippets in search results.", 2)
+
+    # Hreflang
+    check("Hreflang for Hindi audience", len(seo.get("hreflang_entries", [])) > 0,
+          "Add hreflang entries (en-IN, hi-IN) to target Hindi + English searchers.", 1)
+
+    # Redirects
+    redirects = notice_store.get_all_redirects()
+    check("301 redirects managed", True, "Redirect manager is available.", 0)
+
+    pct = round((score / total) * 100) if total > 0 else 0
+    grade = "A" if pct >= 90 else "B" if pct >= 75 else "C" if pct >= 60 else "D" if pct >= 40 else "F"
+
+    return {
+        "score": pct,
+        "grade": grade,
+        "total_checks": len(checks),
+        "passed": sum(1 for c in checks if c["passed"]),
+        "failed": sum(1 for c in checks if not c["passed"]),
+        "checks": checks,
+        "summary": {
+            "published_posts": len(published),
+            "total_pages": len(pages),
+            "total_redirects": len(redirects),
+        },
+    }
+
+
+# ── 301 Redirects API ───────────────────────────────────────────────
+
+class RedirectInput(BaseModel):
+    from_path: str
+    to_path: str
+    status_code: int = 301
+
+@app.get("/api/admin/redirects")
+async def list_redirects(_=Depends(require_admin)):
+    return notice_store.get_all_redirects()
+
+@app.post("/api/admin/redirects")
+async def create_redirect(body: RedirectInput, _=Depends(require_admin)):
+    entry = body.model_dump()
+    result = notice_store.save_redirect(entry)
+    notice_store.log_activity("Created redirect", f"{body.from_path} → {body.to_path}", "seo")
+    return result
+
+@app.delete("/api/admin/redirects/{redirect_id}")
+async def delete_redirect(redirect_id: str, _=Depends(require_admin)):
+    if not notice_store.delete_redirect(redirect_id):
+        raise HTTPException(status_code=404, detail="Redirect not found")
+    notice_store.log_activity("Deleted redirect", redirect_id, "seo")
+    return {"ok": True}
+
+
+# ── Sitemap Ping ─────────────────────────────────────────────────────
+
+@app.post("/api/admin/seo/ping-sitemap")
+async def ping_sitemap(_=Depends(require_admin)):
+    """Notify Google and Bing that the sitemap has been updated."""
+    import httpx
+    seo = notice_store.get_seo_settings()
+    base = seo.get("canonical_url", "https://lawly.store/").rstrip("/")
+    sitemap_url = f"{base}/sitemap.xml"
+    results = {}
+    async with httpx.AsyncClient(timeout=10) as client:
+        for name, ping_url in [
+            ("google", f"https://www.google.com/ping?sitemap={sitemap_url}"),
+            ("bing", f"https://www.bing.com/ping?sitemap={sitemap_url}"),
+        ]:
+            try:
+                resp = await client.get(ping_url)
+                results[name] = {"status": resp.status_code, "ok": resp.status_code < 400}
+            except Exception as e:
+                results[name] = {"status": 0, "ok": False, "error": str(e)}
+    notice_store.log_activity("Pinged search engines", f"Sitemap: {sitemap_url}", "seo")
+    return results
+
+
+# ── AEO / AI Engine Optimization ─────────────────────────────────────
+
+class AEOSettingsUpdate(BaseModel):
+    llms_txt: str | None = None
+    llms_full_txt: str | None = None
+    org_schema: dict | None = None
+    speakable_selectors: list[str] | None = None
+    howto_schemas: list[dict] | None = None
+    ai_snippets: list[dict] | None = None
+    topic_clusters: list[dict] | None = None
+    cite_sources: list[dict] | None = None
+
+
+@app.get("/api/admin/aeo")
+async def get_aeo(_=Depends(require_admin)):
+    return notice_store.get_aeo_settings()
+
+
+@app.put("/api/admin/aeo")
+async def save_aeo(body: AEOSettingsUpdate, _=Depends(require_admin)):
+    data = {k: v for k, v in body.model_dump().items() if v is not None}
+    result = notice_store.save_aeo_settings(data)
+    notice_store.log_activity("Updated AEO settings", "", "aeo")
+    return result
+
+
+@app.get("/api/admin/aeo/audit")
+async def aeo_audit(_=Depends(require_admin)):
+    """Run an AI Engine Optimization health audit."""
+    import html as html_mod
+    aeo = notice_store.get_aeo_settings()
+    seo = notice_store.get_seo_settings()
+    posts = notice_store.get_published_blog_posts()
+
+    checks: list[dict] = []
+
+    def _check(name: str, passed: bool, tip: str, weight: int = 1):
+        checks.append({"name": name, "passed": passed, "tip": tip, "weight": weight})
+
+    # 1. llms.txt configured
+    llms = (aeo.get("llms_txt") or "").strip()
+    _check("llms.txt configured", bool(llms), "Create a llms.txt file so AI crawlers understand your site purpose and offerings.", 3)
+
+    # 2. llms-full.txt configured
+    llms_full = (aeo.get("llms_full_txt") or "").strip()
+    _check("llms-full.txt configured", bool(llms_full), "Provide comprehensive content in llms-full.txt for deeper AI understanding.", 2)
+
+    # 3. Organization schema complete
+    org = aeo.get("org_schema", {})
+    org_fields = ["name", "url", "logo", "description"]
+    org_filled = sum(1 for f in org_fields if org.get(f))
+    _check("Organization schema complete", org_filled >= 3, f"{org_filled}/{len(org_fields)} core fields filled. Add name, URL, logo, description.", 2)
+
+    # 4. sameAs links (social profiles / Wikipedia)
+    same_as = org.get("same_as", [])
+    _check("Social/sameAs links", len(same_as) >= 2, "Add social profiles, Wikipedia, Crunchbase links so AI knows your brand identity.", 2)
+
+    # 5. FAQ schema (already in SEO)
+    faq = seo.get("faq_schema", [])
+    _check("FAQ schema for AI answers", len(faq) >= 3, f"{len(faq)} FAQ items. Add 3+ question-answer pairs — AI engines love extracting these.", 3)
+
+    # 6. HowTo schemas
+    howtos = aeo.get("howto_schemas", [])
+    _check("HowTo schemas defined", len(howtos) >= 1, "Create step-by-step HowTo guides — AI assistants prominently feature these.", 2)
+
+    # 7. AI-ready content snippets
+    snippets = aeo.get("ai_snippets", [])
+    _check("AI answer snippets", len(snippets) >= 3, f"{len(snippets)} snippets. Write 3+ concise authoritative answers for common queries.", 3)
+
+    # 8. Topic authority clusters
+    clusters = aeo.get("topic_clusters", [])
+    _check("Topic authority clusters", len(clusters) >= 2, "Define topic clusters to demonstrate expertise depth to AI rankers.", 2)
+
+    # 9. Citation sources
+    sources = aeo.get("cite_sources", [])
+    _check("Citation sources listed", len(sources) >= 2, "Add authoritative sources you cite — boosts credibility with AI engines.", 1)
+
+    # 10. Speakable selectors
+    speakable = aeo.get("speakable_selectors", [])
+    _check("Speakable content marked", len(speakable) >= 1, "Mark key content as speakable for voice assistants (Google Assistant, Alexa).", 1)
+
+    # 11. Blog has structured Q&A patterns
+    qa_posts = sum(1 for p in posts if any(q in (p.get("title") or "").lower() for q in ["how", "what", "why", "can i", "guide", "step"]))
+    _check("Blog has Q&A-style content", qa_posts >= 2, f"{qa_posts} posts with question-style titles. AI engines prioritize conversational Q&A content.", 2)
+
+    # 12. Meta descriptions under 160 chars (AI snippet-friendly)
+    good_desc = sum(1 for p in posts if 50 <= len(p.get("meta_description") or "") <= 160)
+    _check("Blog meta descs AI-ready", good_desc >= len(posts) * 0.7 or good_desc >= 3, f"{good_desc}/{len(posts)} blog posts have concise meta descriptions (50-160 chars).", 1)
+
+    # 13. Content freshness (posts in last 60 days)
+    from datetime import datetime, timedelta
+    cutoff = (datetime.utcnow() - timedelta(days=60)).isoformat()
+    recent = sum(1 for p in posts if (p.get("updated_at") or p.get("created_at", "")) > cutoff)
+    _check("Content freshness", recent >= 1, f"{recent} posts updated in last 60 days. Fresh content signals authority to AI.", 2)
+
+    # 14. Structured data breadth
+    has_org = org_filled >= 3
+    has_faq = len(faq) >= 1
+    has_howto = len(howtos) >= 1
+    schema_count = sum([has_org, has_faq, has_howto])
+    _check("Schema diversity (3+ types)", schema_count >= 3, f"{schema_count}/3 schema types. Use Organization + FAQ + HowTo for maximum AI coverage.", 2)
+
+    total_weight = sum(c["weight"] for c in checks)
+    earned = sum(c["weight"] for c in checks if c["passed"])
+    score = round((earned / total_weight) * 100) if total_weight else 0
+    grade = "A" if score >= 85 else "B" if score >= 70 else "C" if score >= 50 else "D" if score >= 30 else "F"
+
+    return {
+        "score": score,
+        "grade": grade,
+        "total_checks": len(checks),
+        "passed": sum(1 for c in checks if c["passed"]),
+        "failed": sum(1 for c in checks if not c["passed"]),
+        "checks": checks,
+        "summary": {
+            "llms_txt_lines": len(llms.splitlines()) if llms else 0,
+            "howto_count": len(howtos),
+            "snippet_count": len(snippets),
+            "topic_clusters": len(clusters),
+            "blog_posts": len(posts),
+        },
+    }
+
+
+@app.get("/llms.txt")
+async def serve_llms_txt():
+    """Serve llms.txt for AI crawlers."""
+    aeo = notice_store.get_aeo_settings()
+    content = aeo.get("llms_txt", "")
+    if not content:
+        # Auto-generate a sensible default
+        seo = notice_store.get_seo_settings()
+        content = f"""# {seo.get('site_title', 'Lawly')}
+
+> {seo.get('meta_description', '')}
+
+## About
+Lawly is an AI-powered legal notice generator for Indian consumers.
+It helps citizens exercise their consumer protection rights under the Consumer Protection Act 2019.
+
+## Key Features
+- AI-generated legal notices backed by 15+ Indian consumer statutes
+- Three tiers: Self-Send, Professional Review, Lawyer-Drafted
+- Instant PDF generation with proper legal formatting
+
+## Contact
+Website: {seo.get('canonical_url', 'https://lawly.store')}
+"""
+    return Response(content=content, media_type="text/plain; charset=utf-8")
+
+
+@app.get("/llms-full.txt")
+async def serve_llms_full_txt():
+    """Serve llms-full.txt with comprehensive site content for AI."""
+    aeo = notice_store.get_aeo_settings()
+    content = aeo.get("llms_full_txt", "")
+    if not content:
+        # Auto-generate from blog + FAQ + snippets
+        seo = notice_store.get_seo_settings()
+        posts = notice_store.get_published_blog_posts()
+        parts = [f"# {seo.get('site_title', 'Lawly')} — Complete Information\n"]
+        parts.append(f"> {seo.get('meta_description', '')}\n")
+
+        faq = seo.get("faq_schema", [])
+        if faq:
+            parts.append("## Frequently Asked Questions\n")
+            for item in faq:
+                parts.append(f"**Q: {item.get('question', '')}**")
+                parts.append(f"A: {item.get('answer', '')}\n")
+
+        snippets = aeo.get("ai_snippets", [])
+        if snippets:
+            parts.append("## Key Topics\n")
+            for s in snippets:
+                parts.append(f"### {s.get('query', '')}")
+                parts.append(f"{s.get('answer', '')}\n")
+
+        if posts:
+            parts.append("## Published Guides & Articles\n")
+            for p in posts[:20]:
+                parts.append(f"### {p.get('title', '')}")
+                if p.get("meta_description"):
+                    parts.append(p["meta_description"])
+                parts.append("")
+
+        content = "\n".join(parts)
+    return Response(content=content, media_type="text/plain; charset=utf-8")
 
 
 # ── Blog Posts API ───────────────────────────────────────────────────
@@ -657,12 +1422,12 @@ class BlogPostInput(BaseModel):
 
 
 @app.get("/api/admin/blog")
-async def list_blog_posts():
+async def list_blog_posts(_=Depends(require_admin)):
     return notice_store.get_all_blog_posts()
 
 
 @app.get("/api/admin/blog/{slug}")
-async def get_blog_post(slug: str):
+async def get_blog_post(slug: str, _=Depends(require_admin)):
     post = notice_store.get_blog_post(slug)
     if not post:
         raise HTTPException(status_code=404, detail="Blog post not found")
@@ -670,21 +1435,26 @@ async def get_blog_post(slug: str):
 
 
 @app.post("/api/admin/blog")
-async def create_blog_post(body: BlogPostInput):
-    return notice_store.save_blog_post(body.model_dump())
+async def create_blog_post(body: BlogPostInput, _=Depends(require_admin)):
+    result = notice_store.save_blog_post(body.model_dump())
+    notice_store.log_activity("Created blog post", body.title, "blog", result.get("slug", ""))
+    return result
 
 
 @app.put("/api/admin/blog/{slug}")
-async def update_blog_post(slug: str, body: BlogPostInput):
+async def update_blog_post(slug: str, body: BlogPostInput, _=Depends(require_admin)):
     data = body.model_dump()
     data["slug"] = slug
-    return notice_store.save_blog_post(data)
+    result = notice_store.save_blog_post(data)
+    notice_store.log_activity("Updated blog post", body.title, "blog", slug)
+    return result
 
 
 @app.delete("/api/admin/blog/{slug}")
-async def delete_blog_post(slug: str):
+async def delete_blog_post(slug: str, _=Depends(require_admin)):
     if not notice_store.delete_blog_post(slug):
         raise HTTPException(status_code=404, detail="Blog post not found")
+    notice_store.log_activity("Deleted blog post", slug, "blog", slug)
     return {"ok": True}
 
 
@@ -703,27 +1473,32 @@ class PageInput(BaseModel):
 
 
 @app.get("/api/admin/pages")
-async def list_pages():
+async def list_pages(_=Depends(require_admin)):
     return notice_store.get_all_pages()
 
 
 @app.post("/api/admin/pages")
-async def create_page(body: PageInput):
-    return notice_store.save_page(body.model_dump())
+async def create_page(body: PageInput, _=Depends(require_admin)):
+    result = notice_store.save_page(body.model_dump())
+    notice_store.log_activity("Created page", body.path, "page", body.path)
+    return result
 
 
 @app.put("/api/admin/pages/{path:path}")
-async def update_page(path: str, body: PageInput):
+async def update_page(path: str, body: PageInput, _=Depends(require_admin)):
     data = body.model_dump()
     data["path"] = f"/{path}" if not path.startswith("/") else path
-    return notice_store.save_page(data)
+    result = notice_store.save_page(data)
+    notice_store.log_activity("Updated page", data["path"], "page", data["path"])
+    return result
 
 
 @app.delete("/api/admin/pages/{path:path}")
-async def delete_page(path: str):
+async def delete_page(path: str, _=Depends(require_admin)):
     key = f"/{path}" if not path.startswith("/") else path
     if not notice_store.delete_page(key):
         raise HTTPException(status_code=404, detail="Page not found")
+    notice_store.log_activity("Deleted page", key, "page", key)
     return {"ok": True}
 
 
@@ -770,15 +1545,38 @@ async def dynamic_robots():
 # ── Blog rendering (SSR for crawlers) ────────────────────────────────
 
 def _render_blog_html(post: dict, seo: dict) -> str:
-    import html
-    title = html.escape(post.get("title", ""))
-    desc = html.escape(post.get("meta_description", ""))
-    keywords = html.escape(post.get("meta_keywords", ""))
-    author = html.escape(post.get("author", ""))
+    import html as html_mod
+    import json as json_mod
+    title = html_mod.escape(post.get("title", ""))
+    desc = html_mod.escape(post.get("meta_description", ""))
+    keywords = html_mod.escape(post.get("meta_keywords", ""))
+    author = html_mod.escape(post.get("author", ""))
     content = post.get("content", "")
     date_str = (post.get("updated_at") or post.get("created_at", ""))[:10]
     base = seo.get("canonical_url", "").rstrip("/")
     slug = post.get("slug", "")
+    og_image = html_mod.escape(seo.get("og_image", ""))
+
+    # Breadcrumb structured data
+    breadcrumb_ld = json_mod.dumps({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": f"{base}/"},
+            {"@type": "ListItem", "position": 2, "name": "Blog", "item": f"{base}/blog"},
+            {"@type": "ListItem", "position": 3, "name": post.get("title", ""), "item": f"{base}/blog/{slug}"},
+        ]
+    })
+
+    # Hreflang tags
+    hreflang_tags = ""
+    for entry in seo.get("hreflang_entries", []):
+        lang = html_mod.escape(entry.get("lang", ""))
+        href = html_mod.escape(entry.get("href", "").rstrip("/"))
+        if lang and href:
+            hreflang_tags += f'\n    <link rel="alternate" hreflang="{lang}" href="{href}/blog/{slug}">'
+
+    og_image_tag = f'\n    <meta property="og:image" content="{og_image}">' if og_image else ""
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -797,7 +1595,7 @@ def _render_blog_html(post: dict, seo: dict) -> str:
     <meta property="og:site_name" content="Jago Grahak Jago">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="{title}">
-    <meta name="twitter:description" content="{desc}">
+    <meta name="twitter:description" content="{desc}">{og_image_tag}{hreflang_tags}
     <script type="application/ld+json">
     {{
         "@context": "https://schema.org",
@@ -810,6 +1608,7 @@ def _render_blog_html(post: dict, seo: dict) -> str:
         "url": "{base}/blog/{slug}"
     }}
     </script>
+    <script type="application/ld+json">{breadcrumb_ld}</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
@@ -915,3 +1714,81 @@ async def blog_post_page(slug: str):
         raise HTTPException(status_code=404, detail="Blog post not found")
     seo = notice_store.get_seo_settings()
     return HTMLResponse(content=_render_blog_html(post, seo))
+
+
+# ── Database API endpoints ───────────────────────────────────────────
+
+@app.get("/api/admin/db/users")
+async def list_users(limit: int = 100, offset: int = 0, _=Depends(require_admin)):
+    """List all users stored in the database."""
+    return await db.get_all_users(limit, offset)
+
+
+@app.get("/api/admin/db/users/{user_id}")
+async def get_user_detail(user_id: str, _=Depends(require_admin)):
+    """Get a single user with all their notices."""
+    user = await db.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user["notices"] = await db.get_user_notices(user_id)
+    return user
+
+
+@app.get("/api/admin/db/notices")
+async def list_db_notices(limit: int = 100, offset: int = 0, _=Depends(require_admin)):
+    """List all notices with full interim analysis data from the database."""
+    return await db.get_all_notices_db(limit, offset)
+
+
+@app.get("/api/admin/db/notices/{notice_id}")
+async def get_db_notice_detail(notice_id: str, _=Depends(require_admin)):
+    """Get a single notice with all interim model outputs."""
+    notice = await db.get_notice_db(notice_id)
+    if not notice:
+        raise HTTPException(status_code=404, detail="Notice not found")
+    return notice
+
+
+@app.get("/api/admin/db/stats")
+async def get_db_stats(_=Depends(require_admin)):
+    """Get database-only dashboard stats (users, analyses, notices)."""
+    return await db.get_dashboard_stats_db()
+
+
+@app.get("/api/admin/db/pdfs")
+async def list_pdfs(limit: int = 100, offset: int = 0, _=Depends(require_admin)):
+    """List all stored generated PDFs (metadata only)."""
+    return await db.get_all_pdfs_meta(limit, offset)
+
+
+@app.get("/api/admin/db/pdfs/{notice_id}")
+async def download_db_pdf(notice_id: str, _=Depends(require_admin)):
+    """Download a stored PDF by notice ID."""
+    result = await db.get_pdf(notice_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="PDF not found for this notice")
+    pdf_bytes, filename = result
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ── 301 Redirect handler (catch-all, must be last) ──────────────────
+
+@app.get("/{full_path:path}")
+async def catch_all_redirect(full_path: str):
+    """Serve static files or follow 301 redirects."""
+    path = f"/{full_path}" if not full_path.startswith("/") else full_path
+    # Check redirects
+    redir = notice_store.find_redirect(path)
+    if redir:
+        from fastapi.responses import RedirectResponse
+        code = redir.get("status_code", 301)
+        return RedirectResponse(url=redir["to_path"], status_code=code)
+    # Try static file
+    static_path = _STATIC_DIR / full_path
+    if static_path.is_file():
+        return FileResponse(str(static_path))
+    raise HTTPException(status_code=404, detail="Not found")

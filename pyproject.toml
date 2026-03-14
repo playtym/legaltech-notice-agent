@@ -5,6 +5,7 @@ description = "Agentic workflow for complaint intake, policy/contact research, a
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "aiosqlite>=0.20.0",
   "anthropic[bedrock]>=0.40.0",
   "beautifulsoup4>=4.12.3",
   "fastapi>=0.115.0",

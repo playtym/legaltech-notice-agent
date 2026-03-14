@@ -3,46 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin — Legal Notice System</title>
+    <title>Admin — Lawly</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <style>
-        body { background: var(--gray-100); }
+        :root {
+            --primary: #DC2626; --primary-hover: #B91C1C; --primary-light: #FEF2F2;
+            --green: #059669; --green-light: #ECFDF5;
+            --orange: #D97706; --orange-light: #FFF7ED;
+            --blue: #2563EB; --blue-light: #DBEAFE;
+            --gray-50: #F9FAFB; --gray-100: #F3F4F6; --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB; --gray-400: #9CA3AF; --gray-500: #6B7280;
+            --gray-600: #4B5563; --gray-700: #374151; --gray-800: #1F2937;
+            --gray-900: #111827; --white: #FFFFFF;
+            --radius: 12px; --shadow: 0 1px 3px rgba(0,0,0,.1); --shadow-md: 0 4px 12px rgba(0,0,0,.1);
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--gray-100); color: var(--gray-800); line-height: 1.5; }
+        .hidden { display: none !important; }
+
+        /* ── Login ─────────────────────────────────── */
+        .login-screen {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, var(--gray-900) 0%, #1a1a2e 50%, var(--gray-900) 100%);
+        }
+        .login-card {
+            background: var(--white); border-radius: var(--radius); padding: 40px; width: 380px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.3); text-align: center;
+        }
+        .login-card h1 { font-size: 1.5rem; margin-bottom: 4px; }
+        .login-card p { color: var(--gray-400); font-size: .9rem; margin-bottom: 24px; }
+        .login-card input {
+            width: 100%; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: 8px;
+            font-size: .95rem; margin-bottom: 16px; outline: none; font-family: inherit;
+        }
+        .login-card input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .login-error { color: var(--primary); font-size: .85rem; margin-top: 8px; }
+
+        /* ── Buttons ───────────────────────────────── */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px;
+            border: none; border-radius: 8px; font-size: .9rem; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: all .15s;
+        }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-outline { background: transparent; border: 1px solid var(--gray-200); color: var(--gray-700); }
+        .btn-outline:hover { background: var(--gray-50); border-color: var(--gray-300); }
+        .btn-ghost { background: transparent; color: var(--gray-500); }
+        .btn-ghost:hover { color: var(--gray-800); background: var(--gray-100); }
+        .btn-sm { padding: 6px 12px; font-size: .8rem; }
+        .btn-block { width: 100%; justify-content: center; }
+        .btn-green { background: var(--green); color: var(--white); }
+        .btn-green:hover { background: #047857; }
+
+        /* ── Header ────────────────────────────────── */
         .admin-header {
-            background: var(--gray-900); color: var(--white); padding: 16px 32px;
+            background: var(--gray-900); color: var(--white); padding: 14px 32px;
             display: flex; justify-content: space-between; align-items: center;
         }
         .admin-header h1 { font-size: 1.1rem; font-weight: 700; }
-        .admin-header a { color: var(--gray-400); text-decoration: none; font-size: .9rem; }
-        .admin-header a:hover { color: var(--white); }
-        .admin-layout { max-width: 1000px; margin: 0 auto; padding: 24px; }
-        .admin-section { margin-bottom: 32px; }
-        .admin-section h2 { font-size: 1.2rem; margin-bottom: 16px; color: var(--gray-800); }
+        .admin-header a, .admin-header button {
+            color: var(--gray-400); text-decoration: none; font-size: .85rem;
+            background: none; border: none; cursor: pointer; font-family: inherit;
+        }
+        .admin-header a:hover, .admin-header button:hover { color: var(--white); }
 
-        /* Lawyer form */
-        .lawyer-form { background: var(--white); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow); }
-        .lawyer-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .lawyer-form .form-group { margin-bottom: 14px; }
-        .lawyer-status { margin-top: 12px; font-size: .9rem; padding: 8px 12px; border-radius: 6px; }
-        .lawyer-status.saved { background: var(--green-light); color: var(--green); }
+        /* ── Tabs ──────────────────────────────────── */
+        .admin-tabs {
+            display: flex; gap: 0; background: var(--white); border-bottom: 1px solid var(--gray-200);
+            padding: 0 32px; overflow-x: auto;
+        }
+        .admin-tab {
+            padding: 12px 18px; font-size: .85rem; font-weight: 500; color: var(--gray-500);
+            border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent;
+            white-space: nowrap; font-family: inherit; transition: all .15s;
+        }
+        .admin-tab:hover { color: var(--gray-800); }
+        .admin-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 
-        /* Notices table */
-        .notices-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-        .notices-table th { background: var(--gray-50); text-align: left; padding: 10px 14px; font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-400); border-bottom: 1px solid var(--gray-200); }
-        .notices-table td { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); font-size: .9rem; }
-        .notices-table tr:hover td { background: var(--gray-50); }
+        /* ── Layout ────────────────────────────────── */
+        .admin-layout { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Cards ─────────────────────────────────── */
+        .card { background: var(--white); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card {
+            background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+            border-left: 4px solid var(--gray-300);
+        }
+        .stat-card.red { border-left-color: var(--primary); }
+        .stat-card.green { border-left-color: var(--green); }
+        .stat-card.orange { border-left-color: var(--orange); }
+        .stat-card.blue { border-left-color: var(--blue); }
+        .stat-card h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-400); margin-bottom: 4px; }
+        .stat-card .num { font-size: 1.8rem; font-weight: 800; color: var(--gray-900); }
+
+        /* ── Charts ────────────────────────────────── */
+        .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .chart-card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+        .chart-card h3 { font-size: .9rem; margin-bottom: 12px; color: var(--gray-700); }
+        @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
+
+        /* ── Tables ────────────────────────────────── */
+        .data-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+        .data-table th {
+            background: var(--gray-50); text-align: left; padding: 10px 14px;
+            font-size: .75rem; text-transform: uppercase; letter-spacing: .5px;
+            color: var(--gray-400); border-bottom: 1px solid var(--gray-200);
+        }
+        .data-table td { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); font-size: .88rem; }
+        .data-table tr:hover td { background: var(--gray-50); }
+        .data-table tr { cursor: pointer; }
         .badge {
             display: inline-block; padding: 2px 10px; border-radius: 20px;
             font-size: .75rem; font-weight: 600;
         }
-        .badge.pending { background: #FFF7ED; color: var(--orange-dark); }
+        .badge.pending { background: var(--orange-light); color: var(--orange); }
         .badge.approved { background: var(--green-light); color: var(--green); }
-        .badge.sent { background: #DBEAFE; color: #2563EB; }
+        .badge.sent, .badge.published { background: var(--blue-light); color: var(--blue); }
         .badge.delivered { background: var(--gray-100); color: var(--gray-600); }
-        .badge.rejected { background: #FEF2F2; color: var(--red); }
+        .badge.rejected { background: var(--primary-light); color: var(--primary); }
+        .badge.draft { background: var(--gray-100); color: var(--gray-500); }
 
-        /* Notice detail modal */
+        /* ── Forms ─────────────────────────────────── */
+        .form-card { background: var(--white); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: .85rem; font-weight: 600; color: var(--gray-700); margin-bottom: 4px; }
+        .form-group label small { font-weight: 400; color: var(--gray-400); }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: 8px;
+            font-size: .9rem; outline: none; font-family: inherit; color: var(--gray-800);
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        .req { color: var(--primary); }
+        .form-status { margin-top: 12px; font-size: .9rem; padding: 8px 12px; border-radius: 6px; }
+        .form-status.ok { background: var(--green-light); color: var(--green); }
+
+        /* ── Modal ─────────────────────────────────── */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,.5);
             display: flex; align-items: center; justify-content: center; z-index: 999;
@@ -50,425 +153,2253 @@
         .modal-overlay.hidden { display: none; }
         .modal-box {
             background: var(--white); border-radius: var(--radius); padding: 28px;
-            max-width: 750px; width: 95%; max-height: 90vh; overflow-y: auto;
+            max-width: 850px; width: 95%; max-height: 90vh; overflow-y: auto;
         }
-        .modal-box h3 { margin-bottom: 16px; }
+        .modal-box h3 { margin-bottom: 16px; font-size: 1.15rem; }
         .modal-box pre {
             background: var(--gray-50); padding: 16px; border-radius: 8px;
             font-size: .78rem; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word;
-            max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace;
+            max-height: 350px; overflow-y: auto; font-family: 'Courier New', monospace;
         }
         .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+        .modal-card { background: var(--gray-50); padding: 12px; border-radius: 8px; }
+        .modal-card h4 { font-size: .7rem; text-transform: uppercase; color: var(--gray-400); margin-bottom: 2px; }
 
+        /* ── SEO Previews ──────────────────────────── */
+        .serp-preview {
+            background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px;
+            padding: 16px; margin-top: 12px;
+        }
+        .serp-preview h4 { font-size: .75rem; text-transform: uppercase; color: var(--gray-400); margin-bottom: 10px; }
+        .serp-title { font-size: 1.15rem; color: #1a0dab; font-weight: 400; line-height: 1.3; cursor: pointer; }
+        .serp-url { font-size: .85rem; color: #006621; margin: 2px 0; }
+        .serp-desc { font-size: .85rem; color: #545454; line-height: 1.4; }
+        .og-preview {
+            background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px;
+            overflow: hidden; margin-top: 12px; max-width: 500px;
+        }
+        .og-preview-img { height: 120px; background: linear-gradient(135deg, var(--gray-200), var(--gray-100)); display: flex; align-items: center; justify-content: center; color: var(--gray-400); font-size: .85rem; }
+        .og-preview-body { padding: 12px; }
+        .og-preview-body .og-site { font-size: .75rem; color: var(--gray-400); text-transform: uppercase; }
+        .og-preview-body .og-title { font-size: .95rem; font-weight: 600; color: var(--gray-900); margin: 4px 0; }
+        .og-preview-body .og-desc { font-size: .82rem; color: var(--gray-500); }
+        .char-counter { font-size: .75rem; margin-top: 2px; }
+        .char-ok { color: var(--green); }
+        .char-warn { color: var(--orange); }
+        .char-over { color: var(--primary); }
+
+        .keyword-result {
+            margin-top: 16px; background: var(--gray-50); border-radius: 8px; padding: 16px;
+        }
+        .keyword-result h4 { font-size: .8rem; color: var(--gray-600); margin-bottom: 8px; }
+        .kw-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: .82rem; }
+        .kw-bar-fill { height: 6px; border-radius: 3px; background: var(--primary); }
+
+        /* ── Quill overrides ───────────────────────── */
+        .ql-container { min-height: 250px; font-size: .95rem; font-family: 'Inter', sans-serif; }
+        .ql-editor { min-height: 250px; }
+
+        /* ── Activity ──────────────────────────────── */
+        .activity-item {
+            display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--gray-100);
+            font-size: .88rem;
+        }
+        .activity-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; flex-shrink: 0;
+        }
+        .activity-time { color: var(--gray-400); font-size: .78rem; }
+
+        .toolbar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
         .empty-state { text-align: center; padding: 40px; color: var(--gray-400); }
+
+        /* ── Toast notifications ────────────────────── */
+        .toast-container {
+            position: fixed; top: 16px; right: 16px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+        }
+        .toast {
+            background: var(--gray-900); color: var(--white); padding: 12px 20px;
+            border-radius: 8px; font-size: .88rem; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+            pointer-events: auto; animation: toastIn .3s ease-out;
+            display: flex; align-items: center; gap: 8px; max-width: 380px;
+        }
+        .toast.success { border-left: 4px solid var(--green); }
+        .toast.error { border-left: 4px solid var(--primary); }
+        .toast.info { border-left: 4px solid var(--blue); }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(40px); } }
+
+        /* ── Search / Filter ───────────────────────── */
+        .search-bar {
+            display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 1; min-width: 200px; padding: 8px 14px; border: 1px solid var(--gray-200);
+            border-radius: 8px; font-size: .88rem; outline: none; font-family: inherit;
+        }
+        .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .filter-select {
+            padding: 8px 12px; border: 1px solid var(--gray-200); border-radius: 8px;
+            font-size: .85rem; font-family: inherit; background: var(--white); cursor: pointer;
+        }
+
+        /* ── Loading overlay ───────────────────────── */
+        .btn.loading { opacity: .6; pointer-events: none; }
+        .btn.loading::after { content: '...'; }
+
+        /* ── SEO Audit ─────────────────────────────── */
+        .audit-score {
+            display: flex; align-items: center; gap: 20px; margin-bottom: 20px;
+            padding: 20px; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+        }
+        .audit-circle {
+            width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 1.6rem; font-weight: 800; color: var(--white); flex-shrink: 0;
+        }
+        .audit-circle.grade-a { background: var(--green); }
+        .audit-circle.grade-b { background: #2563EB; }
+        .audit-circle.grade-c { background: var(--orange); }
+        .audit-circle.grade-d, .audit-circle.grade-f { background: var(--primary); }
+        .audit-summary { flex: 1; }
+        .audit-summary h3 { font-size: 1.1rem; margin-bottom: 4px; }
+        .audit-summary p { color: var(--gray-500); font-size: .85rem; }
+        .audit-checks { display: flex; flex-direction: column; gap: 6px; }
+        .audit-check {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            background: var(--white); border-radius: 8px; font-size: .85rem;
+            border-left: 3px solid var(--gray-200);
+        }
+        .audit-check.pass { border-left-color: var(--green); }
+        .audit-check.fail { border-left-color: var(--primary); }
+        .audit-check .check-icon { font-size: 1rem; flex-shrink: 0; }
+        .audit-check .check-tip { color: var(--gray-400); font-size: .78rem; margin-top: 2px; }
+
+        /* ── SEO Sections ──────────────────────────── */
+        .seo-section {
+            background: var(--white); border-radius: var(--radius); padding: 20px;
+            box-shadow: var(--shadow); margin-bottom: 16px;
+        }
+        .seo-section h3 {
+            font-size: .95rem; margin-bottom: 12px; padding-bottom: 8px;
+            border-bottom: 1px solid var(--gray-100); color: var(--gray-700);
+        }
+        .faq-entry {
+            background: var(--gray-50); border-radius: 8px; padding: 12px; margin-bottom: 10px;
+            position: relative;
+        }
+        .faq-entry .faq-remove {
+            position: absolute; top: 8px; right: 8px; background: none; border: none;
+            color: var(--gray-400); cursor: pointer; font-size: 1rem;
+        }
+        .faq-entry .faq-remove:hover { color: var(--primary); }
+        .redirect-row {
+            display: grid; grid-template-columns: 1fr 20px 1fr 80px; gap: 8px;
+            align-items: center; margin-bottom: 8px;
+        }
+        .redirect-row .arrow { text-align: center; color: var(--gray-400); font-weight: 600; }
+        .hreflang-row {
+            display: grid; grid-template-columns: 120px 1fr 50px; gap: 8px;
+            align-items: center; margin-bottom: 8px;
+        }
+
+        /* ── AEO Styles ────────────────────────────── */
+        .aeo-kpi-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;
+        }
+        .aeo-kpi {
+            background: var(--white); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .aeo-kpi .kpi-val { font-size: 1.6rem; font-weight: 800; color: var(--gray-800); }
+        .aeo-kpi .kpi-label { font-size: .75rem; color: var(--gray-400); margin-top: 4px; }
+        .howto-entry {
+            background: var(--gray-50); border-radius: 8px; padding: 14px; margin-bottom: 12px; position: relative;
+        }
+        .howto-entry .howto-remove {
+            position: absolute; top: 8px; right: 8px; background: none; border: none;
+            color: var(--gray-400); cursor: pointer; font-size: 1rem;
+        }
+        .howto-entry .howto-remove:hover { color: var(--primary); }
+        .step-row {
+            display: flex; gap: 8px; align-items: center; margin-bottom: 6px;
+        }
+        .step-row input { flex: 1; }
+        .snippet-entry {
+            background: var(--gray-50); border-radius: 8px; padding: 14px; margin-bottom: 12px; position: relative;
+        }
+        .snippet-entry .snippet-remove {
+            position: absolute; top: 8px; right: 8px; background: none; border: none;
+            color: var(--gray-400); cursor: pointer; font-size: 1rem;
+        }
+        .snippet-entry .snippet-remove:hover { color: var(--primary); }
+        .cluster-entry {
+            background: var(--gray-50); border-radius: 8px; padding: 14px; margin-bottom: 10px; position: relative;
+        }
+        .cluster-entry .cluster-remove {
+            position: absolute; top: 8px; right: 8px; background: none; border: none;
+            color: var(--gray-400); cursor: pointer; font-size: 1rem;
+        }
+        .cluster-entry .cluster-remove:hover { color: var(--primary); }
+        .sameas-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+        .sameas-row input { flex: 1; }
+        .source-row { display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .llms-preview {
+            background: var(--gray-50); border-radius: 8px; padding: 12px; font-family: monospace;
+            font-size: .8rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap;
+            border: 1px solid var(--gray-200); color: var(--gray-600);
+        }
+
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .admin-layout { padding: 16px; } .redirect-row { grid-template-columns: 1fr; } .aeo-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
 
-<div class="api-config" id="api-config-bar" style="display:none">
-    <label for="api-base-admin">API Base URL (optional, for hosted frontend):</label>
-    <input id="api-base-admin" type="url" placeholder="https://your-backend.example.com">
-    <button type="button" class="btn btn-sm" onclick="Admin.saveApiBase()">Save</button>
-</div>
-
-<div class="admin-header">
-    <h1>⚖️ Legal Notice Admin</h1>
-    <div style="display:flex;gap:12px;align-items:center;">
-        <a href="/blog" target="_blank">📝 View Blog</a>
-        <a href="/">← Back to Main Site</a>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LOGIN SCREEN                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="login-screen" class="login-screen">
+    <div class="login-card">
+        <h1>⚖️ Lawly Admin</h1>
+        <p>Enter your admin password</p>
+        <form id="login-form">
+            <input type="password" id="login-pw" placeholder="Password" autofocus required>
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+            <p id="login-error" class="login-error hidden"></p>
+        </form>
     </div>
 </div>
 
-<!-- ─── Tab navigation ───────────────────────────────────────────── -->
-<div class="admin-tabs">
-    <button class="admin-tab active" onclick="Admin.switchTab('notices')">📋 Notices</button>
-    <button class="admin-tab" onclick="Admin.switchTab('blog')">📝 Blog</button>
-    <button class="admin-tab" onclick="Admin.switchTab('pages')">📄 Pages</button>
-    <button class="admin-tab" onclick="Admin.switchTab('seo')">🔍 SEO Settings</button>
-    <button class="admin-tab" onclick="Admin.switchTab('lawyer')">👨‍⚖️ Lawyer</button>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- ADMIN PANEL (hidden until login)                                -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="admin-panel" class="hidden">
+
+<header class="admin-header">
+    <h1>⚖️ Lawly Admin</h1>
+    <div style="display:flex;gap:16px;align-items:center;">
+        <a href="/blog" target="_blank">📝 Blog</a>
+        <a href="/" target="_blank">🏠 Site</a>
+        <button onclick="Admin.logout()">🚪 Logout</button>
+    </div>
+</header>
+
+<!-- Tab navigation -->
+<nav class="admin-tabs">
+    <button class="admin-tab active" data-tab="dashboard">📊 Dashboard</button>
+    <button class="admin-tab" data-tab="notices">📋 Notices</button>
+    <button class="admin-tab" data-tab="blog">📝 Blog</button>
+    <button class="admin-tab" data-tab="pages">📄 Pages</button>
+    <button class="admin-tab" data-tab="seo">🔍 SEO</button>
+    <button class="admin-tab" data-tab="aeo">🤖 AEO</button>
+    <button class="admin-tab" data-tab="activity">🕐 Activity</button>
+    <button class="admin-tab" data-tab="lawyer">👨‍⚖️ Lawyer</button>
+    <button class="admin-tab" data-tab="settings">⚙️ Settings</button>
+    <button class="admin-tab" data-tab="database">� Users</button>
+</nav>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<main class="admin-layout">
+
+<!-- ═══ DASHBOARD TAB ═══ -->
+<div class="tab-panel active" id="tab-dashboard">
+    <div class="stat-grid" id="stats-grid">
+        <div class="stat-card red"><h3>Total Notices</h3><div class="num" id="st-total">—</div></div>
+        <div class="stat-card orange"><h3>Pending Review</h3><div class="num" id="st-pending">—</div></div>
+        <div class="stat-card green"><h3>Approved</h3><div class="num" id="st-approved">—</div></div>
+        <div class="stat-card blue"><h3>Blog Posts</h3><div class="num" id="st-blog">—</div></div>
+    </div>
+    <div class="chart-grid">
+        <div class="chart-card"><h3>Notices Over Time</h3><canvas id="chart-line"></canvas></div>
+        <div class="chart-card"><h3>Tier Breakdown</h3><canvas id="chart-doughnut"></canvas></div>
+    </div>
+    <div class="card">
+        <h3 style="font-size:.9rem;margin-bottom:12px;">Recent Activity</h3>
+        <div id="dash-activity"><div class="empty-state">Loading...</div></div>
+    </div>
 </div>
 
-<div class="admin-layout">
+<!-- ═══ NOTICES TAB ═══ -->
+<div class="tab-panel" id="tab-notices">
+    <div class="toolbar-row">
+        <h2 style="font-size:1.15rem;">📋 All Notices</h2>
+        <button class="btn btn-outline btn-sm" onclick="Admin.exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="search-bar">
+        <input type="text" class="search-input" id="notice-search" placeholder="Search by name, company, or ID..." oninput="Admin.filterNotices()">
+        <select class="filter-select" id="notice-status-filter" onchange="Admin.filterNotices()">
+            <option value="">All Statuses</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="approved">Approved</option>
+            <option value="sent">Sent</option>
+            <option value="delivered">Delivered</option>
+            <option value="rejected">Rejected</option>
+        </select>
+    </div>
+    <div id="notices-container"><div class="empty-state">Loading notices...</div></div>
+</div>
 
-    <!-- Lawyer Details Section -->
-    <div class="admin-section">
-        <h2>👨‍⚖️ Lawyer Details</h2>
-        <div class="lawyer-form">
-            <p style="color:var(--gray-400); font-size:.9rem; margin-bottom:16px;">
-                Configure the advocate who will review and attest ₹599 tier notices.
-            </p>
-            <form id="lawyer-form" onsubmit="return false;">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Advocate Name <span class="req">*</span></label>
-                        <input type="text" id="l-name" required placeholder="e.g. Adv. Rajesh Kumar">
-                    </div>
-                    <div class="form-group">
-                        <label>Email <span class="req">*</span></label>
-                        <input type="email" id="l-email" required placeholder="advocate@lawfirm.com">
-                    </div>
+<!-- ═══ BLOG TAB ═══ -->
+<div class="tab-panel" id="tab-blog">
+    <div class="toolbar-row">
+        <h2 style="font-size:1.15rem;">📝 Blog Posts</h2>
+        <button class="btn btn-primary btn-sm" onclick="Admin.openBlogEditor()">+ New Post</button>
+    </div>
+    <div id="blog-list"><div class="empty-state">Loading...</div></div>
+</div>
+
+<!-- ═══ PAGES TAB ═══ -->
+<div class="tab-panel" id="tab-pages">
+    <div class="toolbar-row">
+        <h2 style="font-size:1.15rem;">📄 SEO Pages</h2>
+        <button class="btn btn-primary btn-sm" onclick="Admin.openPageEditor()">+ Add Page</button>
+    </div>
+    <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:16px;">
+        Manage pages in sitemap.xml and set per-page meta tags.
+    </p>
+    <div id="pages-list"><div class="empty-state">Loading...</div></div>
+</div>
+
+<!-- ═══ SEO TAB ═══ -->
+<div class="tab-panel" id="tab-seo">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">🔍 SEO Command Center</h2>
+
+    <!-- ── SEO Health Audit ── -->
+    <div class="seo-section">
+        <h3>📊 SEO Health Score</h3>
+        <div id="seo-audit-area">
+            <div class="audit-score" id="audit-score-box" style="display:none;">
+                <div class="audit-circle" id="audit-circle">—</div>
+                <div class="audit-summary">
+                    <h3 id="audit-grade-label">Run an audit to check your SEO health</h3>
+                    <p id="audit-stats"></p>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Bar Council Enrollment No. <span class="req">*</span></label>
-                        <input type="text" id="l-enrollment" required placeholder="e.g. KAR/1234/2015">
-                    </div>
-                    <div class="form-group">
-                        <label>Bar Council</label>
-                        <input type="text" id="l-bar" placeholder="e.g. Bar Council of Karnataka">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="tel" id="l-phone" placeholder="+91-98XXXXXXXX">
-                </div>
-                <button type="button" class="btn btn-primary" onclick="Admin.saveLawyer()">Save Lawyer Details</button>
-                <div id="lawyer-save-status" class="lawyer-status hidden"></div>
-            </form>
+                <button class="btn btn-outline btn-sm" onclick="Admin.runSEOAudit()" id="btn-reaudit">↻ Re-run</button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-run-audit" onclick="Admin.runSEOAudit()">Run SEO Audit</button>
+            <div class="audit-checks" id="audit-checks"></div>
         </div>
     </div>
 
-    <!-- ═══ NOTICES TAB ═══ -->
-    <div class="tab-panel active" id="tab-notices">
-    <div class="admin-section">
-        <h2>📋 All Notices</h2>
-        <div id="notices-container">
-            <div class="empty-state">Loading notices...</div>
-        </div>
-    </div>
+    <!-- ── Core Meta Settings ── -->
+    <div class="seo-section">
+        <h3>🏷️ Core Meta Tags</h3>
+        <form id="seo-form" onsubmit="return false;">
+            <div class="form-group">
+                <label>Site Title <small>(recommended: 50-60 chars)</small></label>
+                <input type="text" id="seo-title" oninput="Admin.updateSEOPreview()">
+                <div class="char-counter" id="seo-title-count"></div>
+            </div>
+            <div class="form-group">
+                <label>Meta Description <small>(recommended: 120-160 chars)</small></label>
+                <textarea id="seo-desc" rows="2" oninput="Admin.updateSEOPreview()"></textarea>
+                <div class="char-counter" id="seo-desc-count"></div>
+            </div>
+            <div class="form-group">
+                <label>Meta Keywords <small>(comma-separated)</small></label>
+                <input type="text" id="seo-keywords" oninput="Admin.updateSEOPreview()">
+            </div>
+            <div class="form-group">
+                <label>Canonical URL</label>
+                <input type="url" id="seo-canonical" oninput="Admin.updateSEOPreview()">
+            </div>
+            <div class="form-group">
+                <label>Default Meta Robots</label>
+                <select id="seo-robots">
+                    <option value="index, follow">index, follow</option>
+                    <option value="noindex, follow">noindex, follow</option>
+                    <option value="index, nofollow">index, nofollow</option>
+                    <option value="noindex, nofollow">noindex, nofollow</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Custom Head Tags <small>(raw HTML)</small></label>
+                <textarea id="seo-custom-head" rows="3"></textarea>
+            </div>
     </div>
 
-    <!-- ═══ BLOG TAB ═══ -->
-    <div class="tab-panel" id="tab-blog">
-    <div class="admin-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2>📝 Blog Posts</h2>
-            <button class="btn btn-primary" onclick="Admin.openBlogEditor()">+ New Post</button>
-        </div>
-        <div id="blog-list"><div class="empty-state">Loading...</div></div>
-    </div>
-    </div>
-
-    <!-- ═══ PAGES TAB ═══ -->
-    <div class="tab-panel" id="tab-pages">
-    <div class="admin-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2>📄 SEO Pages</h2>
-            <button class="btn btn-primary" onclick="Admin.openPageEditor()">+ Add Page</button>
-        </div>
-        <p style="color:var(--gray-400);font-size:.85rem;margin-bottom:16px;">
-            Manage which pages appear in sitemap.xml and set per-page meta tags.
-        </p>
-        <div id="pages-list"><div class="empty-state">Loading...</div></div>
-    </div>
-    </div>
-
-    <!-- ═══ SEO TAB ═══ -->
-    <div class="tab-panel" id="tab-seo">
-    <div class="admin-section">
-        <h2>🔍 Global SEO Settings</h2>
-        <div class="lawyer-form">
-            <form id="seo-form" onsubmit="return false;">
+    <!-- ── OG & Social ── -->
+    <div class="seo-section">
+        <h3>🌐 Open Graph & Social</h3>
+            <div class="form-row">
                 <div class="form-group">
-                    <label>Site Title</label>
-                    <input type="text" id="seo-title" placeholder="Jago Grahak Jago — AI Legal Notice Generator">
+                    <label>OG Title</label>
+                    <input type="text" id="seo-og-title" oninput="Admin.updateSEOPreview()">
                 </div>
                 <div class="form-group">
-                    <label>Meta Description <small style="color:var(--gray-400)">(max 160 chars)</small></label>
-                    <textarea id="seo-desc" rows="2" maxlength="160" placeholder="Generate a professional AI-powered legal notice..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Meta Keywords <small style="color:var(--gray-400)">(comma-separated)</small></label>
-                    <input type="text" id="seo-keywords" placeholder="legal notice generator, consumer complaint India...">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>OG Title</label>
-                        <input type="text" id="seo-og-title" placeholder="Open Graph title for social sharing">
-                    </div>
-                    <div class="form-group">
-                        <label>OG Description</label>
-                        <input type="text" id="seo-og-desc" placeholder="Open Graph description">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Canonical URL</label>
-                    <input type="url" id="seo-canonical" placeholder="https://lawly.store/">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Google Analytics ID</label>
-                        <input type="text" id="seo-ga" placeholder="G-XXXXXXXXXX">
-                    </div>
-                    <div class="form-group">
-                        <label>Search Console Verification</label>
-                        <input type="text" id="seo-gsc" placeholder="google-site-verification content">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Custom Head Tags <small style="color:var(--gray-400)">(raw HTML injected into &lt;head&gt;)</small></label>
-                    <textarea id="seo-custom-head" rows="3" placeholder='<meta name="author" content="...">'></textarea>
-                </div>
-                <button type="button" class="btn btn-primary" onclick="Admin.saveSEO()">Save SEO Settings</button>
-                <div id="seo-save-status" class="lawyer-status hidden"></div>
-            </form>
-
-            <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--gray-200);">
-                <h3 style="font-size:.95rem;margin-bottom:8px;">Quick Actions</h3>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <a class="btn btn-outline btn-sm" href="/sitemap.xml" target="_blank">View Sitemap</a>
-                    <a class="btn btn-outline btn-sm" href="/robots.txt" target="_blank">View robots.txt</a>
-                    <a class="btn btn-outline btn-sm" href="/blog" target="_blank">View Blog</a>
+                    <label>OG Description</label>
+                    <input type="text" id="seo-og-desc" oninput="Admin.updateSEOPreview()">
                 </div>
             </div>
-        </div>
-    </div>
+            <div class="form-group">
+                <label>OG Image URL</label>
+                <input type="url" id="seo-og-image" placeholder="https://lawly.store/img/og-banner.png" oninput="Admin.updateSEOPreview()">
+            </div>
     </div>
 
-    <!-- ═══ LAWYER TAB ═══ -->
-    <div class="tab-panel" id="tab-lawyer">
-    <!-- Lawyer Details Section -->
+    <!-- ── Verification & Analytics ── -->
+    <div class="seo-section">
+        <h3>✅ Verification & Analytics</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Google Analytics ID</label>
+                    <input type="text" id="seo-ga" placeholder="G-XXXXXXXXXX">
+                </div>
+                <div class="form-group">
+                    <label>Google Search Console</label>
+                    <input type="text" id="seo-gsc" placeholder="Verification meta content">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Bing Webmaster Verification</label>
+                <input type="text" id="seo-bing" placeholder="Bing msvalidate.01 content value">
+            </div>
+    </div>
 
-<!-- Detail Modal -->
-<div class="modal-overlay hidden" id="modal-overlay">
-    <div class="modal-box">
-        <h3 id="modal-title">Notice Detail</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-            <div class="found-card"><h4>Complainant</h4><p id="modal-complainant"></p></div>
-            <div class="found-card"><h4>Company</h4><p id="modal-company"></p></div>
-            <div class="found-card"><h4>Tier</h4><p id="modal-tier"></p></div>
-            <div class="found-card"><h4>Status</h4><p id="modal-status"></p></div>
+    <!-- ── FAQ Schema ── -->
+    <div class="seo-section">
+        <h3>❓ FAQ Schema (FAQPage JSON-LD)</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Add FAQ pairs to generate rich snippet FAQ results in Google. Great for ranking on question keywords.
+        </p>
+        <div id="faq-entries"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="Admin.addFaqItem()">+ Add FAQ</button>
+    </div>
+
+    <!-- ── Hreflang ── -->
+    <div class="seo-section">
+        <h3>🌏 Hreflang Tags</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Declare language/region targeting. Helps Google serve the right version. Use codes like en, hi, en-IN.
+        </p>
+        <div id="hreflang-entries"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="Admin.addHreflangItem()">+ Add Hreflang</button>
+    </div>
+
+    <!-- ── Save Button ── -->
+    <div class="seo-section">
+            <button type="button" class="btn btn-primary" onclick="Admin.saveSEO()">💾 Save All SEO Settings</button>
+            <div id="seo-save-status" class="form-status ok hidden"></div>
+        </form>
+    </div>
+
+    <!-- ── Previews ── -->
+    <div class="seo-section">
+        <h3>👁️ Live Previews</h3>
+        <div class="serp-preview">
+            <h4>Google Search Preview</h4>
+            <div class="serp-title" id="serp-title">Site Title — Lawly</div>
+            <div class="serp-url" id="serp-url">https://lawly.store</div>
+            <div class="serp-desc" id="serp-desc">Your meta description will appear here...</div>
         </div>
-        <pre id="modal-notice"></pre>
-        <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="Admin.closeModal()">Close</button>
-            <button class="btn btn-outline" id="modal-btn-pdf" onclick="Admin.downloadPDF()">⬇ PDF</button>
-            <button class="btn btn-primary" id="modal-btn-approve" onclick="Admin.approveNotice()">✓ Approve & Send</button>
-            <button class="btn btn-ghost" id="modal-btn-reject" onclick="Admin.rejectNotice()" style="color:var(--red)">✕ Reject</button>
+
+        <div class="og-preview">
+            <div class="og-preview-img" id="og-prev-img">Image preview (set OG Image URL above)</div>
+            <div class="og-preview-body">
+                <div class="og-site">LAWLY.STORE</div>
+                <div class="og-title" id="og-prev-title">OG Title</div>
+                <div class="og-desc" id="og-prev-desc">OG Description</div>
+            </div>
+        </div>
+
+        <div class="keyword-result" id="keyword-analysis">
+            <h4>Keyword Density</h4>
+            <p style="color:var(--gray-400);font-size:.82rem;">Add keywords above to see density analysis</p>
+        </div>
+    </div>
+
+    <!-- ── 301 Redirect Manager ── -->
+    <div class="seo-section">
+        <h3>↪️ 301 Redirect Manager</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Manage URL redirects to preserve link equity and fix broken links.
+        </p>
+        <div id="redirects-list"></div>
+        <div class="redirect-row" style="margin-top:12px;">
+            <input type="text" id="redir-from" placeholder="/old-path">
+            <span class="arrow">→</span>
+            <input type="text" id="redir-to" placeholder="/new-path">
+            <button class="btn btn-primary btn-sm" onclick="Admin.addRedirect()">Add</button>
+        </div>
+    </div>
+
+    <!-- ── Quick Actions ── -->
+    <div class="seo-section">
+        <h3>⚡ Quick Actions</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a class="btn btn-outline btn-sm" href="/sitemap.xml" target="_blank">View Sitemap</a>
+            <a class="btn btn-outline btn-sm" href="/robots.txt" target="_blank">View robots.txt</a>
+            <a class="btn btn-outline btn-sm" href="/blog" target="_blank">View Blog</a>
+            <button class="btn btn-outline btn-sm" onclick="Admin.pingSitemap()">📡 Ping Sitemap</button>
+        </div>
+        <div id="ping-result" style="margin-top:10px;font-size:.82rem;color:var(--gray-500);"></div>
+    </div>
+</div>
+
+<!-- ═══ AEO TAB ═══ -->
+<div class="tab-panel" id="tab-aeo">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">🤖 AI Engine Optimization (AEO) Center</h2>
+
+    <!-- AEO Health Audit -->
+    <div class="seo-section">
+        <h3>📊 AEO Health Score</h3>
+        <div id="aeo-audit-area">
+            <div class="audit-score" id="aeo-score-box" style="display:none;">
+                <div class="audit-circle" id="aeo-circle">—</div>
+                <div class="audit-summary">
+                    <h3 id="aeo-grade-label">Run an audit to check AI optimization</h3>
+                    <p id="aeo-stats"></p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="Admin.runAEOAudit()" id="btn-reaudit-aeo">↻ Re-run</button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-run-aeo-audit" onclick="Admin.runAEOAudit()">Run AEO Audit</button>
+            <div class="audit-checks" id="aeo-checks"></div>
+        </div>
+    </div>
+
+    <!-- KPI Summary -->
+    <div class="aeo-kpi-grid" id="aeo-kpis" style="display:none;"></div>
+
+    <!-- llms.txt Editor -->
+    <div class="seo-section">
+        <h3>📄 llms.txt — AI Crawler Instructions</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Like robots.txt for search engines, llms.txt tells AI crawlers (ChatGPT, Perplexity, Claude) what your site offers.
+            <a href="/llms.txt" target="_blank" style="color:var(--primary);">View live →</a>
+        </p>
+        <div class="form-group">
+            <label>llms.txt content <small>(Markdown format — leave empty for auto-generated)</small></label>
+            <textarea id="aeo-llms-txt" rows="8" style="font-family:monospace;font-size:.82rem;"></textarea>
+        </div>
+    </div>
+
+    <!-- llms-full.txt Editor -->
+    <div class="seo-section">
+        <h3>📋 llms-full.txt — Detailed AI Content</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Extended version with comprehensive information for AI deep-reading.
+            <a href="/llms-full.txt" target="_blank" style="color:var(--primary);">View live →</a>
+        </p>
+        <div class="form-group">
+            <label>llms-full.txt content <small>(Markdown — leave empty for auto-generated from blog + snippets)</small></label>
+            <textarea id="aeo-llms-full" rows="8" style="font-family:monospace;font-size:.82rem;"></textarea>
+        </div>
+    </div>
+
+    <!-- Organization / Brand Schema -->
+    <div class="seo-section">
+        <h3>🏢 Organization Schema (Brand Identity)</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Tell AI engines exactly who you are. Powers Knowledge Panels and brand recognition.
+        </p>
+        <div class="form-row">
+            <div class="form-group"><label>Organization Name</label><input type="text" id="org-name"></div>
+            <div class="form-group"><label>Website URL</label><input type="url" id="org-url"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Logo URL</label><input type="url" id="org-logo"></div>
+            <div class="form-group"><label>Founding Date</label><input type="text" id="org-founding" placeholder="2024"></div>
+        </div>
+        <div class="form-group">
+            <label>Description <small>(concise brand description for AI)</small></label>
+            <textarea id="org-desc" rows="2"></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Contact Email</label><input type="email" id="org-email"></div>
+            <div class="form-group"><label>Contact Phone</label><input type="text" id="org-phone"></div>
+        </div>
+        <div class="form-group">
+            <label>Founders</label>
+            <input type="text" id="org-founders" placeholder="Comma-separated names">
+        </div>
+        <div class="form-group">
+            <label>sameAs Links <small>(social profiles, Wikipedia, Crunchbase — one per line)</small></label>
+            <div id="sameas-entries"></div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="Admin.addSameAs()">+ Add Link</button>
+        </div>
+    </div>
+
+    <!-- AI Answer Snippets -->
+    <div class="seo-section">
+        <h3>💬 AI Answer Snippets</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Write concise, authoritative answers to common queries. AI engines extract these for direct answers.
+            Think: "What would ChatGPT / Perplexity quote from your site?"
+        </p>
+        <div id="snippet-entries"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="Admin.addSnippet()">+ Add Snippet</button>
+    </div>
+
+    <!-- HowTo Schema Builder -->
+    <div class="seo-section">
+        <h3>📝 HowTo Schema Builder</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Create step-by-step guides that AI assistants and Google feature prominently. Generates HowTo JSON-LD.
+        </p>
+        <div id="howto-entries"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="Admin.addHowTo()">+ Add HowTo Guide</button>
+    </div>
+
+    <!-- Topic Authority Clusters -->
+    <div class="seo-section">
+        <h3>🎯 Topic Authority Clusters</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Map your expertise areas. AI engines assess topical authority — broad + deep coverage = higher trust.
+        </p>
+        <div id="cluster-entries"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="Admin.addCluster()">+ Add Topic Cluster</button>
+    </div>
+
+    <!-- Speakable Content -->
+    <div class="seo-section">
+        <h3>🗣️ Speakable Content Selectors</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            CSS selectors for content that voice assistants (Google Assistant, Alexa) should read aloud.
+            Example: <code>.hero-title</code>, <code>.faq-answer</code>, <code>#about-section</code>
+        </p>
+        <div id="speakable-entries"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="Admin.addSpeakable()">+ Add Selector</button>
+    </div>
+
+    <!-- Citation Sources -->
+    <div class="seo-section">
+        <h3>📚 Citation Sources</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Authoritative sources your content cites. Boosts E-E-A-T signals and AI credibility scoring.
+        </p>
+        <div id="source-entries"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="Admin.addSource()">+ Add Source</button>
+    </div>
+
+    <!-- Save -->
+    <div class="seo-section">
+        <button type="button" class="btn btn-primary" onclick="Admin.saveAEO()">💾 Save All AEO Settings</button>
+        <div id="aeo-save-status" class="form-status ok hidden"></div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="seo-section">
+        <h3>⚡ Quick Links</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a class="btn btn-outline btn-sm" href="/llms.txt" target="_blank">View llms.txt</a>
+            <a class="btn btn-outline btn-sm" href="/llms-full.txt" target="_blank">View llms-full.txt</a>
+            <a class="btn btn-outline btn-sm" href="/sitemap.xml" target="_blank">View Sitemap</a>
         </div>
     </div>
 </div>
+
+<!-- ═══ ACTIVITY TAB ═══ -->
+<div class="tab-panel" id="tab-activity">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">🕐 Activity Log</h2>
+    <div class="card" id="activity-list"><div class="empty-state">Loading...</div></div>
+</div>
+
+<!-- ═══ LAWYER TAB ═══ -->
+<div class="tab-panel" id="tab-lawyer">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">👨‍⚖️ Lawyer Details</h2>
+    <div class="form-card">
+        <p style="color:var(--gray-400);font-size:.85rem;margin-bottom:16px;">
+            Configure the advocate who will review and attest ₹599 tier notices.
+        </p>
+        <form id="lawyer-form" onsubmit="return false;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Advocate Name <span class="req">*</span></label>
+                    <input type="text" id="l-name" required placeholder="e.g. Adv. Rajesh Kumar">
+                </div>
+                <div class="form-group">
+                    <label>Email <span class="req">*</span></label>
+                    <input type="email" id="l-email" required placeholder="advocate@lawfirm.com">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Bar Council Enrollment No. <span class="req">*</span></label>
+                    <input type="text" id="l-enrollment" required placeholder="e.g. KAR/1234/2015">
+                </div>
+                <div class="form-group">
+                    <label>Bar Council</label>
+                    <input type="text" id="l-bar" placeholder="e.g. Bar Council of Karnataka">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="l-phone" placeholder="+91-98XXXXXXXX">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="Admin.saveLawyer()">Save Lawyer Details</button>
+            <div id="lawyer-save-status" class="form-status ok hidden"></div>
+        </form>
+    </div>
+</div>
+
+<!-- ═══ SETTINGS TAB ═══ -->
+<div class="tab-panel" id="tab-settings">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">⚙️ Settings</h2>
+
+    <div class="form-card" style="margin-bottom:20px;">
+        <h3 style="font-size:.95rem;margin-bottom:12px;">Change Admin Password</h3>
+        <form id="pw-form" onsubmit="return false;">
+            <div class="form-group">
+                <label>Current Password <span class="req">*</span></label>
+                <input type="password" id="pw-current" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>New Password <span class="req">*</span> <small>(min 6 chars)</small></label>
+                    <input type="password" id="pw-new" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password <span class="req">*</span></label>
+                    <input type="password" id="pw-confirm" required minlength="6">
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="Admin.changePassword()">Update Password</button>
+        </form>
+    </div>
+
+    <div class="form-card">
+        <h3 style="font-size:.95rem;margin-bottom:12px;">API Configuration</h3>
+        <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
+            Override the backend API base URL. Leave empty to auto-detect (localhost → origin, deployed → api.lawly.store).
+        </p>
+        <div class="form-group">
+            <label>API Base URL</label>
+            <input type="url" id="settings-api-base" placeholder="https://api.lawly.store">
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="Admin.saveApiBase()">Save</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="Admin.clearApiBase()">Reset to Default</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═════ Users Tab ═════ -->
+<div class="tab-panel" id="tab-database">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">👤 Registered Users</h2>
+    <div id="db-stats-bar" style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;"></div>
+    <table class="data-table"><thead><tr>
+        <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Created</th>
+    </tr></thead><tbody id="db-users-tbody"></tbody></table>
+</div>
+
+</main>
+</div><!-- /admin-panel -->
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODALS                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Notice Detail Modal -->
+<div class="modal-overlay hidden" id="notice-modal">
+    <div class="modal-box" style="max-width:900px;">
+        <h3 id="modal-n-title">Notice Detail</h3>
+        <div class="modal-grid">
+            <div class="modal-card"><h4>Complainant</h4><p id="modal-n-complainant"></p></div>
+            <div class="modal-card"><h4>Company</h4><p id="modal-n-company"></p></div>
+            <div class="modal-card"><h4>Tier</h4><p id="modal-n-tier"></p></div>
+            <div class="modal-card"><h4>Status</h4><p id="modal-n-status"></p></div>
+            <div class="modal-card"><h4>Email</h4><p id="modal-n-email"></p></div>
+            <div class="modal-card"><h4>Created</h4><p id="modal-n-date"></p></div>
+        </div>
+        <!-- Analysis data from DB -->
+        <div id="modal-n-analysis" class="hidden" style="margin-top:12px;">
+            <h4 style="font-size:.85rem;margin-bottom:8px;color:var(--gray-400);">📊 Agent Analysis Data</h4>
+            <div class="modal-grid" id="modal-n-analysis-grid"></div>
+        </div>
+        <pre id="modal-n-notice"></pre>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="Admin.closeNoticeModal()">Close</button>
+            <button class="btn btn-outline" id="modal-btn-pdf" onclick="Admin.downloadPDF()">⬇ PDF</button>
+            <button class="btn btn-primary btn-sm hidden" id="modal-btn-db-pdf" onclick="Admin.downloadDbPdf()">⬇ Stored PDF</button>
+            <button class="btn btn-green" id="modal-btn-approve" onclick="Admin.approveNotice()">✓ Approve & Send</button>
+            <button class="btn btn-ghost" id="modal-btn-reject" onclick="Admin.rejectNotice()" style="color:var(--primary)">✕ Reject</button>
+        </div>
+    </div>
+</div>
+
+<!-- Blog Editor Modal -->
+<div class="modal-overlay hidden" id="blog-modal">
+    <div class="modal-box" style="max-width:900px;">
+        <h3 id="blog-modal-title">New Blog Post</h3>
+        <form id="blog-form" onsubmit="return false;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Title <span class="req">*</span></label>
+                    <input type="text" id="b-title" required placeholder="Post title">
+                </div>
+                <div class="form-group">
+                    <label>Slug</label>
+                    <input type="text" id="b-slug" placeholder="auto-generated-from-title">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Content</label>
+                <div id="blog-editor"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Meta Description</label>
+                    <textarea id="b-meta-desc" rows="2" placeholder="SEO description (max 160 chars)" maxlength="160"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Meta Keywords</label>
+                    <input type="text" id="b-meta-kw" placeholder="keyword1, keyword2, ...">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Author</label>
+                    <input type="text" id="b-author" value="Jago Grahak Jago">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="b-status">
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" onclick="Admin.closeBlogModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="Admin.saveBlog()">Save Post</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Page Editor Modal -->
+<div class="modal-overlay hidden" id="page-modal">
+    <div class="modal-box">
+        <h3 id="page-modal-title">Add Page</h3>
+        <form id="page-form" onsubmit="return false;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Path <span class="req">*</span></label>
+                    <input type="text" id="pg-path" required placeholder="/about">
+                </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="pg-title" placeholder="Page Title">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Meta Description</label>
+                <textarea id="pg-desc" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Meta Keywords</label>
+                <input type="text" id="pg-keywords">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>OG Title</label>
+                    <input type="text" id="pg-og-title">
+                </div>
+                <div class="form-group">
+                    <label>OG Description</label>
+                    <input type="text" id="pg-og-desc">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Priority</label>
+                    <input type="number" id="pg-priority" value="0.5" min="0" max="1" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Change Frequency</label>
+                    <select id="pg-freq">
+                        <option value="daily">Daily</option>
+                        <option value="weekly" selected>Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                <input type="checkbox" id="pg-sitemap" checked> <label for="pg-sitemap" style="margin:0;">Include in Sitemap</label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" onclick="Admin.closePageModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="Admin.savePage()">Save Page</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CDN SCRIPTS                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
 const Admin = (() => {
+    /* ── State ──────────────────────────────────────────── */
+    let token = sessionStorage.getItem('admin_token') || null;
     let currentNoticeId = null;
+    let editingSlug = null;   // blog
+    let editingPage = null;   // page
+    let quill = null;         // Quill editor instance
+    let lineChart = null;     // Chart.js instances
+    let doughnutChart = null;
+    let noticesCache = [];    // for CSV export + filtering
 
     const API_BACKEND = 'https://api.lawly.store';
 
-    function isLocalHost() {
-        return ['localhost', '127.0.0.1'].includes(window.location.hostname);
-    }
+    /* ── Helpers ────────────────────────────────────────── */
+    function isLocal() { return ['localhost','127.0.0.1'].includes(location.hostname); }
 
-    function apiUrl(path) {
-        const configured = (localStorage.getItem('legaltech_api_base') || '').trim();
-        const base = configured || (isLocalHost() ? window.location.origin : API_BACKEND);
-        return `${base.replace(/\/$/, '')}${path}`;
-    }
-
-    function saveApiBase() {
-        const input = document.getElementById('api-base-admin');
-        const v = (input?.value || '').trim();
-        if (!v) {
-            localStorage.removeItem('legaltech_api_base');
-            alert('API base cleared. Using current site origin.');
-            return;
-        }
-        try {
-            const u = new URL(v);
-            if (!['http:', 'https:'].includes(u.protocol)) throw new Error('Invalid protocol');
-        } catch (_) {
-            alert('Please enter a valid URL, e.g. https://your-backend.example.com');
-            return;
-        }
-        localStorage.setItem('legaltech_api_base', v.replace(/\/$/, ''));
-        alert('API base saved.');
-    }
-
-    // ── Load initial data ───────────────────────────────────────
-    async function init() {
-        const input = document.getElementById('api-base-admin');
-        if (input) input.value = localStorage.getItem('legaltech_api_base') || '';
-        await loadLawyer();
-        await loadNotices();
-    }
-
-    // ── Lawyer ──────────────────────────────────────────────────
-    async function loadLawyer() {
-        try {
-            const res = await fetch(apiUrl('/api/admin/lawyer'));
-            const data = await res.json();
-            if (data && data.name) {
-                document.getElementById('l-name').value = data.name || '';
-                document.getElementById('l-email').value = data.email || '';
-                document.getElementById('l-enrollment').value = data.enrollment_no || '';
-                document.getElementById('l-bar').value = data.bar_council || '';
-                document.getElementById('l-phone').value = data.phone || '';
-            }
-        } catch (_) {}
-    }
-
-    async function saveLawyer() {
-        const body = {
-            name: document.getElementById('l-name').value.trim(),
-            email: document.getElementById('l-email').value.trim(),
-            enrollment_no: document.getElementById('l-enrollment').value.trim(),
-            bar_council: document.getElementById('l-bar').value.trim() || null,
-            phone: document.getElementById('l-phone').value.trim() || null,
-        };
-        if (!body.name || !body.email || !body.enrollment_no) {
-            alert('Please fill in name, email, and enrollment number.');
-            return;
-        }
-        try {
-            const res = await fetch(apiUrl('/api/admin/lawyer'), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            });
-            if (res.ok) {
-                const el = document.getElementById('lawyer-save-status');
-                el.textContent = '✓ Lawyer details saved successfully.';
-                el.className = 'lawyer-status saved';
-                el.classList.remove('hidden');
-                setTimeout(() => el.classList.add('hidden'), 3000);
-            }
-        } catch (err) {
-            alert('Failed to save: ' + err.message);
-        }
-    }
-
-    // ── Notices ─────────────────────────────────────────────────
-    async function loadNotices() {
-        try {
-            const res = await fetch(apiUrl('/api/admin/notices'));
-            const notices = await res.json();
-            renderNotices(notices);
-        } catch (_) {
-            document.getElementById('notices-container').innerHTML =
-                '<div class="empty-state">Failed to load notices.</div>';
-        }
-    }
-
-    function renderNotices(notices) {
-        const container = document.getElementById('notices-container');
-        if (!notices || notices.length === 0) {
-            container.innerHTML = '<div class="empty-state">No notices generated yet.</div>';
-            return;
-        }
-        const rows = notices.map(n => {
-            const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-IN') : '—';
-            const statusClass = n.status === 'pending_review' ? 'pending'
-                : n.status === 'approved' ? 'approved'
-                : n.status === 'sent' ? 'sent'
-                : n.status === 'rejected' ? 'rejected'
-                : 'delivered';
-            const statusLabel = n.status === 'pending_review' ? 'Pending Review'
-                : n.status.charAt(0).toUpperCase() + n.status.slice(1);
-            return `<tr style="cursor:pointer" onclick="Admin.openNotice('${n.id}')">
-                <td><strong>#${(n.id || '').toUpperCase()}</strong></td>
-                <td>${esc(n.complainant_name)}</td>
-                <td>${esc(n.company_name)}</td>
-                <td>${esc(n.tier === 'lawyer' ? '₹599 Lawyer' : '₹199 Self')}</td>
-                <td><span class="badge ${statusClass}">${statusLabel}</span></td>
-                <td>${date}</td>
-            </tr>`;
-        }).join('');
-
-        container.innerHTML = `
-            <table class="notices-table">
-                <thead><tr>
-                    <th>ID</th><th>Complainant</th><th>Company</th><th>Tier</th><th>Status</th><th>Date</th>
-                </tr></thead>
-                <tbody>${rows}</tbody>
-            </table>`;
-    }
-
-    // ── Notice detail modal ─────────────────────────────────────
-    async function openNotice(id) {
-        currentNoticeId = id;
-        try {
-            const res = await fetch(apiUrl(`/api/admin/notices/${id}`));
-            const n = await res.json();
-            document.getElementById('modal-title').textContent = `Notice #${id.toUpperCase()}`;
-            document.getElementById('modal-complainant').textContent = n.complainant_name || '';
-            document.getElementById('modal-company').textContent = n.company_name || '';
-            document.getElementById('modal-tier').textContent = n.tier === 'lawyer' ? '₹599 Lawyer-Assisted' : '₹199 Self-Send';
-            document.getElementById('modal-status').textContent = n.status || '';
-            document.getElementById('modal-notice').textContent = n.legal_notice || '';
-            // Show/hide action buttons based on status
-            const isPending = n.status === 'pending_review';
-            document.getElementById('modal-btn-approve').classList.toggle('hidden', !isPending);
-            document.getElementById('modal-btn-reject').classList.toggle('hidden', !isPending);
-            document.getElementById('modal-overlay').classList.remove('hidden');
-        } catch (err) {
-            alert('Failed to load notice: ' + err.message);
-        }
-    }
-
-    function closeModal() {
-        document.getElementById('modal-overlay').classList.add('hidden');
-        currentNoticeId = null;
-    }
-
-    async function approveNotice() {
-        if (!currentNoticeId) return;
-        try {
-            await fetch(apiUrl(`/api/admin/notices/${currentNoticeId}/status`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'approved', reviewer_notes: 'Approved by admin' }),
-            });
-            closeModal();
-            await loadNotices();
-        } catch (err) {
-            alert('Failed: ' + err.message);
-        }
-    }
-
-    async function rejectNotice() {
-        if (!currentNoticeId) return;
-        const reason = prompt('Rejection reason (optional):') || '';
-        try {
-            await fetch(apiUrl(`/api/admin/notices/${currentNoticeId}/status`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'rejected', reviewer_notes: reason }),
-            });
-            closeModal();
-            await loadNotices();
-        } catch (err) {
-            alert('Failed: ' + err.message);
-        }
-    }
-
-    async function downloadPDF() {
-        if (!currentNoticeId) return;
-        try {
-            const res = await fetch(apiUrl(`/api/admin/notices/${currentNoticeId}/pdf`));
-            if (!res.ok) throw new Error('PDF failed');
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `Legal_Notice_${currentNoticeId}.pdf`;
-            document.body.appendChild(a); a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch (err) {
-            alert('Failed: ' + err.message);
-        }
+    function apiBase() {
+        const saved = (localStorage.getItem('legaltech_api_base') || '').trim();
+        return saved || (isLocal() ? location.origin : API_BACKEND);
     }
 
     function esc(s) {
         if (!s) return '';
         const d = document.createElement('div');
         d.textContent = s;
-        return d.innerHTML;
+        return d.innerHTML.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    }
+    function qs(sel) { return document.querySelector(sel); }
+    function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-IN', {year:'numeric',month:'short',day:'numeric'}) : '—'; }
+
+    /* ── Toast notifications ────────────────────────────── */
+    function showToast(message, type = 'info') {
+        const container = qs('#toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'toastOut .3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
     }
 
-    // Auto-init
-    document.addEventListener('DOMContentLoaded', init);
+    /* ── API fetch wrapper ──────────────────────────────── */
+    async function apiFetch(path, opts = {}) {
+        const url = `${apiBase().replace(/\/$/,'')}${path}`;
+        const headers = { ...(opts.headers || {}) };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (opts.body && typeof opts.body === 'object' && !(opts.body instanceof Blob)) {
+            headers['Content-Type'] = 'application/json';
+            opts.body = JSON.stringify(opts.body);
+        }
+        const res = await fetch(url, { ...opts, headers });
+        if (res.status === 401) { logout(); throw new Error('Session expired'); }
+        return res;
+    }
 
-    return { saveApiBase, saveLawyer, loadNotices, openNotice, closeModal, approveNotice, rejectNotice, downloadPDF };
+    /* ── Auth ───────────────────────────────────────────── */
+    async function login(e) {
+        e.preventDefault();
+        const pw = qs('#login-pw').value;
+        const errEl = qs('#login-error');
+        errEl.classList.add('hidden');
+        try {
+            const res = await fetch(`${apiBase().replace(/\/$/,'')}/api/admin/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pw }),
+            });
+            if (!res.ok) { errEl.textContent = 'Invalid password'; errEl.classList.remove('hidden'); return; }
+            const data = await res.json();
+            token = data.token;
+            sessionStorage.setItem('admin_token', token);
+            showAdmin();
+        } catch (err) {
+            errEl.textContent = 'Connection failed'; errEl.classList.remove('hidden');
+        }
+    }
+
+    function logout() {
+        token = null;
+        sessionStorage.removeItem('admin_token');
+        qs('#admin-panel').classList.add('hidden');
+        qs('#login-screen').classList.remove('hidden');
+        qs('#login-pw').value = '';
+    }
+
+    async function showAdmin() {
+        qs('#login-screen').classList.add('hidden');
+        qs('#admin-panel').classList.remove('hidden');
+        loadDashboard();
+    }
+
+    /* ── Tabs ───────────────────────────────────────────── */
+    function switchTab(tabName) {
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tabName}`));
+        const loaders = {
+            dashboard: loadDashboard,
+            notices: loadNotices,
+            blog: loadBlog,
+            pages: loadPages,
+            seo: loadSEO,
+            aeo: loadAEO,
+            activity: loadActivity,
+            lawyer: loadLawyer,
+            settings: loadSettings,
+            database: loadDatabase,
+        };
+        if (loaders[tabName]) loaders[tabName]();
+    }
+
+    /* ── Dashboard ──────────────────────────────────────── */
+    async function loadDashboard() {
+        try {
+            const [statsRes, actRes] = await Promise.all([
+                apiFetch('/api/admin/stats'),
+                apiFetch('/api/admin/activity?limit=10'),
+            ]);
+            const stats = await statsRes.json();
+            const activity = await actRes.json();
+            renderStats(stats);
+            renderCharts(stats);
+            renderDashActivity(activity);
+        } catch (err) { showToast('Failed to load dashboard', 'error'); }
+    }
+
+    function renderStats(s) {
+        qs('#st-total').textContent = s.total_notices;
+        qs('#st-pending').textContent = s.pending;
+        qs('#st-approved').textContent = s.approved;
+        qs('#st-blog').textContent = `${s.published_posts}/${s.total_blog_posts}`;
+    }
+
+    function renderCharts(s) {
+        if (typeof Chart === 'undefined') return;
+
+        const dates = Object.keys(s.notices_by_date);
+        const counts = Object.values(s.notices_by_date);
+        if (lineChart) lineChart.destroy();
+        lineChart = new Chart(qs('#chart-line'), {
+            type: 'line',
+            data: {
+                labels: dates.length ? dates : ['No data'],
+                datasets: [{
+                    label: 'Notices',
+                    data: counts.length ? counts : [0],
+                    borderColor: '#DC2626',
+                    backgroundColor: 'rgba(220,38,38,.1)',
+                    fill: true, tension: 0.3,
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        if (doughnutChart) doughnutChart.destroy();
+        doughnutChart = new Chart(qs('#chart-doughnut'), {
+            type: 'doughnut',
+            data: {
+                labels: ['₹599 Lawyer', '₹199 Self'],
+                datasets: [{ data: [s.lawyer_tier, s.self_tier], backgroundColor: ['#DC2626','#F59E0B'] }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    function renderDashActivity(items) {
+        const el = qs('#dash-activity');
+        if (!items || !items.length) { el.innerHTML = '<div class="empty-state">No activity yet</div>'; return; }
+        el.innerHTML = items.map(a =>
+            `<div class="activity-item">
+                <div class="activity-dot"></div>
+                <div>
+                    <div><strong>${esc(a.action)}</strong> ${esc(a.details)}</div>
+                    <div class="activity-time">${formatDate(a.timestamp)}</div>
+                </div>
+            </div>`
+        ).join('');
+    }
+
+    /* ── Notices ─────────────────────────────────────────── */
+    let pdfLookup = {};  // noticeId -> true, for quick PDF availability check
+
+    async function loadNotices() {
+        try {
+            const [storeRes, dbRes, pdfsRes] = await Promise.all([
+                apiFetch('/api/admin/notices'),
+                apiFetch('/api/admin/db/notices').catch(() => null),
+                apiFetch('/api/admin/db/pdfs').catch(() => null),
+            ]);
+            noticesCache = await storeRes.json();
+            // Build PDF lookup from DB
+            pdfLookup = {};
+            if (pdfsRes && pdfsRes.ok) {
+                const pdfs = await pdfsRes.json();
+                pdfs.forEach(p => { pdfLookup[p.notice_id] = true; });
+            }
+            // Merge has_pdf from DB notices into store notices
+            if (dbRes && dbRes.ok) {
+                const dbNotices = await dbRes.json();
+                const dbMap = {};
+                dbNotices.forEach(n => {
+                    if (n.has_pdf) dbMap[n.id] = true;
+                    // Also check by matching company + date
+                    const key = (n.company_name || '').toLowerCase();
+                    if (key) dbMap[key] = n;
+                });
+                noticesCache.forEach(n => {
+                    // Check if this notice has a PDF stored in DB
+                    if (pdfLookup[n.id]) { n._has_db_pdf = true; n._db_notice_id = n.id; }
+                    if (n.db_notice_id && pdfLookup[n.db_notice_id]) { n._has_db_pdf = true; n._db_notice_id = n.db_notice_id; }
+                });
+            }
+            filterNotices();
+        } catch (err) {
+            qs('#notices-container').innerHTML = '<div class="empty-state">Failed to load notices.</div>';
+        }
+    }
+
+    function filterNotices() {
+        const q = (qs('#notice-search')?.value || '').toLowerCase().trim();
+        const statusFilter = qs('#notice-status-filter')?.value || '';
+        let filtered = noticesCache;
+        if (q) {
+            filtered = filtered.filter(n =>
+                (n.id || '').toLowerCase().includes(q) ||
+                (n.complainant_name || '').toLowerCase().includes(q) ||
+                (n.company_name || '').toLowerCase().includes(q) ||
+                (n.complainant_email || '').toLowerCase().includes(q)
+            );
+        }
+        if (statusFilter) {
+            filtered = filtered.filter(n => n.status === statusFilter);
+        }
+        renderNotices(filtered);
+    }
+
+    function renderNotices(notices) {
+        const c = qs('#notices-container');
+        if (!notices || !notices.length) { c.innerHTML = '<div class="empty-state">No notices match your filters.</div>'; return; }
+        const statusLabel = s => ({ pending_review: 'Pending Review', approved: 'Approved', sent: 'Sent', rejected: 'Rejected', delivered: 'Delivered' }[s] || s);
+        const statusClass = s => ({ pending_review: 'pending', approved: 'approved', sent: 'sent', rejected: 'rejected', delivered: 'delivered' }[s] || 'delivered');
+        const rows = notices.map(n => {
+            const pdfCell = n._has_db_pdf
+                ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); Admin.downloadDbPdf('${esc(n._db_notice_id || n.id)}')">⬇ PDF</button>`
+                : '<span style="color:var(--gray-400)">—</span>';
+            return `<tr onclick="Admin.openNotice('${esc(n.id)}')">
+                <td><strong>#${esc((n.id||'').toUpperCase())}</strong></td>
+                <td>${esc(n.complainant_name)}</td>
+                <td>${esc(n.company_name)}</td>
+                <td>${esc(n.tier==='lawyer'?'₹599 Lawyer':'₹199 Self')}</td>
+                <td><span class="badge ${statusClass(n.status)}">${statusLabel(n.status)}</span></td>
+                <td>${formatDate(n.created_at)}</td>
+                <td>${pdfCell}</td>
+            </tr>`;
+        }).join('');
+        c.innerHTML = `<table class="data-table"><thead><tr>
+            <th>ID</th><th>Complainant</th><th>Company</th><th>Tier</th><th>Status</th><th>Date</th><th>PDF</th>
+        </tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    async function openNotice(id) {
+        currentNoticeId = id;
+        try {
+            const res = await apiFetch(`/api/admin/notices/${id}`);
+            const n = await res.json();
+            qs('#modal-n-title').textContent = `Notice #${id.toUpperCase()}`;
+            qs('#modal-n-complainant').textContent = n.complainant_name || '';
+            qs('#modal-n-company').textContent = n.company_name || '';
+            qs('#modal-n-tier').textContent = n.tier === 'lawyer' ? '₹599 Lawyer-Assisted' : '₹199 Self-Send';
+            qs('#modal-n-status').textContent = n.status || '';
+            qs('#modal-n-email').textContent = n.complainant_email || '—';
+            qs('#modal-n-date').textContent = formatDate(n.created_at);
+            qs('#modal-n-notice').textContent = n.legal_notice || '';
+            const isPending = n.status === 'pending_review';
+            qs('#modal-btn-approve').classList.toggle('hidden', !isPending);
+            qs('#modal-btn-reject').classList.toggle('hidden', !isPending);
+            // Show stored PDF download button if available
+            const dbNoticeId = n.db_notice_id || id;
+            const hasDbPdf = pdfLookup[id] || pdfLookup[dbNoticeId];
+            qs('#modal-btn-db-pdf').classList.toggle('hidden', !hasDbPdf);
+            if (hasDbPdf) qs('#modal-btn-db-pdf').dataset.noticeId = dbNoticeId;
+            // Try to load analysis data from DB
+            const analysisEl = qs('#modal-n-analysis');
+            const analysisGrid = qs('#modal-n-analysis-grid');
+            analysisEl.classList.add('hidden');
+            try {
+                const dbRes = await apiFetch(`/api/admin/db/notices/${dbNoticeId}`);
+                if (dbRes.ok) {
+                    const db = await dbRes.json();
+                    const fields = [
+                        ['Jurisdiction', db.jurisdiction_analysis],
+                        ['Claim Elements', db.claim_elements],
+                        ['Arbitration', db.arbitration_analysis],
+                        ['Evidence Scoring', db.evidence_scoring],
+                        ['Gap Analysis', db.gap_analysis],
+                        ['Cure Period', db.cure_period],
+                        ['Escalation', db.escalation_roadmap],
+                        ['Respondent ID', db.respondent_id],
+                        ['T&C Counter', db.tc_counter_args],
+                        ['Legal Analysis', db.legal_analysis],
+                    ];
+                    const hasAny = fields.some(([, v]) => v);
+                    if (hasAny) {
+                        analysisGrid.innerHTML = fields.map(([k, v]) =>
+                            `<div class="modal-card"><h4>${k}</h4><p>${v ? '✅ Available' : '—'}</p></div>`
+                        ).join('');
+                        analysisEl.classList.remove('hidden');
+                    }
+                }
+            } catch (_) { /* DB detail not available, that's fine */ }
+            qs('#notice-modal').classList.remove('hidden');
+        } catch (err) { showToast('Failed to load notice', 'error'); }
+    }
+
+    function closeNoticeModal() { qs('#notice-modal').classList.add('hidden'); currentNoticeId = null; }
+
+    async function approveNotice() {
+        if (!currentNoticeId) return;
+        try {
+            await apiFetch(`/api/admin/notices/${currentNoticeId}/status`, { method: 'PUT', body: { status: 'approved', reviewer_notes: 'Approved by admin' } });
+            showToast('Notice approved', 'success');
+            closeNoticeModal();
+            loadNotices();
+        } catch (err) { showToast('Failed to approve notice', 'error'); }
+    }
+
+    async function rejectNotice() {
+        if (!currentNoticeId) return;
+        const reason = prompt('Rejection reason (optional):') || '';
+        try {
+            await apiFetch(`/api/admin/notices/${currentNoticeId}/status`, { method: 'PUT', body: { status: 'rejected', reviewer_notes: reason } });
+            showToast('Notice rejected', 'success');
+            closeNoticeModal();
+            loadNotices();
+        } catch (err) { showToast('Failed to reject notice', 'error'); }
+    }
+
+    async function downloadPDF() {
+        if (!currentNoticeId) return;
+        try {
+            const res = await apiFetch(`/api/admin/notices/${currentNoticeId}/pdf`);
+            if (!res.ok) throw new Error('PDF failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `Legal_Notice_${currentNoticeId}.pdf`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('PDF downloaded', 'success');
+        } catch (err) { showToast('PDF download failed', 'error'); }
+    }
+
+    function exportCSV() {
+        if (!noticesCache.length) { showToast('No notices to export', 'info'); return; }
+        const headers = ['ID','Complainant','Email','Company','Tier','Status','Created'];
+        const rows = noticesCache.map(n => [
+            n.id, n.complainant_name, n.complainant_email, n.company_name,
+            n.tier === 'lawyer' ? 'Lawyer ₹599' : 'Self ₹199',
+            n.status, (n.created_at || '').slice(0, 10)
+        ]);
+        const csv = [headers, ...rows].map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'notices_export.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('CSV exported', 'success');
+    }
+
+    /* ── Blog ────────────────────────────────────────────── */
+    async function loadBlog() {
+        try {
+            const res = await apiFetch('/api/admin/blog');
+            const posts = await res.json();
+            renderBlog(posts);
+        } catch (err) {
+            qs('#blog-list').innerHTML = '<div class="empty-state">Failed to load blog posts.</div>';
+        }
+    }
+
+    function renderBlog(posts) {
+        const el = qs('#blog-list');
+        if (!posts || !posts.length) { el.innerHTML = '<div class="empty-state">No blog posts yet.</div>'; return; }
+        el.innerHTML = `<table class="data-table"><thead><tr>
+            <th>Title</th><th>Status</th><th>Updated</th><th>Actions</th>
+        </tr></thead><tbody>${posts.map(p =>
+            `<tr>
+                <td><strong>${esc(p.title)}</strong><br><small style="color:var(--gray-400)">/${esc(p.slug)}</small></td>
+                <td><span class="badge ${p.status==='published'?'published':'draft'}">${esc(p.status)}</span></td>
+                <td>${formatDate(p.updated_at)}</td>
+                <td style="white-space:nowrap" onclick="event.stopPropagation()">
+                    <button class="btn btn-ghost btn-sm" onclick="Admin.editBlog('${esc(p.slug)}')">✏️</button>
+                    <button class="btn btn-ghost btn-sm" onclick="Admin.deleteBlog('${esc(p.slug)}')" style="color:var(--primary)">🗑</button>
+                    ${p.status==='published'?`<a class="btn btn-ghost btn-sm" href="/blog/${esc(p.slug)}" target="_blank">👁</a>`:''}
+                </td>
+            </tr>`
+        ).join('')}</tbody></table>`;
+    }
+
+    function initQuill() {
+        if (quill) return;
+        quill = new Quill('#blog-editor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['blockquote', 'code-block'],
+                    ['link', 'image'],
+                    [{ align: [] }],
+                    ['clean'],
+                ],
+            },
+            placeholder: 'Write your blog post here...',
+        });
+    }
+
+    function openBlogEditor(slug) {
+        editingSlug = slug || null;
+        qs('#blog-modal-title').textContent = slug ? 'Edit Blog Post' : 'New Blog Post';
+        qs('#b-title').value = '';
+        qs('#b-slug').value = '';
+        qs('#b-meta-desc').value = '';
+        qs('#b-meta-kw').value = '';
+        qs('#b-author').value = 'Jago Grahak Jago';
+        qs('#b-status').value = 'draft';
+        qs('#blog-modal').classList.remove('hidden');
+        initQuill();
+        quill.root.innerHTML = '';
+        if (slug) loadBlogPost(slug);
+    }
+
+    async function loadBlogPost(slug) {
+        try {
+            const res = await apiFetch(`/api/admin/blog/${slug}`);
+            const p = await res.json();
+            qs('#b-title').value = p.title || '';
+            qs('#b-slug').value = p.slug || '';
+            qs('#b-meta-desc').value = p.meta_description || '';
+            qs('#b-meta-kw').value = p.meta_keywords || '';
+            qs('#b-author').value = p.author || 'Jago Grahak Jago';
+            qs('#b-status').value = p.status || 'draft';
+            quill.root.innerHTML = p.content || '';
+        } catch (err) { showToast('Failed to load blog post', 'error'); }
+    }
+
+    function editBlog(slug) { openBlogEditor(slug); }
+
+    function closeBlogModal() { qs('#blog-modal').classList.add('hidden'); editingSlug = null; }
+
+    async function saveBlog() {
+        const title = qs('#b-title').value.trim();
+        if (!title) { showToast('Title is required', 'error'); return; }
+        const body = {
+            title,
+            slug: qs('#b-slug').value.trim() || null,
+            content: quill.root.innerHTML,
+            meta_description: qs('#b-meta-desc').value.trim(),
+            meta_keywords: qs('#b-meta-kw').value.trim(),
+            author: qs('#b-author').value.trim(),
+            status: qs('#b-status').value,
+        };
+        try {
+            const method = editingSlug ? 'PUT' : 'POST';
+            const path = editingSlug ? `/api/admin/blog/${editingSlug}` : '/api/admin/blog';
+            const res = await apiFetch(path, { method, body });
+            if (res.ok) {
+                showToast(editingSlug ? 'Blog post updated' : 'Blog post created', 'success');
+                closeBlogModal(); loadBlog();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || 'Save failed', 'error');
+            }
+        } catch (err) { showToast('Failed to save blog post', 'error'); }
+    }
+
+    async function deleteBlog(slug) {
+        if (!confirm(`Delete blog post "${slug}"?`)) return;
+        try {
+            await apiFetch(`/api/admin/blog/${slug}`, { method: 'DELETE' });
+            showToast('Blog post deleted', 'success');
+            loadBlog();
+        } catch (err) { showToast('Failed to delete', 'error'); }
+    }
+
+    /* ── Pages ───────────────────────────────────────────── */
+    async function loadPages() {
+        try {
+            const res = await apiFetch('/api/admin/pages');
+            const pages = await res.json();
+            renderPages(pages);
+        } catch (err) {
+            qs('#pages-list').innerHTML = '<div class="empty-state">Failed to load.</div>';
+        }
+    }
+
+    function renderPages(pages) {
+        const el = qs('#pages-list');
+        if (!pages || !pages.length) { el.innerHTML = '<div class="empty-state">No pages yet.</div>'; return; }
+        el.innerHTML = `<table class="data-table"><thead><tr>
+            <th>Path</th><th>Title</th><th>Priority</th><th>Sitemap</th><th>Actions</th>
+        </tr></thead><tbody>${pages.map(p =>
+            `<tr>
+                <td><strong>${esc(p.path)}</strong></td>
+                <td>${esc(p.title)}</td>
+                <td>${p.priority}</td>
+                <td>${p.include_in_sitemap?'✅':'—'}</td>
+                <td style="white-space:nowrap" onclick="event.stopPropagation()">
+                    <button class="btn btn-ghost btn-sm" onclick="Admin.editPage('${esc(p.path)}')">✏️</button>
+                    <button class="btn btn-ghost btn-sm" onclick="Admin.deletePage('${esc(p.path)}')" style="color:var(--primary)">🗑</button>
+                </td>
+            </tr>`
+        ).join('')}</tbody></table>`;
+    }
+
+    function openPageEditor(path) {
+        editingPage = path || null;
+        qs('#page-modal-title').textContent = path ? 'Edit Page' : 'Add Page';
+        qs('#pg-path').value = '';
+        qs('#pg-title').value = '';
+        qs('#pg-desc').value = '';
+        qs('#pg-keywords').value = '';
+        qs('#pg-og-title').value = '';
+        qs('#pg-og-desc').value = '';
+        qs('#pg-priority').value = '0.5';
+        qs('#pg-freq').value = 'weekly';
+        qs('#pg-sitemap').checked = true;
+        if (path) loadPageData(path);
+        qs('#page-modal').classList.remove('hidden');
+    }
+
+    async function loadPageData(path) {
+        try {
+            const res = await apiFetch('/api/admin/pages');
+            const pages = await res.json();
+            const p = pages.find(pg => pg.path === path);
+            if (!p) return;
+            qs('#pg-path').value = p.path || '';
+            qs('#pg-title').value = p.title || '';
+            qs('#pg-desc').value = p.meta_description || '';
+            qs('#pg-keywords').value = p.meta_keywords || '';
+            qs('#pg-og-title').value = p.og_title || '';
+            qs('#pg-og-desc').value = p.og_description || '';
+            qs('#pg-priority').value = p.priority || 0.5;
+            qs('#pg-freq').value = p.changefreq || 'weekly';
+            qs('#pg-sitemap').checked = p.include_in_sitemap !== false;
+        } catch (err) { showToast('Failed to load page data', 'error'); }
+    }
+
+    function editPage(path) { openPageEditor(path); }
+    function closePageModal() { qs('#page-modal').classList.add('hidden'); editingPage = null; }
+
+    async function savePage() {
+        const path = qs('#pg-path').value.trim();
+        if (!path) { showToast('Path is required', 'error'); return; }
+        const body = {
+            path,
+            title: qs('#pg-title').value.trim(),
+            meta_description: qs('#pg-desc').value.trim(),
+            meta_keywords: qs('#pg-keywords').value.trim(),
+            og_title: qs('#pg-og-title').value.trim(),
+            og_description: qs('#pg-og-desc').value.trim(),
+            priority: parseFloat(qs('#pg-priority').value) || 0.5,
+            changefreq: qs('#pg-freq').value,
+            include_in_sitemap: qs('#pg-sitemap').checked,
+        };
+        try {
+            const method = editingPage ? 'PUT' : 'POST';
+            const apiPath = editingPage ? `/api/admin/pages${editingPage}` : '/api/admin/pages';
+            const res = await apiFetch(apiPath, { method, body });
+            if (res.ok) {
+                showToast(editingPage ? 'Page updated' : 'Page created', 'success');
+                closePageModal(); loadPages();
+            } else showToast('Save failed', 'error');
+        } catch (err) { showToast('Failed to save page', 'error'); }
+    }
+
+    async function deletePage(path) {
+        if (!confirm(`Delete page "${path}"?`)) return;
+        try {
+            await apiFetch(`/api/admin/pages${path}`, { method: 'DELETE' });
+            showToast('Page deleted', 'success');
+            loadPages();
+        } catch (err) { showToast('Failed to delete', 'error'); }
+    }
+
+    /* ── SEO ─────────────────────────────────────────────── */
+    async function loadSEO() {
+        try {
+            const res = await apiFetch('/api/admin/seo');
+            const d = await res.json();
+            qs('#seo-title').value = d.site_title || '';
+            qs('#seo-desc').value = d.meta_description || '';
+            qs('#seo-keywords').value = d.meta_keywords || '';
+            qs('#seo-og-title').value = d.og_title || '';
+            qs('#seo-og-desc').value = d.og_description || '';
+            qs('#seo-canonical').value = d.canonical_url || '';
+            qs('#seo-ga').value = d.google_analytics_id || '';
+            qs('#seo-gsc').value = d.google_search_console_verification || '';
+            qs('#seo-custom-head').value = d.custom_head_tags || '';
+            qs('#seo-og-image').value = d.og_image || '';
+            qs('#seo-bing').value = d.bing_verification || '';
+            qs('#seo-robots').value = d.default_robots || 'index, follow';
+            renderFaqEntries(d.faq_schema || []);
+            renderHreflangEntries(d.hreflang_entries || []);
+            updateSEOPreview();
+            loadSEOAudit();
+            loadRedirects();
+        } catch (err) { showToast('Failed to load SEO settings', 'error'); }
+    }
+
+    async function saveSEO() {
+        const body = {
+            site_title: qs('#seo-title').value.trim(),
+            meta_description: qs('#seo-desc').value.trim(),
+            meta_keywords: qs('#seo-keywords').value.trim(),
+            og_title: qs('#seo-og-title').value.trim(),
+            og_description: qs('#seo-og-desc').value.trim(),
+            canonical_url: qs('#seo-canonical').value.trim(),
+            google_analytics_id: qs('#seo-ga').value.trim(),
+            google_search_console_verification: qs('#seo-gsc').value.trim(),
+            custom_head_tags: qs('#seo-custom-head').value.trim(),
+            og_image: qs('#seo-og-image').value.trim(),
+            bing_verification: qs('#seo-bing').value.trim(),
+            default_robots: qs('#seo-robots').value,
+            faq_schema: collectFaqEntries(),
+            hreflang_entries: collectHreflangEntries(),
+        };
+        try {
+            const res = await apiFetch('/api/admin/seo', { method: 'PUT', body });
+            if (res.ok) { showToast('SEO settings saved', 'success'); loadSEOAudit(); }
+            else showToast('Failed to save SEO settings', 'error');
+        } catch (err) { showToast('Failed to save SEO settings', 'error'); }
+    }
+
+    function updateSEOPreview() {
+        const title = qs('#seo-title').value || 'Your Site Title';
+        const desc = qs('#seo-desc').value || 'Your meta description...';
+        const url = qs('#seo-canonical').value || 'https://lawly.store';
+        const ogTitle = qs('#seo-og-title').value || title;
+        const ogDesc = qs('#seo-og-desc').value || desc;
+        const ogImage = qs('#seo-og-image')?.value || '';
+        const keywords = qs('#seo-keywords').value;
+
+        qs('#serp-title').textContent = title.length > 60 ? title.slice(0, 57) + '...' : title;
+        qs('#serp-url').textContent = url;
+        qs('#serp-desc').textContent = desc.length > 160 ? desc.slice(0, 157) + '...' : desc;
+
+        qs('#og-prev-title').textContent = ogTitle;
+        qs('#og-prev-desc').textContent = ogDesc;
+
+        const imgEl = qs('#og-prev-img');
+        if (ogImage) {
+            imgEl.innerHTML = `<img src="${esc(ogImage)}" alt="OG Preview" style="width:100%;height:100%;object-fit:cover;border-radius:8px 8px 0 0;">`;
+        } else {
+            imgEl.textContent = 'Image preview (set OG Image URL above)';
+        }
+
+        charCount('seo-title-count', title.length, 50, 60);
+        charCount('seo-desc-count', desc.length, 120, 160);
+
+        analyzeKeywords(keywords, title + ' ' + desc);
+    }
+
+    function charCount(elId, len, good, max) {
+        const el = qs(`#${elId}`);
+        const cls = len <= good ? 'char-ok' : len <= max ? 'char-warn' : 'char-over';
+        el.className = `char-counter ${cls}`;
+        el.textContent = `${len}/${max} characters`;
+    }
+
+    function analyzeKeywords(kwStr, content) {
+        const el = qs('#keyword-analysis');
+        if (!kwStr.trim()) {
+            el.innerHTML = '<h4>Keyword Density</h4><p style="color:var(--gray-400);font-size:.82rem;">Add keywords above to see density analysis</p>';
+            return;
+        }
+        const keywords = kwStr.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+        const words = content.toLowerCase().split(/\s+/).filter(Boolean);
+        const totalWords = words.length || 1;
+        let html = '<h4>Keyword Density</h4>';
+        keywords.slice(0, 10).forEach(kw => {
+            const count = words.filter(w => w.includes(kw)).length;
+            const pct = ((count / totalWords) * 100).toFixed(1);
+            const barW = Math.min(pct * 10, 100);
+            html += `<div class="kw-bar">
+                <span style="min-width:120px;color:var(--gray-600)">${esc(kw)}</span>
+                <div style="flex:1;background:var(--gray-200);border-radius:3px;height:6px;overflow:hidden">
+                    <div class="kw-bar-fill" style="width:${barW}%"></div>
+                </div>
+                <span style="min-width:40px;text-align:right;color:var(--gray-500)">${pct}%</span>
+            </div>`;
+        });
+        el.innerHTML = html;
+    }
+
+    /* ── SEO Audit ───────────────────────────────────────── */
+    async function loadSEOAudit() {
+        try {
+            const res = await apiFetch('/api/admin/seo/audit');
+            const data = await res.json();
+            renderSEOAudit(data);
+        } catch (err) {}
+    }
+
+    async function runSEOAudit() {
+        const btn = qs('#btn-run-audit');
+        if (btn) btn.classList.add('loading');
+        const btn2 = qs('#btn-reaudit');
+        if (btn2) btn2.classList.add('loading');
+        try {
+            const res = await apiFetch('/api/admin/seo/audit');
+            const data = await res.json();
+            renderSEOAudit(data);
+            showToast(`SEO Audit: ${data.score}/100 (${data.grade})`, data.score >= 70 ? 'success' : 'error');
+        } catch (err) {
+            showToast('Failed to run SEO audit', 'error');
+        } finally {
+            if (btn) btn.classList.remove('loading');
+            if (btn2) btn2.classList.remove('loading');
+        }
+    }
+
+    function renderSEOAudit(data) {
+        const scoreBox = qs('#audit-score-box');
+        scoreBox.style.display = 'flex';
+        qs('#btn-run-audit').style.display = 'none';
+
+        const circle = qs('#audit-circle');
+        circle.textContent = data.score;
+        circle.className = `audit-circle grade-${data.grade.toLowerCase()}`;
+
+        qs('#audit-grade-label').textContent = `Grade: ${data.grade} — ${data.score}/100`;
+        const s = data.summary || {};
+        qs('#audit-stats').textContent = `${s.published_posts || 0} blog posts · ${s.total_pages || 0} pages · ${s.total_redirects || 0} redirects`;
+
+        const checksEl = qs('#audit-checks');
+        checksEl.innerHTML = data.checks.map(c =>
+            `<div class="audit-check ${c.passed ? 'pass' : 'fail'}">
+                <span class="check-icon">${c.passed ? '✅' : '❌'}</span>
+                <div style="flex:1"><strong>${esc(c.name)}</strong><div class="check-tip">${esc(c.tip)}</div></div>
+            </div>`
+        ).join('');
+    }
+
+    /* ── FAQ Schema Editor ───────────────────────────────── */
+    let faqItems = [];
+
+    function renderFaqEntries(items) {
+        faqItems = items || [];
+        const el = qs('#faq-entries');
+        if (!faqItems.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:.82rem;">No FAQ items yet.</p>'; return; }
+        el.innerHTML = faqItems.map((item, i) =>
+            `<div class="faq-entry">
+                <button class="faq-remove" onclick="Admin.removeFaqItem(${i})" title="Remove">✕</button>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label>Question</label>
+                    <input type="text" value="${esc(item.question || '')}" onchange="Admin.updateFaqItem(${i},'question',this.value)">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>Answer</label>
+                    <textarea rows="2" onchange="Admin.updateFaqItem(${i},'answer',this.value)">${esc(item.answer || '')}</textarea>
+                </div>
+            </div>`
+        ).join('');
+    }
+
+    function addFaqItem() {
+        faqItems.push({ question: '', answer: '' });
+        renderFaqEntries(faqItems);
+    }
+
+    function removeFaqItem(idx) {
+        faqItems.splice(idx, 1);
+        renderFaqEntries(faqItems);
+    }
+
+    function updateFaqItem(idx, field, value) {
+        if (faqItems[idx]) faqItems[idx][field] = value;
+    }
+
+    function collectFaqEntries() {
+        return faqItems.filter(f => f.question && f.answer);
+    }
+
+    /* ── Hreflang Editor ─────────────────────────────────── */
+    let hreflangItems = [];
+
+    function renderHreflangEntries(items) {
+        hreflangItems = items || [];
+        const el = qs('#hreflang-entries');
+        if (!hreflangItems.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:.82rem;">No hreflang entries yet.</p>'; return; }
+        el.innerHTML = hreflangItems.map((item, i) =>
+            `<div class="hreflang-row">
+                <input type="text" value="${esc(item.lang || '')}" placeholder="en-IN" onchange="Admin.updateHreflangItem(${i},'lang',this.value)">
+                <input type="url" value="${esc(item.href || '')}" placeholder="https://lawly.store/" onchange="Admin.updateHreflangItem(${i},'href',this.value)">
+                <button class="btn btn-outline btn-sm" onclick="Admin.removeHreflangItem(${i})" style="color:var(--primary);">✕</button>
+            </div>`
+        ).join('');
+    }
+
+    function addHreflangItem() {
+        hreflangItems.push({ lang: '', href: '' });
+        renderHreflangEntries(hreflangItems);
+    }
+
+    function removeHreflangItem(idx) {
+        hreflangItems.splice(idx, 1);
+        renderHreflangEntries(hreflangItems);
+    }
+
+    function updateHreflangItem(idx, field, value) {
+        if (hreflangItems[idx]) hreflangItems[idx][field] = value;
+    }
+
+    function collectHreflangEntries() {
+        return hreflangItems.filter(h => h.lang && h.href);
+    }
+
+    /* ── 301 Redirect Manager ────────────────────────────── */
+    async function loadRedirects() {
+        try {
+            const res = await apiFetch('/api/admin/redirects');
+            const items = await res.json();
+            renderRedirects(items);
+        } catch (err) {}
+    }
+
+    function renderRedirects(items) {
+        const el = qs('#redirects-list');
+        if (!items || !items.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:.82rem;">No redirects configured.</p>'; return; }
+        el.innerHTML = items.map(r =>
+            `<div class="redirect-row">
+                <code style="font-size:.82rem;">${esc(r.from_path)}</code>
+                <span class="arrow">→</span>
+                <code style="font-size:.82rem;">${esc(r.to_path)}</code>
+                <button class="btn btn-outline btn-sm" onclick="Admin.deleteRedirect('${esc(r.id)}')" style="color:var(--primary);font-size:.75rem;">Delete</button>
+            </div>`
+        ).join('');
+    }
+
+    async function addRedirect() {
+        const from = qs('#redir-from').value.trim();
+        const to = qs('#redir-to').value.trim();
+        if (!from || !to) { showToast('Enter both from and to paths', 'error'); return; }
+        try {
+            const res = await apiFetch('/api/admin/redirects', { method: 'POST', body: { from_path: from, to_path: to, status_code: 301 } });
+            if (res.ok) {
+                showToast('Redirect added', 'success');
+                qs('#redir-from').value = '';
+                qs('#redir-to').value = '';
+                loadRedirects();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || 'Failed to add redirect', 'error');
+            }
+        } catch (err) { showToast('Failed to add redirect', 'error'); }
+    }
+
+    async function deleteRedirect(id) {
+        try {
+            const res = await apiFetch(`/api/admin/redirects/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            if (res.ok) { showToast('Redirect deleted', 'success'); loadRedirects(); }
+            else showToast('Failed to delete redirect', 'error');
+        } catch (err) { showToast('Failed to delete redirect', 'error'); }
+    }
+
+    /* ── Sitemap Ping ────────────────────────────────────── */
+    async function pingSitemap() {
+        const el = qs('#ping-result');
+        el.textContent = 'Pinging Google & Bing...';
+        try {
+            const res = await apiFetch('/api/admin/seo/ping-sitemap', { method: 'POST' });
+            const data = await res.json();
+            const parts = data.results.map(r => `${r.engine}: ${r.status === 'ok' ? '✅' : '❌ ' + (r.error || 'failed')}`);
+            el.textContent = parts.join(' · ');
+            showToast('Sitemap pinged', 'success');
+        } catch (err) {
+            el.textContent = 'Ping failed';
+            showToast('Failed to ping sitemap', 'error');
+        }
+    }
+
+    /* ── AEO (AI Engine Optimization) ────────────────────── */
+    let aeoData = {};
+    let sameAsItems = [];
+    let snippetItems = [];
+    let howtoItems = [];
+    let clusterItems = [];
+    let speakableItems = [];
+    let sourceItems = [];
+
+    async function loadAEO() {
+        try {
+            const res = await apiFetch('/api/admin/aeo');
+            aeoData = await res.json();
+            qs('#aeo-llms-txt').value = aeoData.llms_txt || '';
+            qs('#aeo-llms-full').value = aeoData.llms_full_txt || '';
+            const org = aeoData.org_schema || {};
+            qs('#org-name').value = org.name || '';
+            qs('#org-url').value = org.url || '';
+            qs('#org-logo').value = org.logo || '';
+            qs('#org-founding').value = org.founding_date || '';
+            qs('#org-desc').value = org.description || '';
+            qs('#org-email').value = org.contact_email || '';
+            qs('#org-phone').value = org.contact_phone || '';
+            qs('#org-founders').value = org.founders || '';
+            renderSameAs(org.same_as || []);
+            renderSnippets(aeoData.ai_snippets || []);
+            renderHowTos(aeoData.howto_schemas || []);
+            renderClusters(aeoData.topic_clusters || []);
+            renderSpeakable(aeoData.speakable_selectors || []);
+            renderSources(aeoData.cite_sources || []);
+            loadAEOAudit();
+        } catch (err) { showToast('Failed to load AEO settings', 'error'); }
+    }
+
+    async function saveAEO() {
+        const body = {
+            llms_txt: qs('#aeo-llms-txt').value,
+            llms_full_txt: qs('#aeo-llms-full').value,
+            org_schema: {
+                name: qs('#org-name').value.trim(),
+                url: qs('#org-url').value.trim(),
+                logo: qs('#org-logo').value.trim(),
+                description: qs('#org-desc').value.trim(),
+                founding_date: qs('#org-founding').value.trim(),
+                founders: qs('#org-founders').value.trim(),
+                contact_email: qs('#org-email').value.trim(),
+                contact_phone: qs('#org-phone').value.trim(),
+                same_as: collectSameAs(),
+            },
+            ai_snippets: collectSnippets(),
+            howto_schemas: collectHowTos(),
+            topic_clusters: collectClusters(),
+            speakable_selectors: collectSpeakable(),
+            cite_sources: collectSources(),
+        };
+        try {
+            const res = await apiFetch('/api/admin/aeo', { method: 'PUT', body });
+            if (res.ok) { showToast('AEO settings saved', 'success'); loadAEOAudit(); }
+            else showToast('Failed to save AEO settings', 'error');
+        } catch (err) { showToast('Failed to save AEO settings', 'error'); }
+    }
+
+    /* AEO Audit */
+    async function loadAEOAudit() {
+        try {
+            const res = await apiFetch('/api/admin/aeo/audit');
+            const data = await res.json();
+            renderAEOAudit(data);
+        } catch (err) {}
+    }
+
+    async function runAEOAudit() {
+        const btn = qs('#btn-run-aeo-audit');
+        if (btn) btn.classList.add('loading');
+        const btn2 = qs('#btn-reaudit-aeo');
+        if (btn2) btn2.classList.add('loading');
+        try {
+            const res = await apiFetch('/api/admin/aeo/audit');
+            const data = await res.json();
+            renderAEOAudit(data);
+            showToast(`AEO Audit: ${data.score}/100 (${data.grade})`, data.score >= 70 ? 'success' : 'error');
+        } catch (err) {
+            showToast('Failed to run AEO audit', 'error');
+        } finally {
+            if (btn) btn.classList.remove('loading');
+            if (btn2) btn2.classList.remove('loading');
+        }
+    }
+
+    function renderAEOAudit(data) {
+        const scoreBox = qs('#aeo-score-box');
+        scoreBox.style.display = 'flex';
+        qs('#btn-run-aeo-audit').style.display = 'none';
+
+        const circle = qs('#aeo-circle');
+        circle.textContent = data.score;
+        circle.className = `audit-circle grade-${data.grade.toLowerCase()}`;
+
+        qs('#aeo-grade-label').textContent = `Grade: ${data.grade} — ${data.score}/100`;
+        const s = data.summary || {};
+        qs('#aeo-stats').textContent = `${s.llms_txt_lines || 0} llms.txt lines · ${s.snippet_count || 0} snippets · ${s.howto_count || 0} HowTos · ${s.topic_clusters || 0} clusters`;
+
+        const checksEl = qs('#aeo-checks');
+        checksEl.innerHTML = data.checks.map(c =>
+            `<div class="audit-check ${c.passed ? 'pass' : 'fail'}">
+                <span class="check-icon">${c.passed ? '✅' : '❌'}</span>
+                <div style="flex:1"><strong>${esc(c.name)}</strong><div class="check-tip">${esc(c.tip)}</div></div>
+            </div>`
+        ).join('');
+
+        // KPIs
+        const kpiEl = qs('#aeo-kpis');
+        kpiEl.style.display = 'grid';
+        kpiEl.innerHTML = [
+            { val: data.score, label: 'AEO Score' },
+            { val: s.snippet_count || 0, label: 'AI Snippets' },
+            { val: s.howto_count || 0, label: 'HowTo Guides' },
+            { val: s.topic_clusters || 0, label: 'Topic Clusters' },
+            { val: s.blog_posts || 0, label: 'Blog Posts' },
+        ].map(k => `<div class="aeo-kpi"><div class="kpi-val">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+    }
+
+    /* sameAs links */
+    function renderSameAs(items) {
+        sameAsItems = items.map(i => typeof i === 'string' ? i : (i.url || ''));
+        const el = qs('#sameas-entries');
+        if (!sameAsItems.length) { el.innerHTML = ''; return; }
+        el.innerHTML = sameAsItems.map((url, i) =>
+            `<div class="sameas-row">
+                <input type="url" value="${esc(url)}" placeholder="https://twitter.com/..." onchange="Admin.updateSameAs(${i},this.value)">
+                <button class="btn btn-outline btn-sm" onclick="Admin.removeSameAs(${i})" style="color:var(--primary);">✕</button>
+            </div>`
+        ).join('');
+    }
+    function addSameAs() { sameAsItems.push(''); renderSameAs(sameAsItems); }
+    function removeSameAs(i) { sameAsItems.splice(i, 1); renderSameAs(sameAsItems); }
+    function updateSameAs(i, v) { sameAsItems[i] = v; }
+    function collectSameAs() { return sameAsItems.filter(Boolean); }
+
+    /* AI Snippets */
+    function renderSnippets(items) {
+        snippetItems = items || [];
+        const el = qs('#snippet-entries');
+        if (!snippetItems.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:.82rem;">No AI snippets yet. Add concise answers to common queries.</p>'; return; }
+        el.innerHTML = snippetItems.map((s, i) =>
+            `<div class="snippet-entry">
+                <button class="snippet-remove" onclick="Admin.removeSnippet(${i})" title="Remove">✕</button>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label>Query <small>(what users ask AI)</small></label>
+                    <input type="text" value="${esc(s.query || '')}" placeholder="What is Lawly?" onchange="Admin.updateSnippet(${i},'query',this.value)">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>Answer <small>(concise, authoritative \u2014 2-3 sentences)</small></label>
+                    <textarea rows="2" onchange="Admin.updateSnippet(${i},'answer',this.value)">${esc(s.answer || '')}</textarea>
+                </div>
+            </div>`
+        ).join('');
+    }
+    function addSnippet() { snippetItems.push({ query: '', answer: '' }); renderSnippets(snippetItems); }
+    function removeSnippet(i) { snippetItems.splice(i, 1); renderSnippets(snippetItems); }
+    function updateSnippet(i, f, v) { if (snippetItems[i]) snippetItems[i][f] = v; }
+    function collectSnippets() { return snippetItems.filter(s => s.query && s.answer); }
+
+    /* HowTo Schema */
+    function renderHowTos(items) {
+        howtoItems = (items || []).map(h => ({ ...h, steps: h.steps || [] }));
+        const el = qs('#howto-entries');
+        if (!howtoItems.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:.82rem;">No HowTo guides yet.</p>'; return; }
+        el.innerHTML = howtoItems.map((h, i) =>
+            `<div class="howto-entry">
+                <button class="howto-remove" onclick="Admin.removeHowTo(${i})" title="Remove">✕</button>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label>Guide Title</label>
+                    <input type="text" value="${esc(h.name || '')}" placeholder="How to send a consumer legal notice in India" onchange="Admin.updateHowTo(${i},'name',this.value)">
+                </div>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label>Description <small>(optional)</small></label>
+                    <input type="text" value="${esc(h.description || '')}" onchange="Admin.updateHowTo(${i},'description',this.value)">
+                </div>
+                <label style="font-size:.82rem;font-weight:600;margin-bottom:6px;display:block;">Steps</label>
+                <div id="howto-steps-${i}">
+                    ${h.steps.map((step, si) => `<div class="step-row">
+                        <span style="color:var(--gray-400);font-weight:600;min-width:24px;">${si + 1}.</span>
+                        <input type="text" value="${esc(step)}" onchange="Admin.updateHowToStep(${i},${si},this.value)">
+                        <button class="btn btn-outline btn-sm" onclick="Admin.removeHowToStep(${i},${si})" style="color:var(--primary);padding:4px 8px;">✕</button>
+                    </div>`).join('')}
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="Admin.addHowToStep(${i})" style="margin-top:6px;">+ Step</button>
+            </div>`
+        ).join('');
+    }
+    function addHowTo() { howtoItems.push({ name: '', description: '', steps: [''] }); renderHowTos(howtoItems); }
+    function removeHowTo(i) { howtoItems.splice(i, 1); renderHowTos(howtoItems); }
+    function updateHowTo(i, f, v) { if (howtoItems[i]) howtoItems[i][f] = v; }
+    function addHowToStep(i) { if (howtoItems[i]) { howtoItems[i].steps.push(''); renderHowTos(howtoItems); } }
+    function removeHowToStep(i, si) { if (howtoItems[i]) { howtoItems[i].steps.splice(si, 1); renderHowTos(howtoItems); } }
+    function updateHowToStep(i, si, v) { if (howtoItems[i] && howtoItems[i].steps) howtoItems[i].steps[si] = v; }
+    function collectHowTos() { return howtoItems.filter(h => h.name && h.steps.some(Boolean)).map(h => ({ ...h, steps: h.steps.filter(Boolean) })); }
+
+    /* Topic Clusters */
+    function renderClusters(items) {
+        clusterItems = items || [];
+        const el = qs('#cluster-entries');
+        if (!clusterItems.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:.82rem;">No topic clusters defined.</p>'; return; }
+        el.innerHTML = clusterItems.map((c, i) =>
+            `<div class="cluster-entry">
+                <button class="cluster-remove" onclick="Admin.removeCluster(${i})" title="Remove">✕</button>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label>Pillar Topic</label>
+                    <input type="text" value="${esc(c.pillar || '')}" placeholder="Consumer Protection in India" onchange="Admin.updateCluster(${i},'pillar',this.value)">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>Sub-topics <small>(comma-separated)</small></label>
+                    <input type="text" value="${esc((c.subtopics || []).join(', '))}" placeholder="CPA 2019, consumer forum, legal notice, refund rights" onchange="Admin.updateClusterSubs(${i},this.value)">
+                </div>
+            </div>`
+        ).join('');
+    }
+    function addCluster() { clusterItems.push({ pillar: '', subtopics: [] }); renderClusters(clusterItems); }
+    function removeCluster(i) { clusterItems.splice(i, 1); renderClusters(clusterItems); }
+    function updateCluster(i, f, v) { if (clusterItems[i]) clusterItems[i][f] = v; }
+    function updateClusterSubs(i, v) { if (clusterItems[i]) clusterItems[i].subtopics = v.split(',').map(s => s.trim()).filter(Boolean); }
+    function collectClusters() { return clusterItems.filter(c => c.pillar); }
+
+    /* Speakable */
+    function renderSpeakable(items) {
+        speakableItems = items || [];
+        const el = qs('#speakable-entries');
+        if (!speakableItems.length) { el.innerHTML = ''; return; }
+        el.innerHTML = speakableItems.map((s, i) =>
+            `<div class="sameas-row">
+                <input type="text" value="${esc(s)}" placeholder=".hero-title" onchange="Admin.updateSpeakable(${i},this.value)">
+                <button class="btn btn-outline btn-sm" onclick="Admin.removeSpeakable(${i})" style="color:var(--primary);">✕</button>
+            </div>`
+        ).join('');
+    }
+    function addSpeakable() { speakableItems.push(''); renderSpeakable(speakableItems); }
+    function removeSpeakable(i) { speakableItems.splice(i, 1); renderSpeakable(speakableItems); }
+    function updateSpeakable(i, v) { speakableItems[i] = v; }
+    function collectSpeakable() { return speakableItems.filter(Boolean); }
+
+    /* Citation Sources */
+    function renderSources(items) {
+        sourceItems = items || [];
+        const el = qs('#source-entries');
+        if (!sourceItems.length) { el.innerHTML = '<p style="color:var(--gray-400);font-size:.82rem;">No citation sources added.</p>'; return; }
+        el.innerHTML = sourceItems.map((s, i) =>
+            `<div class="source-row">
+                <input type="text" value="${esc(s.name || '')}" placeholder="Source name" onchange="Admin.updateSource(${i},'name',this.value)">
+                <input type="url" value="${esc(s.url || '')}" placeholder="https://..." onchange="Admin.updateSource(${i},'url',this.value)">
+                <button class="btn btn-outline btn-sm" onclick="Admin.removeSource(${i})" style="color:var(--primary);">✕</button>
+            </div>`
+        ).join('');
+    }
+    function addSource() { sourceItems.push({ name: '', url: '' }); renderSources(sourceItems); }
+    function removeSource(i) { sourceItems.splice(i, 1); renderSources(sourceItems); }
+    function updateSource(i, f, v) { if (sourceItems[i]) sourceItems[i][f] = v; }
+    function collectSources() { return sourceItems.filter(s => s.name || s.url); }
+
+    /* ── Activity ────────────────────────────────────────── */
+    async function loadActivity() {
+        try {
+            const res = await apiFetch('/api/admin/activity?limit=100');
+            const items = await res.json();
+            renderActivity(items);
+        } catch (err) {
+            qs('#activity-list').innerHTML = '<div class="empty-state">Failed to load.</div>';
+        }
+    }
+
+    function renderActivity(items) {
+        const el = qs('#activity-list');
+        if (!items || !items.length) { el.innerHTML = '<div class="empty-state">No activity recorded yet.</div>'; return; }
+        el.innerHTML = items.map(a => {
+            const icon = a.entity_type === 'notice' ? '📋' : a.entity_type === 'blog' ? '📝' : a.entity_type === 'seo' ? '🔍' : a.entity_type === 'page' ? '📄' : a.entity_type === 'lawyer' ? '👨‍⚖️' : a.entity_type === 'auth' ? '🔐' : '📌';
+            return `<div class="activity-item">
+                <div class="activity-dot"></div>
+                <div style="flex:1">
+                    <div>${icon} <strong>${esc(a.action)}</strong> ${esc(a.details)}</div>
+                    ${a.entity_id ? `<div style="font-size:.78rem;color:var(--gray-400)">ID: ${esc(a.entity_id)}</div>` : ''}
+                    <div class="activity-time">${formatDate(a.timestamp)}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    /* ── Lawyer ──────────────────────────────────────────── */
+    async function loadLawyer() {
+        try {
+            const res = await apiFetch('/api/admin/lawyer');
+            const d = await res.json();
+            if (d && d.name) {
+                qs('#l-name').value = d.name || '';
+                qs('#l-email').value = d.email || '';
+                qs('#l-enrollment').value = d.enrollment_no || '';
+                qs('#l-bar').value = d.bar_council || '';
+                qs('#l-phone').value = d.phone || '';
+            }
+        } catch (err) {}
+    }
+
+    async function saveLawyer() {
+        const body = {
+            name: qs('#l-name').value.trim(),
+            email: qs('#l-email').value.trim(),
+            enrollment_no: qs('#l-enrollment').value.trim(),
+            bar_council: qs('#l-bar').value.trim() || null,
+            phone: qs('#l-phone').value.trim() || null,
+        };
+        if (!body.name || !body.email || !body.enrollment_no) { showToast('Fill in name, email, and enrollment number', 'error'); return; }
+        try {
+            const res = await apiFetch('/api/admin/lawyer', { method: 'PUT', body });
+            if (res.ok) showToast('Lawyer details saved', 'success');
+            else showToast('Failed to save', 'error');
+        } catch (err) { showToast('Failed to save lawyer details', 'error'); }
+    }
+
+    /* ── Settings ────────────────────────────────────────── */
+    function loadSettings() {
+        const el = qs('#settings-api-base');
+        if (el) el.value = localStorage.getItem('legaltech_api_base') || '';
+    }
+
+    async function changePassword() {
+        const current = qs('#pw-current').value;
+        const newPw = qs('#pw-new').value;
+        const confirm = qs('#pw-confirm').value;
+        if (!current || !newPw) { showToast('Fill in all password fields', 'error'); return; }
+        if (newPw !== confirm) { showToast('New passwords do not match', 'error'); return; }
+        if (newPw.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+        try {
+            const res = await apiFetch('/api/admin/password', {
+                method: 'PUT',
+                body: { current_password: current, new_password: newPw },
+            });
+            if (res.ok) {
+                showToast('Password changed successfully', 'success');
+                qs('#pw-current').value = '';
+                qs('#pw-new').value = '';
+                qs('#pw-confirm').value = '';
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || 'Failed to change password', 'error');
+            }
+        } catch (err) { showToast('Failed to change password', 'error'); }
+    }
+
+    function saveApiBase() {
+        const v = (qs('#settings-api-base')?.value || '').trim();
+        if (!v) { clearApiBase(); return; }
+        try {
+            const u = new URL(v);
+            if (!['http:', 'https:'].includes(u.protocol)) throw new Error();
+        } catch (_) {
+            showToast('Please enter a valid URL', 'error');
+            return;
+        }
+        localStorage.setItem('legaltech_api_base', v.replace(/\/$/, ''));
+        showToast('API base URL saved', 'success');
+    }
+
+    function clearApiBase() {
+        localStorage.removeItem('legaltech_api_base');
+        qs('#settings-api-base').value = '';
+        showToast('API base reset to default', 'info');
+    }
+
+    /* ── Users Tab (Database) ─────────────────────────── */
+    async function loadDatabase() {
+        try {
+            const [statsRes, usersRes] = await Promise.all([
+                apiFetch('/api/admin/db/stats'),
+                apiFetch('/api/admin/db/users'),
+            ]);
+            const stats = await statsRes.json();
+            const users = await usersRes.json();
+            renderDbStats(stats);
+            renderDbUsers(users);
+        } catch (err) { showToast('Failed to load users', 'error'); }
+    }
+
+    function renderDbStats(s) {
+        const bar = qs('#db-stats-bar');
+        bar.innerHTML = [
+            ['👤 Users', s.total_users],
+            ['📋 Notices', s.total_notices],
+            ['📊 Analyses', s.total_analyses],
+            ['📄 PDFs', s.total_pdfs],
+            ['📎 Documents', s.total_documents],
+        ].map(([label, val]) => `<div class="stat-card"><h3>${val}</h3><p>${label}</p></div>`).join('');
+    }
+
+    function renderDbUsers(users) {
+        const tbody = qs('#db-users-tbody');
+        if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-400)">No users yet</td></tr>'; return; }
+        tbody.innerHTML = users.map(u => `<tr>
+            <td>${u.id}</td>
+            <td>${u.full_name || '-'}</td>
+            <td>${u.email || '-'}</td>
+            <td>${u.phone || '-'}</td>
+            <td>${new Date(u.created_at).toLocaleDateString()}</td>
+        </tr>`).join('');
+    }
+
+    async function downloadDbPdf(noticeId) {
+        if (!noticeId && currentNoticeId) {
+            noticeId = qs('#modal-btn-db-pdf')?.dataset?.noticeId || currentNoticeId;
+        }
+        if (!noticeId) return;
+        try {
+            const res = await apiFetch(`/api/admin/db/pdfs/${noticeId}`);
+            if (!res.ok) { showToast('PDF not found', 'error'); return; }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `notice_${noticeId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) { showToast('Failed to download PDF', 'error'); }
+    }
+
+    /* ── Modal helpers (Escape key + backdrop click) ────── */
+    function closeAllModals() {
+        qs('#notice-modal')?.classList.add('hidden');
+        qs('#blog-modal')?.classList.add('hidden');
+        qs('#page-modal')?.classList.add('hidden');
+        currentNoticeId = null;
+        editingSlug = null;
+        editingPage = null;
+    }
+
+    /* ── Init ────────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+        // Tab click handlers
+        document.querySelectorAll('.admin-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        // Login form
+        qs('#login-form').addEventListener('submit', login);
+
+        // Escape key closes modals
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeAllModals();
+        });
+
+        // Backdrop click closes modals
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) closeAllModals();
+            });
+        });
+
+        // Auto-login if token exists
+        if (token) { showAdmin(); }
+    });
+
+    /* ── Public API ──────────────────────────────────────── */
+    return {
+        login, logout, switchTab,
+        openNotice, closeNoticeModal, approveNotice, rejectNotice, downloadPDF, exportCSV, filterNotices,
+        openBlogEditor, editBlog, closeBlogModal, saveBlog, deleteBlog,
+        openPageEditor, editPage, closePageModal, savePage, deletePage,
+        saveSEO, updateSEOPreview, runSEOAudit,
+        addFaqItem, removeFaqItem, updateFaqItem,
+        addHreflangItem, removeHreflangItem, updateHreflangItem,
+        addRedirect, deleteRedirect, pingSitemap,
+        saveAEO, runAEOAudit,
+        addSameAs, removeSameAs, updateSameAs,
+        addSnippet, removeSnippet, updateSnippet,
+        addHowTo, removeHowTo, updateHowTo, addHowToStep, removeHowToStep, updateHowToStep,
+        addCluster, removeCluster, updateCluster, updateClusterSubs,
+        addSpeakable, removeSpeakable, updateSpeakable,
+        addSource, removeSource, updateSource,
+        saveLawyer,
+        changePassword, saveApiBase, clearApiBase,
+        downloadDbPdf,
+    };
 })();
 </script>
 </body>

@@ -4,8 +4,6 @@ const App = (() => {
     let recognition = null;
     let recognitionField = null;
     let capturedFinalText = '';
-    let smartRecognition = null;
-    let smartTranscript = '';
 
     // ── State ────────────────────────────────────────────────────────
     const state = {
@@ -57,7 +55,9 @@ const App = (() => {
     let _tipInterval7 = null;
 
     // ── Step navigation ─────────────────────────────────────────────
-    function goTo(step) {
+    function goTo(step, options = {}) {
+        const resetTier = options.resetTier !== false;
+
         // Stop tip rotations when leaving loading screens
         if (_tipInterval4) { clearInterval(_tipInterval4); _tipInterval4 = null; }
         if (_tipInterval7) { clearInterval(_tipInterval7); _tipInterval7 = null; }
@@ -68,6 +68,10 @@ const App = (() => {
         state.currentStep = step;
         updateProgress(step);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (step === 6 && resetTier) {
+            resetTierSelection();
+        }
 
         // Start tip rotation on loading screens
         if (step === 4) _tipInterval4 = startLoadingTips('loading-tip-4');
@@ -101,7 +105,14 @@ const App = (() => {
 
     function getApiBase() {
         const stored = (localStorage.getItem('legaltech_api_base') || '').trim();
-        if (stored) return stored;
+        if (stored) {
+            // Never pin production traffic to static website origin.
+            if (!isLocalHost() && stored.replace(/\/$/, '') === window.location.origin.replace(/\/$/, '')) {
+                localStorage.removeItem('legaltech_api_base');
+            } else {
+                return stored;
+            }
+        }
         if (isLocalHost()) return window.location.origin;
         return API_BACKEND;
     }
@@ -124,60 +135,97 @@ const App = (() => {
         return [...new Set(candidates)];
     }
 
-    function apiUrl(path) {
-        return `${getApiBase().replace(/\/$/, '')}${path}`;
+    function normalizeBase(base) {
+        return `${base || ''}`.replace(/\/$/, '');
+    }
+
+    function isWrongOriginResponse(base, path, res) {
+        const b = normalizeBase(base);
+        const siteOrigin = normalizeBase(window.location.origin);
+        const contentType = (res.headers.get('content-type') || '').toLowerCase();
+        const expectsBinary = /pdf($|\?)/.test(path);
+
+        if (res.status === 404 || res.status === 405) return true;
+
+        if (!isLocalHost() && b === siteOrigin && (res.status === 401 || res.status === 403)) {
+            return true;
+        }
+
+        if (!expectsBinary && contentType && !contentType.includes('application/json')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    async function responseErrorMessage(res, fallback) {
+        const base = fallback || `Request failed (${res.status})`;
+        const contentType = (res.headers.get('content-type') || '').toLowerCase();
+
+        try {
+            if (contentType.includes('application/json')) {
+                const data = await res.json();
+                if (typeof data?.detail === 'string' && data.detail.trim()) return data.detail.trim();
+                if (Array.isArray(data?.detail) && data.detail.length) {
+                    const msgs = data.detail
+                        .map((d) => d?.msg || d?.message || '')
+                        .map((s) => `${s}`.trim())
+                        .filter(Boolean);
+                    if (msgs.length) return msgs.join('; ');
+                }
+                if (typeof data?.message === 'string' && data.message.trim()) return data.message.trim();
+            } else {
+                const txt = (await res.text()).trim();
+                if (txt) return txt.slice(0, 220);
+            }
+        } catch (_) {
+            // Fall back to generic message.
+        }
+
+        return base;
     }
 
     async function apiFetch(path, options) {
         const candidates = apiBaseCandidates();
         let lastError = null;
+        let lastResponse = null;
 
         for (const base of candidates) {
             try {
                 const res = await fetch(`${base}${path}`, options);
-                if (res.ok || res.status < 500) {
+                if (res.ok) {
                     // Persist the working origin so subsequent calls are fast.
                     localStorage.setItem('legaltech_api_base', base);
                     return res;
                 }
+
+                // Wrong-origin signatures: keep trying next candidate.
+                if (isWrongOriginResponse(base, path, res)) {
+                    lastResponse = res;
+                    continue;
+                }
+
+                // For valid API-origin client errors (e.g. 400/422), return response.
+                if (res.status < 500) {
+                    localStorage.setItem('legaltech_api_base', base);
+                    return res;
+                }
+
+                // 500+ server errors from the right origin: return immediately,
+                // don't waste time trying other candidates.
+                if (!isWrongOriginResponse(base, path, res)) {
+                    return res;
+                }
+
+                lastResponse = res;
                 lastError = new Error(`Server error: ${res.status} from ${base}`);
             } catch (err) {
                 lastError = err;
             }
         }
 
+        if (lastResponse) return lastResponse;
         throw lastError || new Error('Unable to reach API backend');
-    }
-
-    async function translateToEnglish(text) {
-        const payload = { text };
-        const res = await apiFetch('/translate/to-english', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error(`Translation failed: ${res.status}`);
-        const data = await res.json();
-        return (data.translated_text || '').trim();
-    }
-
-    async function refineSpeechTranscript(text) {
-        const res = await apiFetch('/speech/refine', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transcript_text: text }),
-        });
-        if (!res.ok) throw new Error(`Speech refinement failed: ${res.status}`);
-        return res.json();
-    }
-
-    function resolveRecognitionLang(raw) {
-        const v = `${raw || ''}`.trim();
-        if (!v || v === 'auto-hinglish') {
-            // en-IN generally performs better for Hinglish/mixed speech in web speech engines.
-            return 'en-IN';
-        }
-        return v;
     }
 
     function setVoiceStatus(fieldId, message) {
@@ -197,157 +245,6 @@ const App = (() => {
         return sel ? sel.value : 'issue-summary';
     }
 
-    function setSmartStatus(message) {
-        const el = document.getElementById('smart-intake-status');
-        if (el) el.textContent = message;
-    }
-
-    function criticalQuestions(analysis) {
-        if (!analysis || !Array.isArray(analysis.questions)) return [];
-        return analysis.questions.filter((q) => `${q.priority || ''}`.toLowerCase() === 'critical');
-    }
-
-    function isHighConfidence(analysis) {
-        if (!analysis || !analysis.ready_to_generate) return false;
-        const strength = `${analysis.case_strength || ''}`.toLowerCase();
-        const criticalCount = criticalQuestions(analysis).length;
-        return strength === 'strong' || (strength === 'moderate' && criticalCount === 0);
-    }
-
-    async function processSmartTranscript(transcriptText) {
-        const payload = {
-            transcript_text: transcriptText,
-            complainant: state.complainant,
-            company_name_hint: state.companyName || null,
-            website: state.companyWebsite || null,
-            desired_resolution: state.desiredResolution || null,
-            timeline: state.timeline,
-            evidence: state.evidence,
-            jurisdiction: 'India',
-        };
-
-        const res = await apiFetch('/intake/from-transcript', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error(`Smart intake failed: ${res.status}`);
-        const data = await res.json();
-
-        const issueEl = document.getElementById('issue-summary');
-        const resEl = document.getElementById('desired-resolution');
-        if (issueEl && data.issue_summary) issueEl.value = data.issue_summary;
-        if (resEl && data.desired_resolution) resEl.value = data.desired_resolution;
-
-        state.issueSummary = data.issue_summary || state.issueSummary;
-        state.desiredResolution = data.desired_resolution || state.desiredResolution;
-
-        if ((!state.companyName || !state.companyName.trim()) && data.company_name_hint) {
-            state.companyName = data.company_name_hint;
-            const companyInput = document.getElementById('company-name');
-            if (companyInput) companyInput.value = data.company_name_hint;
-        }
-
-        if ((!state.companyWebsite || !state.companyWebsite.trim()) && data.website) {
-            state.companyWebsite = data.website;
-            const websiteInput = document.getElementById('company-website');
-            if (websiteInput) websiteInput.value = data.website;
-        }
-
-        state.timeline = Array.isArray(data.timeline) ? [...new Set(data.timeline.map(x => `${x}`.trim()).filter(Boolean))] : state.timeline;
-        state.evidence = Array.isArray(data.evidence) ? [...new Set(data.evidence.map(x => `${x}`.trim()).filter(Boolean))] : state.evidence;
-        renderList('timeline-list', state.timeline);
-        renderList('evidence-list', state.evidence);
-
-        if (data.auto_answers && typeof data.auto_answers === 'object') {
-            state.followUpAnswers = { ...state.followUpAnswers, ...data.auto_answers };
-        }
-
-        if (data.analysis) {
-            state.analysisResult = data.analysis;
-            if (isHighConfidence(data.analysis)) {
-                setSmartStatus('High confidence case detected. Review findings and confirm exact details before generation.');
-                renderAnalysis();
-                goTo(5);
-                return;
-            }
-
-            renderAnalysis();
-            goTo(5);
-
-            const remainingCritical = criticalQuestions(data.analysis).length;
-            if (remainingCritical > 0) {
-                setSmartStatus(`Done. We pre-filled your case. Please answer ${remainingCritical} critical question(s) to strengthen notice generation.`);
-            } else {
-                setSmartStatus('Done. We auto-filled details and pre-answered follow-up questions from your speech.');
-            }
-        } else {
-            setSmartStatus('Done. We filled the form from your speech.');
-        }
-    }
-
-    function startSmartIntake() {
-        const Ctor = speechCtor();
-        if (!Ctor) {
-            showError('Voice input is not supported in this browser. Please use Chrome.');
-            return;
-        }
-
-        if (smartRecognition) {
-            smartRecognition.stop();
-        }
-
-        smartTranscript = '';
-        smartRecognition = new Ctor();
-        smartRecognition.lang = 'en-IN';
-        smartRecognition.continuous = true;
-        smartRecognition.interimResults = true;
-
-        smartRecognition.onstart = () => setSmartStatus('Listening... describe your entire issue naturally.');
-
-        smartRecognition.onresult = (event) => {
-            let interim = '';
-            for (let i = event.resultIndex; i < event.results.length; i += 1) {
-                const txt = event.results[i][0].transcript;
-                if (event.results[i].isFinal) smartTranscript += `${txt} `;
-                else interim += txt;
-            }
-            if (interim.trim()) setSmartStatus(`Listening... ${interim.trim()}`);
-        };
-
-        smartRecognition.onerror = (event) => {
-            setSmartStatus(`Mic error: ${event.error || 'unknown'}`);
-        };
-
-        smartRecognition.onend = async () => {
-            const finalText = smartTranscript.trim();
-            smartRecognition = null;
-            smartTranscript = '';
-            if (!finalText) {
-                setSmartStatus('Stopped. No speech detected.');
-                return;
-            }
-            try {
-                setSmartStatus('Refining mixed Hindi-English speech with AI...');
-                const refined = await refineSpeechTranscript(finalText);
-                const transcriptForIntake = (refined.english_text || finalText || '').trim();
-                await processSmartTranscript(transcriptForIntake);
-            } catch (err) {
-                setSmartStatus('Could not auto-process speech. Please try again or type manually.');
-                showError(`${err?.message || err}`);
-            }
-        };
-
-        smartRecognition.start();
-    }
-
-    function stopSmartIntake() {
-        if (smartRecognition) {
-            smartRecognition.stop();
-            setSmartStatus('Stopping...');
-        }
-    }
-
     function speechCtor() {
         return window.SpeechRecognition || window.webkitSpeechRecognition || null;
     }
@@ -365,16 +262,24 @@ const App = (() => {
 
         capturedFinalText = '';
         recognitionField = fieldId;
-        const langSel = document.getElementById(`voice-lang-${fieldId}`);
-        const recogLang = resolveRecognitionLang(langSel ? langSel.value : 'auto-hinglish');
+        const target = document.getElementById(fieldId);
+        const baseText = target ? target.value.trim() : '';
+        const mergeWithBase = (spokenText) => {
+            if (!target) return;
+            const chunk = (spokenText || '').trim();
+            target.value = [baseText, chunk].filter(Boolean).join(baseText ? '\n' : '');
+        };
+        const recogLang = 'en-US';
 
         recognition = new Ctor();
         recognition.lang = recogLang;
-        recognition.continuous = true;
+        recognition.continuous = false;
         recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
 
         recognition.onstart = () => {
-            setVoiceStatus(fieldId, 'Listening... speak naturally in Hindi or English.');
+            setVoiceButtonState(true);
+            setVoiceStatus(fieldId, 'Listening... transcribing in real time.');
         };
 
         recognition.onresult = (event) => {
@@ -387,44 +292,35 @@ const App = (() => {
                     interim += part;
                 }
             }
+            const liveText = `${capturedFinalText} ${interim}`.trim();
+            mergeWithBase(liveText);
             if (interim.trim()) {
                 setVoiceStatus(fieldId, `Listening... ${interim.trim()}`);
             }
         };
 
         recognition.onerror = (event) => {
+            setVoiceButtonState(false);
             setVoiceStatus(fieldId, `Mic error: ${event.error || 'unknown error'}`);
         };
 
-        recognition.onend = async () => {
+        recognition.onend = () => {
             const transcript = capturedFinalText.trim();
+            setVoiceButtonState(false);
             if (!transcript) {
+                mergeWithBase('');
                 setVoiceStatus(fieldId, 'Stopped. No speech detected.');
-                return;
-            }
-
-            try {
-                setVoiceStatus(fieldId, 'Refining Hinglish transcript...');
-                const refined = await refineSpeechTranscript(transcript);
-                const translated = (refined.english_text || '').trim() || await translateToEnglish(transcript);
-                const target = document.getElementById(fieldId);
-                if (target) {
-                    const existing = target.value.trim();
-                    target.value = [existing, translated].filter(Boolean).join('\n');
-                }
-                setVoiceStatus(fieldId, 'Done.');
-            } catch (_) {
-                const target = document.getElementById(fieldId);
-                if (target) {
-                    const existing = target.value.trim();
-                    target.value = [existing, transcript].filter(Boolean).join('\n');
-                }
-                setVoiceStatus(fieldId, 'Translation failed, original speech text was added.');
-            } finally {
                 recognition = null;
                 recognitionField = null;
                 capturedFinalText = '';
+                return;
             }
+
+            mergeWithBase(transcript);
+            setVoiceStatus(fieldId, 'Done.');
+            recognition = null;
+            recognitionField = null;
+            capturedFinalText = '';
         };
 
         recognition.start();
@@ -433,6 +329,7 @@ const App = (() => {
     function stopVoiceInput(fieldId) {
         if (recognition && recognitionField === fieldId) {
             recognition.stop();
+            setVoiceButtonState(false);
             setVoiceStatus(fieldId, 'Stopping...');
         }
     }
@@ -521,10 +418,14 @@ const App = (() => {
                 const err = await res.json().catch(() => ({}));
                 throw new Error(err.detail || `Upload failed: ${res.status}`);
             }
-            const data = await res.json();
+            const data = await res.json().catch(() => null);
+            if (!data || !Array.isArray(data.files)) {
+                throw new Error('Upload failed: invalid server response format.');
+            }
 
             // Replace pending entries with server responses
-            for (let i = 0; i < data.files.length; i++) {
+            const completedCount = Math.min(data.files.length, pendingIds.length);
+            for (let i = 0; i < completedCount; i++) {
                 const srvFile = data.files[i];
                 const pendingIdx = state.uploadedFiles.findIndex(f => f.file_id === pendingIds[i]);
                 if (pendingIdx >= 0) {
@@ -536,7 +437,18 @@ const App = (() => {
                     };
                 }
             }
-            if (statusEl) statusEl.textContent = `${data.files.length} file(s) uploaded successfully.`;
+            if (data.files.length !== pendingIds.length) {
+                for (let i = completedCount; i < pendingIds.length; i++) {
+                    const idx = state.uploadedFiles.findIndex(f => f.file_id === pendingIds[i]);
+                    if (idx >= 0) state.uploadedFiles[idx].status = 'error';
+                }
+            }
+
+            if (statusEl) {
+                statusEl.textContent = data.files.length === pendingIds.length
+                    ? `${data.files.length} file(s) uploaded successfully.`
+                    : `${completedCount} of ${pendingIds.length} file(s) uploaded. Please retry failed uploads.`;
+            }
         } catch (err) {
             // Mark pending as error
             for (const tid of pendingIds) {
@@ -624,22 +536,59 @@ const App = (() => {
         }
     }
 
-    // ── Step 1 → 2: Complainant ─────────────────────────────────────
-    function nextFromComplainant() {
-        const name = val('c-name');
-        const email = val('c-email');
-        const address = val('c-address');
-        if (!name || !email || !address) return showError('Please fill in all required fields.');
-        state.complainant = {
-            full_name: name,
-            email: email,
-            phone: val('c-phone') || null,
-            address: address,
-        };
-        goTo(2);
+    // ── Step 2 → 3: Company ─────────────────────────────────────────
+    let _lookupAbort = null;
+
+    async function lookupCompany() {
+        const name = val('company-name');
+        const website = normalizeWebsite(val('company-website'));
+        const resultEl = document.getElementById('company-lookup-result');
+        const loadingEl = document.getElementById('company-lookup-loading');
+        if (!resultEl || !loadingEl) return;
+
+        resultEl.classList.add('hidden');
+        if (!website || !name) return;
+
+        if (_lookupAbort) _lookupAbort.abort();
+        _lookupAbort = new AbortController();
+
+        loadingEl.classList.remove('hidden');
+
+        try {
+            const res = await apiFetch('/company/lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand_name: name, website }),
+                signal: _lookupAbort.signal,
+            });
+            loadingEl.classList.add('hidden');
+
+            const data = typeof res.json === 'function' ? await res.json() : res;
+            const hasData = data.registered_name || data.cin || data.registered_office || data.grievance_officer_email;
+            if (!hasData) return;
+
+            const setRow = (id, label, value) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (value) {
+                    el.innerHTML = '<strong>' + label + '</strong><span>' + value + '</span>';
+                    el.style.display = '';
+                } else {
+                    el.style.display = 'none';
+                }
+            };
+            setRow('lookup-registered-name', 'Legal Name', data.registered_name);
+            setRow('lookup-cin', 'CIN', data.cin);
+            setRow('lookup-office', 'Registered Office', data.registered_office);
+            const grievance = [data.grievance_officer_name, data.grievance_officer_email].filter(Boolean).join(' — ');
+            setRow('lookup-grievance', 'Grievance Officer', grievance || null);
+            resultEl.classList.remove('hidden');
+        } catch (e) {
+            loadingEl.classList.add('hidden');
+            if (e.name !== 'AbortError') console.warn('Company lookup failed:', e);
+        }
     }
 
-    // ── Step 2 → 3: Company ─────────────────────────────────────────
     function nextFromCompany() {
         const name = val('company-name');
         if (!name) return showError('Please enter the company name.');
@@ -649,6 +598,16 @@ const App = (() => {
             return showError('Please enter a valid website URL, e.g. https://example.com');
         }
         goTo(3);
+    }
+
+    function getAnalyzeComplainant() {
+        const c = state.complainant || {};
+        return {
+            full_name: c.full_name || 'Pending Customer',
+            email: c.email || 'pending@lawly.store',
+            phone: c.phone || null,
+            address: c.address || 'India',
+        };
     }
 
     // ── Step 3 → 4: Analyze ─────────────────────────────────────────
@@ -665,7 +624,7 @@ const App = (() => {
         animateStages(['stage-company', 'stage-contacts', 'stage-policies', 'stage-legal', 'stage-strength'], 6000);
 
         const body = {
-            complainant: state.complainant,
+            complainant: getAnalyzeComplainant(),
             issue_summary: state.issueSummary,
             desired_resolution: state.desiredResolution,
             company_name_hint: state.companyName,
@@ -682,14 +641,16 @@ const App = (() => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             });
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
+            if (!res.ok) {
+                const msg = await responseErrorMessage(res, `Analyze failed (${res.status})`);
+                throw new Error(msg);
+            }
             state.analysisResult = await res.json();
             renderAnalysis();
             goTo(5);
         } catch (err) {
             goTo(3);
-            const attempted = apiBaseCandidates().join(', ');
-            showError(`Could not reach backend. Tried: ${attempted}. Please refresh and try again.`);
+            showError(err?.message || 'Could not analyze your case right now. Please try again.');
         }
     }
 
@@ -815,20 +776,20 @@ const App = (() => {
 
         const items = [];
         const sectionCount = a?.policies_found?.length || 0;
-        items.push(vpItem('⚖️', 'Statutory Arguments', 'Legal sections from 15+ Indian acts'));
-        items.push(vpItem('🛡️', 'Defense Counter-Arguments', 'Pre-emptive rebuttals to company T&Cs'));
-        items.push(vpItem('🔥', 'Escalation Strategy', 'Sector regulators & pressure tactics'));
-        if (a?.respondent_cin) items.push(vpItem('🏛️', 'Company Identity', `CIN: ${a.respondent_cin}`));
-        if (sectionCount > 0) items.push(vpItem('📄', 'Policy Analysis', `${sectionCount} pages of T&Cs analyzed`));
-        if (a?.contacts_found?.length > 0) items.push(vpItem('📞', 'Contact Details', `${a.contacts_found.length} contacts auto-discovered`));
-        items.push(vpItem('📑', 'Court-Ready PDF', 'Formatted for consumer commission filing'));
-        items.push(vpItem('⏱️', 'Cure Period', 'Statutory deadline for company response'));
+        items.push(vpItem('Statutory Arguments', 'Legal sections from 15+ Indian acts'));
+        items.push(vpItem('Defense Counter-Arguments', 'Pre-emptive rebuttals to company T&Cs'));
+        items.push(vpItem('Escalation Strategy', 'Sector regulators & pressure tactics'));
+        if (a?.respondent_cin) items.push(vpItem('Company Identity', `CIN: ${a.respondent_cin}`));
+        if (sectionCount > 0) items.push(vpItem('Policy Analysis', `${sectionCount} pages of T&Cs analyzed`));
+        if (a?.contacts_found?.length > 0) items.push(vpItem('Contact Details', `${a.contacts_found.length} contacts auto-discovered`));
+        items.push(vpItem('Court-Ready PDF', 'Formatted for consumer commission filing'));
+        items.push(vpItem('Cure Period', 'Statutory deadline for company response'));
 
         grid.innerHTML = items.join('');
     }
 
-    function vpItem(icon, title, desc) {
-        return `<div class="vp-item"><span class="vp-icon">${icon}</span><div><strong>${esc(title)}</strong><br><small>${esc(desc)}</small></div></div>`;
+    function vpItem(title, desc) {
+        return `<div class="vp-item"><strong>${esc(title)}</strong><span>${esc(desc)}</span></div>`;
     }
 
     // ── Tier urgency messaging ──────────────────────────────────────
@@ -858,18 +819,40 @@ const App = (() => {
         state.tier = tier;
         document.getElementById('tier-self').classList.toggle('selected', tier === 'self_send');
         document.getElementById('tier-lawyer').classList.toggle('selected', tier === 'lawyer');
-        
-        // Show personal info panel before generating
+
+        // Keep users in control: they should be able to change tier after selecting.
         const backBtn = document.getElementById('tier-back-btn');
-        if (backBtn) backBtn.style.display = 'none';
-        
+        if (backBtn) backBtn.style.display = '';
+
         const panel = document.getElementById('final-details-panel');
         if (panel) {
             panel.style.display = 'block';
+
+            const c = state.complainant || {};
+            const fdName = document.getElementById('fd-name');
+            const fdEmail = document.getElementById('fd-email');
+            const fdPhone = document.getElementById('fd-phone');
+            const fdAddress = document.getElementById('fd-address');
+            if (fdName && !fdName.value && c.full_name) fdName.value = c.full_name;
+            if (fdEmail && !fdEmail.value && c.email) fdEmail.value = c.email;
+            if (fdPhone && !fdPhone.value && c.phone) fdPhone.value = c.phone;
+            if (fdAddress && !fdAddress.value && c.address) fdAddress.value = c.address;
+
             panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else {
-            generateNotice();
         }
+    }
+
+    function resetTierSelection() {
+        const selfCard = document.getElementById('tier-self');
+        const lawyerCard = document.getElementById('tier-lawyer');
+        if (selfCard) selfCard.classList.remove('selected');
+        if (lawyerCard) lawyerCard.classList.remove('selected');
+
+        const panel = document.getElementById('final-details-panel');
+        if (panel) panel.style.display = 'none';
+
+        const backBtn = document.getElementById('tier-back-btn');
+        if (backBtn) backBtn.style.display = '';
     }
 
     // ── Confirm Final Details ───────────────────────────────────────
@@ -897,6 +880,7 @@ const App = (() => {
     async function generateNotice() {
         goTo(7);
         animateStages(['gen-stage-1', 'gen-stage-2', 'gen-stage-3', 'gen-stage-4', 'gen-stage-5'], 8000);
+        animateProgress(40000);
 
         const controls = getCustomerControls();
         const body = {
@@ -918,22 +902,53 @@ const App = (() => {
             language: controls.language,
         };
 
-        try {
-            const res = await apiFetch('/notice/typed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            });
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
-            state.noticeResult = await res.json();
-            state.noticeId = state.noticeResult.notice_id || null;
-            renderNotice();
-            goTo(8);
-        } catch (err) {
-            goTo(6);
-            const attempted = apiBaseCandidates().join(', ');
-            showError(`Could not reach backend. Tried: ${attempted}. Please refresh and try again.`);
+        const maxAttempts = 2;
+        let lastErr = null;
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 150000);
+
+            try {
+                const res = await apiFetch('/notice/typed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    signal: controller.signal,
+                });
+                clearTimeout(timeout);
+                if (!res.ok) {
+                    const msg = await responseErrorMessage(res, `Notice generation failed (${res.status})`);
+                    throw new Error(msg);
+                }
+                state.noticeResult = await res.json();
+                state.noticeId = state.noticeResult.notice_id != null
+                    ? String(state.noticeResult.notice_id) : null;
+                completeProgress();
+                renderNotice();
+                goTo(8);
+                return;
+            } catch (err) {
+                clearTimeout(timeout);
+                lastErr = err;
+                const isNetworkDrop = err?.name === 'TypeError'
+                    || (err?.message || '').toLowerCase().includes('failed to fetch')
+                    || (err?.message || '').toLowerCase().includes('network');
+                if (isNetworkDrop && attempt < maxAttempts) {
+                    // Brief pause then retry
+                    await new Promise(r => setTimeout(r, 2000));
+                    continue;
+                }
+                break;
+            }
         }
+
+        const msg = lastErr?.name === 'AbortError'
+            ? 'Generation timed out. Please try again.'
+            : (lastErr?.message || 'Could not generate notice right now. Please try again.');
+        clearInterval(_progressTimer);
+        goTo(6, { resetTier: false });
+        showError(msg);
     }
 
     // ── Step 8: Render result ───────────────────────────────────────
@@ -957,49 +972,28 @@ const App = (() => {
 
     // ── PDF download ────────────────────────────────────────────────
     async function downloadPDF() {
-        const controls = getCustomerControls();
-        const body = {
-            complainant: state.complainant,
-            issue_summary: state.issueSummary,
-            desired_resolution: state.desiredResolution,
-            company_name_hint: state.companyName,
-            website: state.companyWebsite,
-            timeline: state.timeline,
-            evidence: state.evidence,
-            tier: state.tier,
-            follow_up_answers: Object.keys(state.followUpAnswers).length > 0
-                ? state.followUpAnswers : null,
-            upload_ids: getUploadIds(),
-            notice_tone: controls.notice_tone,
-            cure_period_days: controls.cure_period_days,
-            compensation_amount: controls.compensation_amount,
-            interest_rate_percent: controls.interest_rate_percent,
-            language: controls.language,
-        };
-
-        // If we have a stored notice_id, use the admin PDF endpoint
-        if (state.noticeId) {
-            try {
-                const res = await apiFetch(`/api/admin/notices/${state.noticeId}/pdf`, {
-                    method: 'GET',
-                });
-                if (res.ok) {
-                    const blob = await res.blob();
-                    downloadBlob(blob, `Legal_Notice_${state.noticeId}.pdf`);
-                    return;
-                }
-            } catch (_) { /* fall through to typed/pdf */ }
+        const noticeText = state.noticeResult?.legal_notice;
+        if (!noticeText) {
+            showError('No notice text available. Please generate the notice first.');
+            return;
         }
 
+        const companyName = state.companyName || 'Company';
+        const isLawyer = state.tier === 'lawyer';
+
         try {
-            const res = await apiFetch('/notice/typed/pdf', {
+            const res = await apiFetch('/notice/render-pdf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
+                body: JSON.stringify({
+                    notice_text: noticeText,
+                    company_name: companyName,
+                    is_lawyer_tier: isLawyer,
+                }),
             });
             if (!res.ok) throw new Error('PDF generation failed');
             const blob = await res.blob();
-            downloadBlob(blob, `Legal_Notice_${state.companyName.replace(/ /g, '_')}.pdf`);
+            downloadBlob(blob, `Legal_Notice_${companyName.replace(/ /g, '_')}.pdf`);
         } catch (err) {
             showError(err.message);
         }
@@ -1049,6 +1043,39 @@ const App = (() => {
     }
 
     // ── Loading stage animation ─────────────────────────────────────
+    let _progressTimer = null;
+    function animateProgress(estimatedMs) {
+        const fill = document.getElementById('gen-progress-fill');
+        const pct = document.getElementById('gen-progress-pct');
+        const label = document.getElementById('gen-progress-label');
+        if (!fill) return;
+        fill.style.width = '0%';
+        if (pct) pct.textContent = '0%';
+        if (label) label.textContent = 'Preparing draft\u2026';
+        const labels = ['Analyzing complaint\u2026', 'Building legal arguments\u2026', 'Drafting notice\u2026', 'Finalizing\u2026'];
+        let progress = 0;
+        const interval = 500;
+        const step = (90 / (estimatedMs / interval));
+        clearInterval(_progressTimer);
+        _progressTimer = setInterval(() => {
+            progress = Math.min(progress + step, 92);
+            fill.style.width = progress + '%';
+            if (pct) pct.textContent = Math.round(progress) + '%';
+            const li = Math.min(Math.floor(progress / 25), labels.length - 1);
+            if (label) label.textContent = labels[li];
+            if (progress >= 92) clearInterval(_progressTimer);
+        }, interval);
+    }
+    function completeProgress() {
+        clearInterval(_progressTimer);
+        const fill = document.getElementById('gen-progress-fill');
+        const pct = document.getElementById('gen-progress-pct');
+        const label = document.getElementById('gen-progress-label');
+        if (fill) fill.style.width = '100%';
+        if (pct) pct.textContent = '100%';
+        if (label) label.textContent = 'Done!';
+    }
+
     function animateStages(ids, totalMs) {
         ids.forEach(id => {
             const el = document.getElementById(id);
@@ -1126,16 +1153,26 @@ const App = (() => {
     document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('api-base');
         if (input) input.value = localStorage.getItem('legaltech_api_base') || '';
+
+        // Auto-trigger company lookup when website field loses focus
+        const websiteInput = document.getElementById('company-website');
+        if (websiteInput) {
+            let _lookupTimer = null;
+            websiteInput.addEventListener('blur', () => {
+                clearTimeout(_lookupTimer);
+                _lookupTimer = setTimeout(() => lookupCompany(), 300);
+            });
+        }
     });
 
     // ── Public API ──────────────────────────────────────────────────
     return {
-        start, goTo, nextFromCompany, analyzeCase,
+        start, goTo, nextFromCompany, lookupCompany, analyzeCase,
         selectTier, confirmAndGenerate, generateNotice, downloadPDF, renderNotice, upgradeTier,
+        resetTierSelection,
         addTimeline, addEvidence, removeItem, saveAnswer,
         showError, dismissError, reset, saveApiBase,
         startVoiceInput, stopVoiceInput, toggleVoiceInput,
-        startSmartIntake, stopSmartIntake,
         handleDragOver, handleDragLeave, handleDrop, handleFileSelect,
         removeUploadedFile,
     };

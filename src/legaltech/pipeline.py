@@ -56,24 +56,31 @@ class LegalNoticePipeline:
             user_agent=settings.user_agent,
             timeout_seconds=settings.request_timeout_seconds,
         )
+        # Heavy model (Sonnet) — complex legal reasoning, notice drafting
         self.llm = LLMService(
             model_name=settings.model_name,
             api_key=settings.anthropic_api_key,
         )
-        self.intake = IntakeAgent(llm=self.llm)
+        # Fast model (Haiku) — classification, extraction, short output
+        self.llm_fast = self.llm.fast_copy(settings.fast_model_name)
+
+        # ── Light agents → fast model ────────────────────────────────
+        self.intake = IntakeAgent(llm=self.llm_fast)
         self.company = CompanyAgent()
         self.contacts = ContactDiscoveryAgent()
         self.policy = PolicyAgent()
+        self.evidence_scoring = EvidenceScoringAgent(llm=self.llm_fast)
+        self.arbitration = ArbitrationDetectionAgent(llm=self.llm_fast)
+        self.cure_period_agent = CurePeriodAgent(llm=self.llm_fast)
+        self.limitation_agent = LimitationAgent(llm=self.llm_fast)
+        self.jurisdiction_agent = JurisdictionAgent(llm=self.llm_fast)
+        self.respondent_id = RespondentIdAgent()
+
+        # ── Heavy agents → full model ────────────────────────────────
         self.legal = LegalAnalysisAgent(llm=self.llm)
         self.claim_elements = ClaimElementsAgent(llm=self.llm)
-        self.respondent_id = RespondentIdAgent()
-        self.evidence_scoring = EvidenceScoringAgent(llm=self.llm)
-        self.arbitration = ArbitrationDetectionAgent(llm=self.llm)
         self.tc_counter = TCCounterAgent(llm=self.llm)
         self.escalation = EscalationStrategyAgent(llm=self.llm)
-        self.cure_period_agent = CurePeriodAgent(llm=self.llm)
-        self.limitation_agent = LimitationAgent(llm=self.llm)
-        self.jurisdiction_agent = JurisdictionAgent(llm=self.llm)
         self.gap_analysis = GapAnalysisAgent(self.llm)
         self.notice = NoticeDraftAgent(self.llm)
 

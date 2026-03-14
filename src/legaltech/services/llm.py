@@ -15,7 +15,10 @@ import anthropic
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MODEL = "claude-sonnet-4-20250514"
+_FAST_MODEL = "claude-3-haiku-20240307"
+_FAST_MODEL_MAX_TOKENS = 4096
 _BEDROCK_MODEL = "apac.anthropic.claude-sonnet-4-20250514-v1:0"
+_BEDROCK_FAST_MODEL = "apac.anthropic.claude-3-5-haiku-20241022-v1:0"
 _MAX_TOKENS = 8192
 
 
@@ -25,6 +28,7 @@ class LLMService:
     def __init__(self, model_name: str = _DEFAULT_MODEL, api_key: str | None = None) -> None:
         use_bedrock = os.getenv("USE_BEDROCK", "").lower() in ("1", "true", "yes")
         aws_region = os.getenv("AWS_REGION", "ap-south-1")
+        self._max_output_tokens: int | None = None
 
         if use_bedrock:
             self.model_name = os.getenv("BEDROCK_MODEL_ID", _BEDROCK_MODEL)
@@ -34,6 +38,19 @@ class LLMService:
             self.model_name = model_name or _DEFAULT_MODEL
             self.client = anthropic.AsyncAnthropic(api_key=api_key)
             logger.info("LLM: using direct Anthropic API, model=%s", self.model_name)
+
+    def fast_copy(self, fast_model: str | None = None) -> "LLMService":
+        """Create a sibling instance using a faster/cheaper model, sharing the same client."""
+        use_bedrock = os.getenv("USE_BEDROCK", "").lower() in ("1", "true", "yes")
+        clone = object.__new__(LLMService)
+        clone.client = self.client  # reuse connection pool
+        if use_bedrock:
+            clone.model_name = fast_model or os.getenv("BEDROCK_FAST_MODEL_ID", _BEDROCK_FAST_MODEL)
+        else:
+            clone.model_name = fast_model or _FAST_MODEL
+        clone._max_output_tokens = _FAST_MODEL_MAX_TOKENS
+        logger.info("LLM fast: model=%s (max_tokens=%d)", clone.model_name, clone._max_output_tokens)
+        return clone
 
     async def complete_json(
         self,
@@ -58,6 +75,8 @@ class LLMService:
         max_tokens: int = _MAX_TOKENS,
     ) -> str:
         """Call Claude and return plain text."""
+        if self._max_output_tokens:
+            max_tokens = min(max_tokens, self._max_output_tokens)
         message = await self.client.messages.create(
             model=self.model_name,
             max_tokens=max_tokens,
