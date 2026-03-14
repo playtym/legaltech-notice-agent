@@ -561,11 +561,16 @@ const App = (() => {
             const hasData = data.registered_name || data.cin || data.registered_office || data.grievance_officer_email;
             if (!hasData) return;
 
+            const escHtml = s => {
+                const d = document.createElement('div');
+                d.textContent = s;
+                return d.innerHTML;
+            };
             const setRow = (id, label, value) => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 if (value) {
-                    el.innerHTML = '<strong>' + label + '</strong><span>' + value + '</span>';
+                    el.innerHTML = '<strong>' + escHtml(label) + '</strong><span>' + escHtml(value) + '</span>';
                     el.style.display = '';
                 } else {
                     el.style.display = 'none';
@@ -605,12 +610,15 @@ const App = (() => {
     }
 
     // ── Step 3 → 4: Analyze ─────────────────────────────────────────
+    let _analyzeInFlight = false;
     async function analyzeCase() {
+        if (_analyzeInFlight) return; // prevent double-submit
         const summary = val('issue-summary');
         const resolution = val('desired-resolution');
         if (!summary || summary.length < 20) return showError('Please describe your issue in at least 20 characters.');
         if (!resolution) return showError('Please describe what resolution you want.');
 
+        _analyzeInFlight = true;
         state.issueSummary = summary;
         state.desiredResolution = resolution;
 
@@ -660,6 +668,8 @@ const App = (() => {
                     showError(msg || 'Could not analyze your case right now. Please try again.');
                 }
             }
+        } finally {
+            _analyzeInFlight = false;
         }
     }
 
@@ -886,7 +896,10 @@ const App = (() => {
     }
 
     // ── Step 7: Generate notice ─────────────────────────────────────
+    let _generateInFlight = false;
     async function generateNotice() {
+        if (_generateInFlight) return; // prevent double-submit
+        _generateInFlight = true;
         goTo(7);
         animateStages(['gen-stage-1', 'gen-stage-2', 'gen-stage-3', 'gen-stage-4', 'gen-stage-5'], 8000);
         animateProgress(40000);
@@ -936,6 +949,7 @@ const App = (() => {
                 completeProgress();
                 renderNotice();
                 goTo(8);
+                _generateInFlight = false;
                 return;
             } catch (err) {
                 clearTimeout(timeout);
@@ -958,6 +972,7 @@ const App = (() => {
         clearInterval(_progressTimer);
         goTo(6, { resetTier: false });
         showError(msg);
+        _generateInFlight = false;
     }
 
     // ── Step 8: Render result ───────────────────────────────────────

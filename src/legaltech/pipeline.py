@@ -160,12 +160,13 @@ class LegalNoticePipeline:
         """
         complaint_ctx = self._prepare_complaint_context(complaint, previous_answers)
 
-        # Run lightweight pipeline steps to gather context
-        intake = await self.intake.run(complaint_ctx)
-
-        company = await self.company.run(
-            company_name_hint=complaint_ctx.company_name_hint,
-            website=str(complaint_ctx.website) if complaint_ctx.website else None,
+        # Run intake + company in parallel (they are independent)
+        intake, company = await asyncio.gather(
+            self.intake.run(complaint_ctx),
+            self.company.run(
+                company_name_hint=complaint_ctx.company_name_hint,
+                website=str(complaint_ctx.website) if complaint_ctx.website else None,
+            ),
         )
 
         contacts_found: list[str] = []
@@ -266,11 +267,13 @@ class LegalNoticePipeline:
     ) -> NoticePacket:
         complaint_ctx = self._prepare_complaint_context(complaint, follow_up_answers)
 
-        intake = await self.intake.run(complaint_ctx)
-
-        company = await self.company.run(
-            company_name_hint=complaint_ctx.company_name_hint,
-            website=str(complaint_ctx.website) if complaint_ctx.website else None,
+        # Run intake + company in parallel (they are independent)
+        intake, company = await asyncio.gather(
+            self.intake.run(complaint_ctx),
+            self.company.run(
+                company_name_hint=complaint_ctx.company_name_hint,
+                website=str(complaint_ctx.website) if complaint_ctx.website else None,
+            ),
         )
 
         contacts = []
@@ -406,8 +409,31 @@ class LegalNoticePipeline:
             _jurisdiction(),
             _cure_period(),
             _escalation(),
+            return_exceptions=True,
         )
-        cure_days, cure_rationale = cure_result
+
+        # ── Validate parallel results — re-raise first fatal error ───
+        _agent_names = [
+            "claim_elements", "evidence_scoring", "limitation",
+            "arbitration", "tc_counter", "jurisdiction",
+            "cure_period", "escalation",
+        ]
+        _agent_results = [
+            claim_results, evidence_score, limitation_result,
+            arbitration_result, tc_counter_result, jurisdiction_result,
+            cure_result, escalation_result,
+        ]
+        for name, result in zip(_agent_names, _agent_results):
+            if isinstance(result, Exception):
+                logger.error("Agent %s failed: %s", name, result)
+                raise result
+
+        # Safe unpacking — cure_result might be a tuple or exception
+        if isinstance(cure_result, tuple) and len(cure_result) == 2:
+            cure_days, cure_rationale = cure_result
+        else:
+            logger.warning("Cure period returned unexpected value: %s — using defaults", cure_result)
+            cure_days, cure_rationale = 15, "15 days (default fallback)"
 
         # ── Notice draft ─────────────────────────────────────────────
         legal_notice = await self.notice.run(

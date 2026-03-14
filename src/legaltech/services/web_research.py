@@ -1,3 +1,4 @@
+import asyncio
 import ipaddress
 import logging
 import re
@@ -84,17 +85,35 @@ class WebResearchService:
         self.timeout_seconds = timeout_seconds
         self.headers = {"User-Agent": user_agent}
 
+    _RETRYABLE_STATUS = {502, 503, 504}
+
     async def fetch_text(self, url: str) -> str:
         if not _is_safe_url(url):
             raise ValueError(f"Blocked: URL resolves to private/internal address")
-        async with httpx.AsyncClient(
-            timeout=self.timeout_seconds,
-            follow_redirects=True,
-            verify=certifi.where(),
-        ) as client:
-            response = await client.get(url, headers=self.headers)
-            response.raise_for_status()
-            return response.text
+        last_err: Exception | None = None
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(
+                    timeout=self.timeout_seconds,
+                    follow_redirects=True,
+                    verify=certifi.where(),
+                ) as client:
+                    response = await client.get(url, headers=self.headers)
+                    response.raise_for_status()
+                    return response.text
+            except httpx.HTTPStatusError as e:
+                last_err = e
+                if e.response.status_code in self._RETRYABLE_STATUS and attempt < 2:
+                    await asyncio.sleep(1.0 * (attempt + 1))
+                    continue
+                raise
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+                last_err = e
+                if attempt < 2:
+                    await asyncio.sleep(1.0 * (attempt + 1))
+                    continue
+                raise
+        raise last_err  # type: ignore[misc]
 
     async def scrape_links(self, url: str, limit: int = 30) -> list[str]:
         html = await self.fetch_text(url)

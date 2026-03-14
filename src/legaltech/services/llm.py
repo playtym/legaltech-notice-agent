@@ -5,9 +5,11 @@ Model: claude-sonnet-4-20250514 via Bedrock inference profile
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
+import re
 from typing import Any
 
 import anthropic
@@ -21,6 +23,29 @@ _FAST_MODEL_MAX_TOKENS = 4096
 _BEDROCK_MODEL = "apac.anthropic.claude-sonnet-4-20250514-v1:0"
 _BEDROCK_FAST_MODEL = "apac.anthropic.claude-3-5-haiku-20241022-v1:0"
 _MAX_TOKENS = 8192
+
+_MAX_RETRIES = 3
+_RETRY_BASE_DELAY = 1.0  # seconds — exponential backoff: 1s, 2s, 4s
+_RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 529}
+
+
+def _strip_code_fences(text: str) -> str:
+    """Robustly strip markdown code fences from LLM output."""
+    s = text.strip()
+    # Pattern: ```json ... ``` or ```\n ... ```
+    m = re.match(r'^```(?:\w*)\s*\n(.*?)```\s*$', s, re.DOTALL)
+    if m:
+        return m.group(1).strip()
+    # Fallback: starts with ``` but maybe no closing
+    if s.startswith("```"):
+        first_nl = s.find("\n")
+        if first_nl == -1:
+            return s[3:].strip()
+        last_fence = s.rfind("```", first_nl)
+        if last_fence > first_nl:
+            return s[first_nl + 1:last_fence].strip()
+        return s[first_nl + 1:].strip()
+    return s
 
 
 class LLMService:
@@ -36,6 +61,7 @@ class LLMService:
             self.client = anthropic.AsyncAnthropicBedrock(
                 aws_region=aws_region,
                 timeout=httpx.Timeout(120.0, connect=10.0),
+                max_retries=0,  # we handle retries ourselves
             )
             logger.info("LLM: using Bedrock in %s, model=%s", aws_region, self.model_name)
         else:
@@ -43,6 +69,7 @@ class LLMService:
             self.client = anthropic.AsyncAnthropic(
                 api_key=api_key,
                 timeout=httpx.Timeout(120.0, connect=10.0),
+                max_retries=0,
             )
             logger.info("LLM: using direct Anthropic API, model=%s", self.model_name)
 
@@ -65,15 +92,27 @@ class LLMService:
         user_prompt: str,
         max_tokens: int = _MAX_TOKENS,
     ) -> dict[str, Any]:
-        """Call Claude and parse the response as JSON."""
-        text = await self.complete_text(system_prompt, user_prompt, max_tokens)
-        # Strip markdown code fences if present
-        cleaned = text.strip()
-        if cleaned.startswith("```"):
-            first_nl = cleaned.index("\n")
-            last_fence = cleaned.rfind("```")
-            cleaned = cleaned[first_nl + 1 : last_fence].strip()
-        return json.loads(cleaned)
+        """Call Claude and parse the response as JSON, with retry on parse failure."""
+        last_err: Exception | None = None
+        for attempt in range(2):  # one retry on JSON parse failure
+            text = await self.complete_text(system_prompt, user_prompt, max_tokens)
+            cleaned = _strip_code_fences(text)
+            try:
+                return json.loads(cleaned)
+            except json.JSONDecodeError as e:
+                last_err = e
+                logger.warning(
+                    "LLM JSON parse failed (attempt %d): %s — raw: %.200s",
+                    attempt + 1, e, text,
+                )
+                if attempt == 0:
+                    # Retry with an explicit "output valid JSON" nudge
+                    user_prompt = (
+                        user_prompt
+                        + "\n\nIMPORTANT: Your previous response was not valid JSON. "
+                        "Please respond with ONLY a valid JSON object, no markdown fences or extra text."
+                    )
+        raise ValueError(f"LLM returned invalid JSON after 2 attempts: {last_err}")
 
     async def complete_text(
         self,
@@ -81,16 +120,43 @@ class LLMService:
         user_prompt: str,
         max_tokens: int = _MAX_TOKENS,
     ) -> str:
-        """Call Claude and return plain text."""
+        """Call Claude and return plain text, with automatic retry on transient errors."""
         if self._max_output_tokens:
             max_tokens = min(max_tokens, self._max_output_tokens)
-        message = await self.client.messages.create(
-            model=self.model_name,
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
-        return message.content[0].text
+
+        last_err: Exception | None = None
+        for attempt in range(_MAX_RETRIES):
+            try:
+                message = await self.client.messages.create(
+                    model=self.model_name,
+                    max_tokens=max_tokens,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                )
+                if not message.content:
+                    raise ValueError("Claude returned empty content (possible content filter)")
+                return message.content[0].text
+            except anthropic.APIStatusError as e:
+                last_err = e
+                if e.status_code in _RETRYABLE_STATUS_CODES:
+                    delay = _RETRY_BASE_DELAY * (2 ** attempt)
+                    logger.warning(
+                        "LLM API error %d (attempt %d/%d), retrying in %.1fs: %s",
+                        e.status_code, attempt + 1, _MAX_RETRIES, delay, e.message,
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                raise  # non-retryable status (400, 401, etc.)
+            except (anthropic.APIConnectionError, httpx.TimeoutException) as e:
+                last_err = e
+                delay = _RETRY_BASE_DELAY * (2 ** attempt)
+                logger.warning(
+                    "LLM connection/timeout error (attempt %d/%d), retrying in %.1fs: %s",
+                    attempt + 1, _MAX_RETRIES, delay, e,
+                )
+                await asyncio.sleep(delay)
+                continue
+        raise last_err  # type: ignore[misc]
 
     @property
     def pricing_info(self) -> dict[str, Any]:

@@ -8,8 +8,11 @@ from pydantic import BaseModel, HttpUrl
 
 import hashlib
 import hmac
+import logging
 import secrets
 import time
+
+logger = logging.getLogger(__name__)
 
 from contextlib import asynccontextmanager
 
@@ -373,7 +376,8 @@ async def create_notice_typed(payload: NoticeRequest):
 
         return result
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc
+        logger.exception("Pipeline failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
 @app.post("/notice/analyze")
@@ -452,7 +456,8 @@ async def analyze_case(payload: AnalyzeRequest):
 
         return result_dict
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}") from exc
+        logger.exception("Analysis failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
 @app.get("/notice/cost")
@@ -520,7 +525,8 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
 
         return result
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc
+        logger.exception("Pipeline failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
 @app.post("/translate/to-english")
@@ -541,7 +547,8 @@ async def translate_to_english(payload: TranslateRequest):
         )
         return {"translated_text": translated.strip()}
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Translation failed: {exc}") from exc
+        logger.exception("Translation failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
 @app.post("/intake/from-transcript")
@@ -637,7 +644,8 @@ async def intake_from_transcript(payload: TranscriptIntakeRequest):
             "analysis": final_analysis.model_dump(),
         }
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Transcript intake failed: {exc}") from exc
+        logger.exception("Transcript intake failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
 @app.post("/speech/refine")
@@ -758,7 +766,8 @@ async def create_notice_typed_pdf(payload: NoticeRequest):
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc
+        logger.exception("Pipeline failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
 # ── Root redirect ────────────────────────────────────────────────────
@@ -787,7 +796,8 @@ async def render_pdf(payload: RenderPDFRequest):
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"PDF rendering failed: {exc}") from exc
+        logger.exception("PDF rendering failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
 @app.get("/")

@@ -435,7 +435,7 @@ class NoticeDraftAgent:
         draft = await self.llm.complete_text(system_prompt, brief)
         draft = self._sanitize_notice(draft)
 
-        # ── PASS 2: Refine ───────────────────────────────────────────
+        # ── PASS 2: Refine (fallback to draft on failure) ────────────
         logger.info("Notice agent: PASS 2 — refining draft with senior review")
         refine_prompt = (
             "ORIGINAL BRIEF (for reference — use to verify accuracy):\n"
@@ -446,8 +446,12 @@ class NoticeDraftAgent:
             + "=" * 40 + "\n"
             + draft
         )
-        refined = await self.llm.complete_text(_REFINE_SYSTEM_PROMPT, refine_prompt)
-        return self._sanitize_notice(refined)
+        try:
+            refined = await self.llm.complete_text(_REFINE_SYSTEM_PROMPT, refine_prompt)
+            return self._sanitize_notice(refined)
+        except Exception as exc:
+            logger.warning("Notice PASS 2 refinement failed, returning draft: %s", exc)
+            return draft
 
     @staticmethod
     def _sanitize_notice(notice_text: str) -> str:
