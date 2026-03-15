@@ -466,7 +466,8 @@
     <button class="admin-tab" data-tab="activity">🕐 Activity</button>
     <button class="admin-tab" data-tab="lawyer">👨‍⚖️ Lawyer</button>
     <button class="admin-tab" data-tab="settings">⚙️ Settings</button>
-    <button class="admin-tab" data-tab="database">� Users</button>
+    <button class="admin-tab" data-tab="database">🗂 Users</button>
+    <button class="admin-tab" data-tab="versions">🔄 Versions</button>
 </nav>
 
 <!-- Toast container -->
@@ -1134,6 +1135,44 @@
     </tr></thead><tbody id="db-users-tbody"></tbody></table>
 </div>
 
+<!-- ═════ Versions Tab ═════ -->
+<div class="tab-panel" id="tab-versions">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">🔄 Version History</h2>
+
+    <!-- Bucket selector -->
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+        <label style="font-weight:600;font-size:.9rem;">Bucket:</label>
+        <select id="ver-bucket" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem;">
+            <option value="lawly-data-prod">Data (lawly-data-prod)</option>
+            <option value="lawly.store">Static (lawly.store)</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="Admin.loadVersions()">Load Files</button>
+        <button class="btn btn-outline btn-sm" id="ver-back-btn" style="display:none;" onclick="Admin.versionsBack()">← Back to Files</button>
+    </div>
+
+    <!-- File list view -->
+    <div id="ver-file-list">
+        <table class="data-table"><thead><tr>
+            <th>File</th><th>Last Modified</th><th>Size</th><th>Versions</th><th>Actions</th>
+        </tr></thead><tbody id="ver-files-tbody"></tbody></table>
+    </div>
+
+    <!-- File versions view -->
+    <div id="ver-versions-view" style="display:none;">
+        <h3 id="ver-file-title" style="font-size:1rem;margin-bottom:12px;"></h3>
+        <table class="data-table"><thead><tr>
+            <th>Version ID</th><th>Last Modified</th><th>Size</th><th>Status</th><th>Actions</th>
+        </tr></thead><tbody id="ver-versions-tbody"></tbody></table>
+    </div>
+
+    <!-- Version content preview -->
+    <div id="ver-preview" style="display:none;margin-top:20px;">
+        <h3 style="font-size:1rem;margin-bottom:8px;">Preview <span id="ver-preview-title"></span></h3>
+        <pre id="ver-preview-content" style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;max-height:400px;overflow:auto;font-size:.8rem;white-space:pre-wrap;word-break:break-all;"></pre>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="Admin.closePreview()">Close Preview</button>
+    </div>
+</div>
+
 </main>
 </div><!-- /admin-panel -->
 
@@ -1444,6 +1483,7 @@ const Admin = (() => {
             lawyer: loadLawyer,
             settings: loadSettings,
             database: loadDatabase,
+            versions: loadVersions,
         };
         if (loaders[tabName]) loaders[tabName]();
     }
@@ -2644,6 +2684,117 @@ const Admin = (() => {
         } catch (err) { showToast('Failed to download PDF', 'error'); }
     }
 
+    /* ── Versions Tab ─────────────────────────────────── */
+    let currentVerKey = null;
+
+    async function loadVersions() {
+        const bucket = qs('#ver-bucket').value;
+        qs('#ver-file-list').style.display = '';
+        qs('#ver-versions-view').style.display = 'none';
+        qs('#ver-preview').style.display = 'none';
+        qs('#ver-back-btn').style.display = 'none';
+        currentVerKey = null;
+        try {
+            const res = await apiFetch(`/api/admin/versions?bucket=${encodeURIComponent(bucket)}`);
+            const files = await res.json();
+            renderVerFiles(files);
+        } catch (err) { showToast('Failed to load versions', 'error'); }
+    }
+
+    function renderVerFiles(files) {
+        const tbody = qs('#ver-files-tbody');
+        if (!files.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-400)">No versioned files found. Changes made after enabling versioning will appear here.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = files.map(f => {
+            const size = f.latest_size > 1024 ? `${(f.latest_size / 1024).toFixed(1)} KB` : `${f.latest_size} B`;
+            const date = new Date(f.latest_modified).toLocaleString();
+            return `<tr>
+                <td style="font-family:monospace;font-size:.8rem;">${esc(f.key)}</td>
+                <td>${date}</td>
+                <td>${size}</td>
+                <td><span class="badge">${f.version_count}</span></td>
+                <td><button class="btn btn-outline btn-sm" onclick="Admin.viewFileVersions('${escAttr(f.key)}')">View Versions</button></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function escAttr(s) { return s.replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+    async function viewFileVersions(key) {
+        const bucket = qs('#ver-bucket').value;
+        currentVerKey = key;
+        qs('#ver-file-list').style.display = 'none';
+        qs('#ver-versions-view').style.display = '';
+        qs('#ver-preview').style.display = 'none';
+        qs('#ver-back-btn').style.display = '';
+        qs('#ver-file-title').textContent = `Versions of: ${key}`;
+        try {
+            const res = await apiFetch(`/api/admin/versions/file?key=${encodeURIComponent(key)}&bucket=${encodeURIComponent(bucket)}`);
+            const versions = await res.json();
+            renderFileVersions(versions, key, bucket);
+        } catch (err) { showToast('Failed to load file versions', 'error'); }
+    }
+
+    function renderFileVersions(versions, key, bucket) {
+        const tbody = qs('#ver-versions-tbody');
+        if (!versions.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-400)">No versions found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = versions.map(v => {
+            const size = v.size > 1024 ? `${(v.size / 1024).toFixed(1)} KB` : `${v.size} B`;
+            const date = new Date(v.last_modified).toLocaleString();
+            const status = v.is_latest ? '<span class="badge" style="background:#22c55e;color:#fff;">Current</span>' : '<span class="badge" style="background:var(--gray-200);">Old</span>';
+            const revertBtn = v.is_latest ? '' : `<button class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#dc2626;" onclick="Admin.revertVersion('${escAttr(key)}','${escAttr(v.version_id)}')">Revert</button>`;
+            return `<tr>
+                <td style="font-family:monospace;font-size:.75rem;">${v.version_id.substring(0, 16)}…</td>
+                <td>${date}</td>
+                <td>${size}</td>
+                <td>${status}</td>
+                <td style="display:flex;gap:6px;">
+                    <button class="btn btn-outline btn-sm" onclick="Admin.previewVersion('${escAttr(key)}','${escAttr(v.version_id)}')">Preview</button>
+                    ${revertBtn}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function previewVersion(key, versionId) {
+        const bucket = qs('#ver-bucket').value;
+        try {
+            const res = await apiFetch(`/api/admin/versions/content?key=${encodeURIComponent(key)}&version_id=${encodeURIComponent(versionId)}&bucket=${encodeURIComponent(bucket)}`);
+            const data = await res.json();
+            qs('#ver-preview-title').textContent = `(${key} — ${versionId.substring(0, 12)}…)`;
+            qs('#ver-preview-content').textContent = data.content;
+            qs('#ver-preview').style.display = '';
+        } catch (err) { showToast('Failed to load version content', 'error'); }
+    }
+
+    async function revertVersion(key, versionId) {
+        if (!confirm(`Revert "${key}" to version ${versionId.substring(0, 12)}…? This creates a new version with the old content.`)) return;
+        const bucket = qs('#ver-bucket').value;
+        try {
+            const res = await apiFetch('/api/admin/versions/revert', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({key, version_id: versionId, bucket}),
+            });
+            if (!res.ok) throw new Error('Revert failed');
+            showToast('File reverted successfully', 'success');
+            viewFileVersions(key);
+        } catch (err) { showToast('Failed to revert version', 'error'); }
+    }
+
+    function versionsBack() {
+        loadVersions();
+    }
+
+    function closePreview() {
+        qs('#ver-preview').style.display = 'none';
+    }
+
     /* ── Email / Notifications ────────────────────────── */
     let emailSettings = {};
 
@@ -3150,6 +3301,7 @@ const Admin = (() => {
         saveEmailSettings, sendTestEmail,
         filterTickets, openTicket, updateTicket, sendTicketReply, closeTicketModal,
         submitBingUrl, submitAllPages,
+        loadVersions, viewFileVersions, previewVersion, revertVersion, versionsBack, closePreview,
     };
 })();
 </script>

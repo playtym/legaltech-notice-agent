@@ -9,6 +9,7 @@ from pydantic import BaseModel, HttpUrl
 import hashlib
 import hmac
 import logging
+import os
 import secrets
 import time
 
@@ -2066,6 +2067,55 @@ async def reply_to_ticket(ticket_id: str, body: TicketReplyRequest, _=Depends(re
         raise HTTPException(status_code=404, detail="Ticket not found")
     notice_store.log_activity("Replied to ticket", f"#{ticket_id}", "ticket", ticket_id)
     return ticket
+
+
+# ── Version management ───────────────────────────────────────────────
+
+ALLOWED_BUCKETS = {"lawly.store", os.getenv("DATA_BUCKET", "lawly-data-prod")}
+
+
+@app.get("/api/admin/versions")
+async def list_versions(bucket: str | None = None, _=Depends(require_admin)):
+    b = bucket or "lawly-data-prod"
+    if b not in ALLOWED_BUCKETS:
+        raise HTTPException(status_code=400, detail="Invalid bucket")
+    return notice_store.list_versioned_files(b)
+
+
+@app.get("/api/admin/versions/file")
+async def list_file_versions(key: str, bucket: str | None = None, _=Depends(require_admin)):
+    b = bucket or "lawly-data-prod"
+    if b not in ALLOWED_BUCKETS:
+        raise HTTPException(status_code=400, detail="Invalid bucket")
+    return notice_store.list_file_versions(key, b)
+
+
+@app.get("/api/admin/versions/content")
+async def get_version_content(key: str, version_id: str, bucket: str | None = None, _=Depends(require_admin)):
+    b = bucket or "lawly-data-prod"
+    if b not in ALLOWED_BUCKETS:
+        raise HTTPException(status_code=400, detail="Invalid bucket")
+    try:
+        content, content_type = notice_store.get_file_version_content(key, version_id, b)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return {"content": content, "content_type": content_type}
+
+
+class RevertRequest(BaseModel):
+    key: str
+    version_id: str
+    bucket: str | None = None
+
+
+@app.post("/api/admin/versions/revert")
+async def revert_version(body: RevertRequest, _=Depends(require_admin)):
+    b = body.bucket or "lawly-data-prod"
+    if b not in ALLOWED_BUCKETS:
+        raise HTTPException(status_code=400, detail="Invalid bucket")
+    result = notice_store.revert_file_version(body.key, body.version_id, b)
+    notice_store.log_activity("Reverted file", f"{body.key} → version {body.version_id[:8]}…", "version")
+    return result
 
 
 # ── 301 Redirect handler (catch-all, must be last) ──────────────────

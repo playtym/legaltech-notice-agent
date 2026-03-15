@@ -746,3 +746,94 @@ def get_ticket_stats() -> dict:
         "resolved": resolved,
         "closed": closed,
     }
+
+
+# ── Version management (S3 object versioning) ───────────────────────
+
+_STATIC_BUCKET = "lawly.store"
+
+
+def list_versioned_files(bucket: str | None = None) -> list[dict]:
+    """List all files in a bucket that have multiple versions."""
+    bucket = bucket or _DATA_BUCKET or _STATIC_BUCKET
+    s3 = _get_s3()
+    files: dict[str, dict] = {}
+    kwargs: dict = {"Bucket": bucket}
+    if bucket == _DATA_BUCKET:
+        kwargs["Prefix"] = _S3_PREFIX
+    while True:
+        resp = s3.list_object_versions(**kwargs)
+        for v in resp.get("Versions", []):
+            key = v["Key"]
+            if key not in files:
+                files[key] = {
+                    "key": key,
+                    "latest_modified": v["LastModified"].isoformat(),
+                    "latest_size": v["Size"],
+                    "version_count": 0,
+                    "is_latest": v["IsLatest"],
+                }
+            files[key]["version_count"] += 1
+            if v["IsLatest"]:
+                files[key]["latest_modified"] = v["LastModified"].isoformat()
+                files[key]["latest_size"] = v["Size"]
+        if resp.get("IsTruncated"):
+            kwargs["KeyMarker"] = resp["NextKeyMarker"]
+            kwargs["VersionIdMarker"] = resp["NextVersionIdMarker"]
+        else:
+            break
+    return sorted(files.values(), key=lambda f: f["key"])
+
+
+def list_file_versions(file_key: str, bucket: str | None = None) -> list[dict]:
+    """List all versions of a specific file."""
+    bucket = bucket or _DATA_BUCKET or _STATIC_BUCKET
+    s3 = _get_s3()
+    versions = []
+    kwargs: dict = {"Bucket": bucket, "Prefix": file_key}
+    while True:
+        resp = s3.list_object_versions(**kwargs)
+        for v in resp.get("Versions", []):
+            if v["Key"] != file_key:
+                continue
+            versions.append({
+                "version_id": v["VersionId"],
+                "last_modified": v["LastModified"].isoformat(),
+                "size": v["Size"],
+                "is_latest": v["IsLatest"],
+            })
+        if resp.get("IsTruncated"):
+            kwargs["KeyMarker"] = resp["NextKeyMarker"]
+            kwargs["VersionIdMarker"] = resp["NextVersionIdMarker"]
+        else:
+            break
+    return versions
+
+
+def get_file_version_content(file_key: str, version_id: str, bucket: str | None = None) -> tuple[str, str]:
+    """Return (content, content_type) for a specific version of a file."""
+    bucket = bucket or _DATA_BUCKET or _STATIC_BUCKET
+    s3 = _get_s3()
+    resp = s3.get_object(Bucket=bucket, Key=file_key, VersionId=version_id)
+    content_type = resp.get("ContentType", "application/octet-stream")
+    body = resp["Body"].read()
+    try:
+        text = body.decode("utf-8")
+    except UnicodeDecodeError:
+        import base64
+        text = base64.b64encode(body).decode()
+        content_type = "application/base64"
+    return text, content_type
+
+
+def revert_file_version(file_key: str, version_id: str, bucket: str | None = None) -> dict:
+    """Revert a file to a specific version by copying it as a new version."""
+    bucket = bucket or _DATA_BUCKET or _STATIC_BUCKET
+    s3 = _get_s3()
+    copy_source = {"Bucket": bucket, "Key": file_key, "VersionId": version_id}
+    s3.copy_object(
+        Bucket=bucket,
+        Key=file_key,
+        CopySource=copy_source,
+    )
+    return {"status": "reverted", "key": file_key, "reverted_to_version": version_id}
