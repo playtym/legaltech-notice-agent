@@ -24,8 +24,8 @@ _BEDROCK_MODEL = "apac.anthropic.claude-sonnet-4-20250514-v1:0"
 _BEDROCK_FAST_MODEL = "apac.anthropic.claude-3-5-haiku-20241022-v1:0"
 _MAX_TOKENS = 8192
 
-_MAX_RETRIES = 3
-_RETRY_BASE_DELAY = 1.0  # seconds — exponential backoff: 1s, 2s, 4s
+_MAX_RETRIES = 2
+_RETRY_BASE_DELAY = 1.0  # seconds — exponential backoff: 1s, 2s
 _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 529}
 
 
@@ -60,7 +60,7 @@ class LLMService:
             self.model_name = os.getenv("BEDROCK_MODEL_ID", _BEDROCK_MODEL)
             self.client = anthropic.AsyncAnthropicBedrock(
                 aws_region=aws_region,
-                timeout=httpx.Timeout(120.0, connect=10.0),
+                timeout=httpx.Timeout(60.0, connect=10.0),
                 max_retries=0,  # we handle retries ourselves
             )
             logger.info("LLM: using Bedrock in %s, model=%s", aws_region, self.model_name)
@@ -68,7 +68,7 @@ class LLMService:
             self.model_name = model_name or _DEFAULT_MODEL
             self.client = anthropic.AsyncAnthropic(
                 api_key=api_key,
-                timeout=httpx.Timeout(120.0, connect=10.0),
+                timeout=httpx.Timeout(60.0, connect=10.0),
                 max_retries=0,
             )
             logger.info("LLM: using direct Anthropic API, model=%s", self.model_name)

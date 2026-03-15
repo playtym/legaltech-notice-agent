@@ -39,11 +39,21 @@ class RespondentIdAgent:
         target_keywords = ("about", "legal", "grievance", "contact", "terms", "privacy", "compliance")
         target_pages = [p for p in pages if any(k in p.lower() for k in target_keywords)][:8]
 
-        for page_url in target_pages:
+        import asyncio
+
+        async def _fetch(url: str) -> tuple[str, str] | None:
             try:
-                html = await web.fetch_text(page_url)
+                html = await web.fetch_text(url)
+                return (url, html)
             except Exception:
+                return None
+
+        fetched = await asyncio.gather(*[_fetch(u) for u in target_pages])
+
+        for result in fetched:
+            if result is None:
                 continue
+            page_url, html = result
 
             text = " ".join(html.split())
 

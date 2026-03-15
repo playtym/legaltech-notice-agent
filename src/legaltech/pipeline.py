@@ -312,17 +312,17 @@ class LegalNoticePipeline:
                     logger.warning("Respondent ID lookup failed (non-fatal): %s", exc)
                     return None
 
-            contacts, policies, respondent_identity = await asyncio.gather(
-                _fetch_contacts(), _fetch_policies(), _fetch_respondent(),
-            )
+            try:
+                contacts, policies, respondent_identity = await asyncio.wait_for(
+                    asyncio.gather(
+                        _fetch_contacts(), _fetch_policies(), _fetch_respondent(),
+                    ),
+                    timeout=20.0,
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Web scraping phase timed out after 20s — proceeding without full data")
 
-        legal_analysis = await self.legal.run(
-            complaint=complaint_ctx,
-            policy_evidence=policies,
-            normalized_issue=intake.normalized_issue,
-        )
-
-        # ── Run independent analysis agents in parallel ────────────────
+        # ── Build corpus early (only needs intake + policies) ────────
         corpus = " ".join([
             complaint.issue_summary,
             complaint_ctx.desired_resolution,
@@ -334,10 +334,15 @@ class LegalNoticePipeline:
 
         cc = customer_controls or {}
 
-        async def _claim():
-            return await self.claim_elements.run(
-                plausible_sections=legal_analysis.plausible_sections,
-                corpus=corpus,
+        # ── Run legal_analysis + independent agents in parallel ──────
+        # Only claim_elements depends on legal_analysis; the rest can
+        # start immediately, saving 10-15 s of sequential wait.
+
+        async def _legal():
+            return await self.legal.run(
+                complaint=complaint_ctx,
+                policy_evidence=policies,
+                normalized_issue=intake.normalized_issue,
             )
 
         async def _evidence():
@@ -392,7 +397,7 @@ class LegalNoticePipeline:
             )
 
         (
-            claim_results,
+            legal_analysis,
             evidence_score,
             limitation_result,
             arbitration_result,
@@ -401,7 +406,7 @@ class LegalNoticePipeline:
             cure_result,
             escalation_result,
         ) = await asyncio.gather(
-            _claim(),
+            _legal(),
             _evidence(),
             _limitation(),
             _arbitration(),
@@ -414,12 +419,12 @@ class LegalNoticePipeline:
 
         # ── Validate parallel results — re-raise first fatal error ───
         _agent_names = [
-            "claim_elements", "evidence_scoring", "limitation",
+            "legal_analysis", "evidence_scoring", "limitation",
             "arbitration", "tc_counter", "jurisdiction",
             "cure_period", "escalation",
         ]
         _agent_results = [
-            claim_results, evidence_score, limitation_result,
+            legal_analysis, evidence_score, limitation_result,
             arbitration_result, tc_counter_result, jurisdiction_result,
             cure_result, escalation_result,
         ]
@@ -427,6 +432,12 @@ class LegalNoticePipeline:
             if isinstance(result, Exception):
                 logger.error("Agent %s failed: %s", name, result)
                 raise result
+
+        # ── claim_elements depends on legal_analysis ─────────────────
+        claim_results = await self.claim_elements.run(
+            plausible_sections=legal_analysis.plausible_sections,
+            corpus=corpus,
+        )
 
         # Safe unpacking — cure_result might be a tuple or exception
         if isinstance(cure_result, tuple) and len(cure_result) == 2:

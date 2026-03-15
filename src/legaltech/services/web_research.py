@@ -91,7 +91,7 @@ class WebResearchService:
         if not _is_safe_url(url):
             raise ValueError(f"Blocked: URL resolves to private/internal address")
         last_err: Exception | None = None
-        for attempt in range(3):
+        for attempt in range(2):
             try:
                 async with httpx.AsyncClient(
                     timeout=self.timeout_seconds,
@@ -103,14 +103,14 @@ class WebResearchService:
                     return response.text
             except httpx.HTTPStatusError as e:
                 last_err = e
-                if e.response.status_code in self._RETRYABLE_STATUS and attempt < 2:
-                    await asyncio.sleep(1.0 * (attempt + 1))
+                if e.response.status_code in self._RETRYABLE_STATUS and attempt < 1:
+                    await asyncio.sleep(1.0)
                     continue
                 raise
             except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 last_err = e
-                if attempt < 2:
-                    await asyncio.sleep(1.0 * (attempt + 1))
+                if attempt < 1:
+                    await asyncio.sleep(1.0)
                     continue
                 raise
         raise last_err  # type: ignore[misc]

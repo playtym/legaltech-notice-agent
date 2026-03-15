@@ -48,41 +48,31 @@ class PolicyAgent:
         evidence: list[PolicyEvidence] = []
         issue_terms = self._extract_issue_terms(issue_summary or "")
 
-        for page in pages:
+        async def _fetch_and_parse(page: str) -> PolicyEvidence | None:
             try:
                 html = await web.fetch_text(page)
             except Exception:
-                continue
-
+                return None
             soup = BeautifulSoup(html, "html.parser")
             title = (soup.title.string.strip() if soup.title and soup.title.string else "").strip()
             body_text = soup.get_text(" ", strip=True)
             compact = " ".join(body_text.split())
             lower_blob = f"{page.lower()} {title.lower()} {compact[:3000].lower()}"
-
             policy_hits = sum(1 for t in _POLICY_TERMS if t in lower_blob)
             if policy_hits == 0:
-                continue
-
+                return None
             complaint_hits = sum(1 for t in issue_terms if t in lower_blob)
             score = policy_hits + (2 * complaint_hits)
             if score < 2:
-                continue
-
+                return None
             snippet = compact[:700]
             heading = (soup.find("h1").get_text(" ", strip=True) if soup.find("h1") else "").strip()
             evidence_title = heading or title or "Policy or terms excerpt"
+            return PolicyEvidence(title=evidence_title, excerpt=snippet, source_url=page)
 
-            evidence.append(
-                PolicyEvidence(
-                    title=evidence_title,
-                    excerpt=snippet,
-                    source_url=page,
-                )
-            )
-
-            if len(evidence) >= 6:
-                break
+        import asyncio
+        results = await asyncio.gather(*[_fetch_and_parse(p) for p in pages])
+        evidence = [r for r in results if r is not None][:6]
 
         return evidence
 
