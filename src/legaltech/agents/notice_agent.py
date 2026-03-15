@@ -24,26 +24,49 @@ _CASE_TYPE_SIGNALS: dict[str, tuple[str, ...]] = {
     "ecommerce": ("order", "delivery", "refund", "product", "amazon", "flipkart", "myntra",
                   "meesho", "snapdeal", "e-commerce", "ecommerce", "online shopping",
                   "cart", "cod", "marketplace", "return", "replacement", "defective product"),
-    "banking": ("bank", "loan", "emi", "credit card", "debit card", "upi", "wallet",
-                "nbfc", "fintech", "neft", "rtgs", "imps", "razorpay", "paytm", "phonepe",
+    "dark_pattern": ("dark pattern", "false urgency", "basket sneaking", "confirm shaming",
+                     "forced action", "subscription trap", "interface interference",
+                     "bait and switch", "hidden cost", "nagging", "trick question",
+                     "disguised ad", "auto renew", "unsubscribe impossible",
+                     "pre-ticked", "roach motel", "forced continuity",
+                     "misdirection", "drip pricing", "sneak into basket"),
+    "banking": ("bank", "loan", "emi", "credit card", "debit card", "wallet",
+                "nbfc", "fintech", "neft", "rtgs", "imps", "razorpay",
                 "account", "transaction", "cheque", "overcharge", "interest"),
+    "upi_payment": ("upi", "upi failed", "payment failed", "money deducted", "double debit",
+                    "auto reversal", "t+5", "failed transaction", "phonepe", "gpay", "paytm",
+                    "bhim", "amount deducted but not credited", "payment gateway",
+                    "transaction failed but debited", "pending transaction"),
     "insurance": ("policy", "claim", "premium", "insurance", "irdai", "life insurance",
                   "health insurance", "motor insurance", "mediclaim", "cashless", "nominee",
-                  "rejection", "repudiation"),
+                  "rejection", "repudiation", "claim rejected", "claim denied", "tpa",
+                  "pre-existing", "contestability"),
     "telecom": ("mobile", "sim", "recharge", "broadband", "jio", "airtel", "vodafone", "vi",
                 "bsnl", "telecom", "network", "data plan", "porting", "trai", "internet"),
     "real_estate": ("flat", "apartment", "builder", "possession", "rera", "real estate",
-                    "construction", "housing", "property", "developer", "registry"),
+                    "construction", "housing", "property", "developer", "registry",
+                    "delayed possession", "builder delay", "carpet area", "super area",
+                    "structural defect", "specification change"),
     "airline_travel": ("flight", "airline", "ticket", "booking", "cancellation", "airport",
-                       "boarding", "indigo", "air india", "spicejet", "dgca", "travel", "hotel"),
+                       "boarding", "indigo", "air india", "spicejet", "dgca", "travel", "hotel",
+                       "denied boarding", "overbooked", "flight delay", "flight cancel",
+                       "lost baggage", "damaged baggage", "vistara", "akasa",
+                       "air sewa", "tarmac delay"),
     "food": ("food", "fssai", "expired", "contaminated", "restaurant", "zomato",
-             "swiggy", "grocery", "bigbasket", "blinkit"),
+             "swiggy", "grocery", "bigbasket", "blinkit", "zepto", "instamart",
+             "quick commerce", "food poisoning", "expired product", "stale",
+             "rotten", "mouldy", "insect in food", "foreign object"),
     "automobile": ("car", "vehicle", "service center", "dealer", "warranty", "automobile",
                    "ev", "bike", "scooter"),
     "education": ("university", "college", "coaching", "edtech", "course", "admission",
-                  "fee", "byju", "unacademy"),
+                  "fee", "byju", "unacademy", "upgrad", "whitehat", "ed-tech",
+                  "placement guarantee", "job guarantee", "course refund",
+                  "skill course", "online course", "learning app"),
     "healthcare": ("hospital", "doctor", "treatment", "medical", "clinic", "pharmacy",
                    "lab", "diagnosis", "surgery"),
+    "credit_score": ("credit score", "cibil", "cibil score", "credit report",
+                     "wrong credit", "default wrongly", "experian", "equifax",
+                     "crif", "credit information", "credit rating wrong"),
 }
 
 _CASE_TYPE_STRATEGY: dict[str, str] = {
@@ -56,6 +79,21 @@ CASE-TYPE STRATEGY — E-COMMERCE DISPUTE:
 - Highlight e-commerce intermediary's vicarious liability — they cannot hide behind "marketplace model"
 - Reference CCPA powers (§§18-27) including product recall and penalties up to ₹50 lakh
 - For high-value orders, emphasize that the complainant chose the platform BECAUSE of its representations""",
+    "dark_pattern": """\
+CASE-TYPE STRATEGY — DARK PATTERN COMPLAINT:
+- Lead with CCPA Guidelines for Prevention and Regulation of Dark Patterns, 2023 (notified 30 Nov 2023)
+- Identify the SPECIFIC dark pattern type from the Schedule of 13 listed patterns:
+  False urgency, Basket sneaking, Confirm shaming, Forced action, Subscription trap, Interface interference,
+  Bait and switch, Drip pricing, Disguised ads, Nagging, Trick question, SaaS billing, Rogue malware
+- Frame the conduct as "unfair trade practice" under CPA 2019 §2(47) — dark patterns are deemed unfair trade practices
+- Invoke CCPA powers under CPA 2019 §§18-27: penalty up to ₹10 lakh (individual) / ₹50 lakh (company)
+- If subscription trap or forced auto-renewal: demand immediate cancellation + full refund of all charges post-initial consent
+- If basket sneaking: demand reversal of hidden charges + interest from date of unauthorized deduction
+- If bait and switch: demand the product/price originally advertised or full refund with compensation
+- Reference IT Act §43A (if personal data was processed via dark pattern consent)
+- Cite DPDP Act 2023 §7 — consent obtained through dark patterns is NOT valid consent
+- Frame the company's design choice as DELIBERATE — dark patterns are engineered, not accidental
+- Preempt defense of "it's just UI design" — Guidelines specifically state platform is responsible for ALL interfaces""",
     "banking": """\
 CASE-TYPE STRATEGY — BANKING/FINANCE DISPUTE:
 - Lead with RBI Master Directions on Customer Service (2023 framework) and Integrated Ombudsman Scheme 2021
@@ -64,18 +102,35 @@ CASE-TYPE STRATEGY — BANKING/FINANCE DISPUTE:
 - If credit card dispute: invoke RBI Master Direction on Credit Card Operations §14 (billing disputes)
 - Emphasize personal liability of compliance officer for RBI regulation violations
 - Reference Banking Codes and Standards Board of India (BCSBI) commitments as binding representations
-- For UPI disputes: cite NPCI Dispute Resolution Mechanism timeline (T+5 days for credit back)
 - Use bank's own charter of customer rights against them""",
+    "upi_payment": """\
+CASE-TYPE STRATEGY — UPI / PAYMENT FAILURE:
+- Lead with RBI Circular on Harmonisation of TAT for Failed Transactions (RBI/DPSS/2019-20/174)
+- KEY TIMELINE: Auto-reversal must happen within T+5 business days for UPI/IMPS
+- COMPENSATION: ₹100/day penalty to customer for every day of delay beyond TAT
+- Calculate exact compensation: ₹100 × (days since T+5 deadline) — include this calculation in the notice
+- If double debit: both the acquiring bank and issuing bank are liable — name both
+- If payment gateway involved (Razorpay, CCAvenue, etc.): cite RBI Payment Aggregator Directions 2020
+- Invoke Payment and Settlement Systems Act 2007 §18 — regulatory oversight by RBI
+- Reference NPCI Dispute Resolution Mechanism — UPI disputes must be resolved within T+5 or escalated
+- If unauthorized UPI transaction: invoke zero-liability framework — report within 3 days = 100% bank liability
+- Preempt "it's a technical issue" defense — RBI holds the bank/PSP liable irrespective of technical cause
+- For delayed refund on cancelled order: the payment service provider and merchant are jointly liable
+- Escalation path: Bank → RBI Ombudsman (cms.rbi.org.in) within 30 days of no resolution""",
     "insurance": """\
 CASE-TYPE STRATEGY — INSURANCE DISPUTE:
 - Lead with IRDAI (Protection of Policyholders' Interests) Regulations 2017
 - If claim rejected: demand the EXACT rejection reason per Regulation 17(7), challenge vague rejections
 - If delayed settlement: cite mandatory settlement timelines (30 days from last document per Reg 17(6))
+- INTEREST CALCULATION: bank rate + 2% for delay beyond 30 days — calculate exact amount in notice
 - Invoke §4 of Insurance Act 1938 on utmost good faith — it binds the INSURER, not just the policyholder
 - Reference IRDAI circular on rejection rates and insurers flagged for excessive rejections
 - If pre-existing disease exclusion: challenge the definition scope per Regulation 2(d) and standard exclusion limits
 - Invoke Section 45 (2-year contestability clause) — after 2 years, no policy can be repudiated on grounds of misstatement
-- For mediclaim: cite IRDAI standardized exclusion list — company cannot exclude beyond listed items""",
+- For mediclaim: cite IRDAI standardized exclusion list — company cannot exclude beyond listed items
+- If TPA delays: insurer is vicariously liable for TPA's conduct under Regulation 3(1)
+- Preempt "non-disclosure" defense: after 8 years (moratorium per IRDAI 2020 circular), policy is incontestable
+- Escalation: IGMS portal (igms.irda.gov.in) → Insurance Ombudsman → Consumer Commission""",
     "telecom": """\
 CASE-TYPE STRATEGY — TELECOM DISPUTE:
 - Lead with TRAI Regulations — Quality of Service, Metering & Billing, Tariff transparency
@@ -87,35 +142,52 @@ CASE-TYPE STRATEGY — TELECOM DISPUTE:
 - Emphasize TRAI complaint mechanism on trai.gov.in and appeal to TDSAT under TRAI Act §14
 - For broadband: cite TRAI recommendations on minimum speed guarantees""",
     "real_estate": """\
-CASE-TYPE STRATEGY — REAL ESTATE DISPUTE:
+CASE-TYPE STRATEGY — REAL ESTATE / RERA DISPUTE:
 - Lead with RERA 2016 — this is the PRIMARY statute, CPA is supplementary
-- If delayed possession: invoke §18 RERA (interest at SBI MCLR + 2%, or prescribed rate)
+- If delayed possession: invoke §18 RERA — TWO OPTIONS:
+  (1) Withdraw: full refund + interest at SBI MCLR + 2% (or state prescribed rate) from EVERY payment date
+  (2) Continue: interest at same rate for every month of delay until actual possession
+- CALCULATE EXACT INTEREST: For each payment tranche → amount × (SBI MCLR + 2%) × (delay days ÷ 365)
+  Include this calculation table in the notice with total delay compensation demand
+- Current SBI MCLR (6-month): reference the latest published rate from SBI website
 - If specification deviation: cite §14 (adherence to sanctioned plans) and §§19(3)-19(4)
 - File simultaneously with RERA Authority AND Consumer Commission — dual remedy is permitted per Imperia Structures v. Anil Patni (2020) 10 SCC 783
-- Calculate per-day delay compensation using RERA formula: agreement value × prescribed rate ÷ 365
 - Challenge one-sided force majeure clauses — buyer-builder agreement cannot override RERA entitlements
 - Reference specific State RERA orders against the same builder (check relevant State RERA website)
-- Invoke §7A (compensation for delay) and §8 (formation of association entitlement)""",
+- Invoke §7A (compensation for delay) and §8 (formation of association entitlement)
+- For structural defect: 5-year warranty period from possession date (§14(3)) — builder must rectify at own cost""",
     "airline_travel": """\
-CASE-TYPE STRATEGY — AIRLINE/TRAVEL DISPUTE:
+CASE-TYPE STRATEGY — AIRLINE / TRAVEL DISPUTE:
 - Lead with DGCA CAR Section 3, Series M, Part IV (facilities to passengers by airlines due to denied boarding, cancellation, and delays)
-- If flight cancelled: cite mandatory compensation — up to ₹20,000 for domestic (> 2 hrs delay) per DGCA
-- If denied boarding: invoke overbooked flight compensation rules — 200%/400% of ticket per DGCA
-- Reference Montreal Convention for international routes (SDR-based compensation for delays/damage)
-- If hotel booking: cite Hotel & Restaurant Approval and Classification Committee (HRACC) rules
-- For travel agent: cite Indian Contract Act §§182-238 (agency liability) + CPA 2019 deficiency
+- SPECIFIC COMPENSATION AMOUNTS (include exact figures in notice):
+  • Denied boarding (overbooked): 200% of basic fare (up to block time ≤1h) / 400% of basic fare (block time >1h)
+  • Cancellation with <24h notice: up to ₹20,000 domestic OR alternate flight + meals + hotel
+  • Delay 2-6 hours: meals + refreshments
+  • Delay >6 hours: meals + hotel accommodation + ₹20,000 compensation
+  • Tarmac delay >3 hours: right to deplane, food, water, medical assistance
+  • Baggage: per DGCA, airline liable for loss/damage/delay — ₹350/kg for registered baggage
+- For international routes: invoke Montreal Convention — airline strictly liable up to 1,288 SDR for bags, 5,346 SDR for delay
+- Calculate exact compensation based on ticket fare and delay duration — include math in notice
+- Reference passenger charter of rights published by DGCA
 - File complaint on AirSewa portal (airsewa.gov.in) — tracked by Ministry of Civil Aviation
-- Emphasize passenger charter of rights published by DGCA""",
+- Preempt "weather/ATC" defense — airline must PROVE force majeure; operational issues are airline's liability
+- For travel agent: cite Indian Contract Act §§182-238 (agency liability) + CPA 2019 deficiency""",
     "food": """\
-CASE-TYPE STRATEGY — FOOD/FMCG DISPUTE:
+CASE-TYPE STRATEGY — FOOD / QUICK COMMERCE DISPUTE:
 - Lead with Food Safety and Standards Act 2006 (FSSA) and FSSAI Regulations
+- If expired product sold: this is a CRIMINAL offence under FSSA §59 — imprisonment up to 6 months + fine up to ₹5 lakh
 - If adulterated/contaminated: invoke §§50-59 FSSA (penalties including imprisonment for unsafe food)
-- If expired product sold: cite FSSAI labeling regulations + CPA 2019 unfair trade practice
 - Reference food operator's FSSAI license number — non-display itself is a violation
-- File complaint with local Food Safety Officer in addition to consumer commission
-- For food delivery platforms (Zomato/Swiggy): invoke both platform liability and restaurant liability
-- Cite §3(1)(r) FSSA definition of "unsafe food" and §26 (responsibilities of food business operator)
-- Reference FSSAI recall procedure — demand product batch recall if safety hazard""",
+- For quick commerce (Blinkit, Zepto, Instamart, BigBasket):
+  • Platform is an FBO under FSSA §3(1)(h) — must hold FSSAI license for storage & delivery
+  • Dark store / warehouse MUST maintain cold chain — failure is §26 violation
+  • Platform is jointly liable with seller for selling expired/unsafe food
+- If food poisoning: demand medical expense reimbursement + compensation for physical suffering
+  Cite FSSA §3(1)(r) definition of "unsafe food" and §26 (FBO responsibilities)
+- File complaint with local Food Safety Officer (FSO) in addition to consumer commission
+- Demand product batch recall under FSSAI recall procedure if safety hazard
+- For restaurant delivery: both platform (Zomato/Swiggy) and restaurant liable under CPA + FSSA
+- Invoke FSSAI Labelling Regulations 2020 — every product must show expiry date, FSSAI license, ingredients""",
     "automobile": """\
 CASE-TYPE STRATEGY — AUTOMOBILE DISPUTE:
 - Lead with Motor Vehicles Act 1988 and BIS standards for vehicle safety
@@ -127,14 +199,21 @@ CASE-TYPE STRATEGY — AUTOMOBILE DISPUTE:
 - If EV-related: cite BIS standards IS 17017 and FAME-II scheme compliance obligations
 - File with company's nodal officer AND head office — most auto companies have structured grievance redressal""",
     "education": """\
-CASE-TYPE STRATEGY — EDUCATION DISPUTE:
+CASE-TYPE STRATEGY — EDUCATION / ED-TECH DISPUTE:
 - Lead with CPA 2019 (education is a "service" per §2(42) read with Supreme Court precedent)
-- If fee dispute: cite UGC/AICTE fee regulations and state fee regulatory committee orders
-- If admission fraud: invoke IPC §420 (cheating) alongside consumer complaint — dual remedy
-- For edtech refund: apply E-Commerce Rules 2020 + IT Act 2000 §79 intermediary obligations
-- Reference UGC (Refund of Fees) Guidelines 2023 for higher education
+- For ed-tech refund: THIS IS KEY — apply triple framework:
+  (1) E-Commerce Rules 2020 (ed-tech platforms are e-commerce entities)
+  (2) CPA 2019 §2(47) unfair trade practice for false placement/job guarantees
+  (3) Indian Contract Act §§16-19A (undue influence / coercion in sales tactics)
+- If aggressive sales call / loan-linked enrollment: cite RBI Fair Practices Code for NBFC attached to ed-tech
+- If placement guarantee broken: treat as unfair trade practice §2(47) — false promise of specific outcome
+  Calculate damages: full course fee + interest + difference in promised vs actual salary (if applicable)
+- If EMI/loan forced: invoke CPA 2019 §2(47)(ix) — permitting sale that creates obligation on credit without consent
+- Reference UGC (Refund of Fees) Guidelines 2023 for higher education — proportionate refund mandated
+- Reference CCPA orders against specific ed-tech companies (Byju's, WhiteHat Jr, etc.)
+- Cooling-off period: if enrolled via online sales, 14-day cooling-off applies per MCA guidelines
+- If fee dispute with university: cite UGC/AICTE fee regulations and state fee regulatory committee orders
 - For coaching institutes: no specific regulator, but CPA 2019 fully applies — cite misleading advertisement §2(28)
-- If placement guarantee broken: treat as unfair trade practice §2(47) — false promise of outcome
 - File additionally with AICTE/UGC if institution is regulated""",
     "healthcare": """\
 CASE-TYPE STRATEGY — HEALTHCARE/MEDICAL DISPUTE:
@@ -146,6 +225,22 @@ CASE-TYPE STRATEGY — HEALTHCARE/MEDICAL DISPUTE:
 - Demand complete medical records under §1.3.2 of MCI Code of Ethics — patient has absolute right to records
 - If drug reaction: invoke Drugs and Cosmetics Act 1940 + pharmacovigilance reporting to CDSCO
 - File additionally with respective State Medical Council for professional misconduct""",
+    "credit_score": """\
+CASE-TYPE STRATEGY — CREDIT SCORE DISPUTE:
+- Lead with Credit Information Companies (Regulation) Act, 2005 (CICRA) §15
+- Dispute process: consumer has RIGHT to dispute inaccurate credit information
+  CIC must resolve dispute within 30 days; credit institution must rectify/confirm within 21 days
+- If bank/NBFC wrongly reported default:
+  (1) Notice to the bank/NBFC demanding correction of data submitted to CIC
+  (2) Simultaneous dispute filed with CIBIL/Experian/Equifax/CRIF via their portal
+  (3) CPA 2019 complaint for deficiency in service — wrong reporting is measurable harm
+- CALCULATE DAMAGES: impact of wrong credit score = higher interest paid on subsequent loans + opportunity cost
+  Demand: correction of report + compensation for financial loss + mental agony
+- If the default was disputed and still reported: cite RBI Master Direction on CIC, §10 — data must be accurate
+- Invoke CPA 2019 §2(11) — inaccurate credit reporting is "deficiency in service" by the bank
+- Reference RBI circular RBI/2021-22/25 on reporting of NPA/SMA — mandates accuracy
+- Preempt "we only report what the bank sends" defense by CIC — CIC has independent verification duty under §15
+- Escalation: RBI Ombudsman (for bank) + CIC dispute portal + Consumer Commission""",
 }
 
 

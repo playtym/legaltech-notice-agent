@@ -37,7 +37,13 @@ LIMITATION PERIODS (Indian statutes):
 - Payment disputes / banking: 3 years (PSS Act / general)
 - Insurance claims (Insurance Act 1938): 3 years
 - Unfair trade practice (CPA 2019): 2 years
-- Real estate (RERA): 1 year from possession or 5 years for structural defect
+- Real estate (RERA §18): No specific limitation under RERA; 2 years under CPA 2019, but continuing cause of action available
+- Real estate structural defect: 5 years from possession for structural defect (RERA §14(3))
+- Airline / travel: 2 years under CPA 2019; Montreal Convention claims 2 years for international
+- Credit score dispute: 3 years from discovery of wrong reporting (continuing cause of action)
+- Dark patterns: 2 years under CPA 2019 (unfair trade practice)
+- Ed-tech / education: 2 years under CPA 2019 from date of incident
+- Food safety: 2 years under CPA 2019; FSSA prosecution within 1 year of offence
 
 Analyse the complaint facts and determine:
 1. The most appropriate claim category
@@ -76,11 +82,35 @@ _LIMITATION_MAP: dict[str, int] = {
     "payment_dispute": 3,
     "insurance_claim": 3,
     "unfair_trade_practice": 2,
+    "real_estate": 2,
+    "real_estate_structural": 5,
+    "airline_travel": 2,
+    "credit_score": 3,
+    "dark_pattern": 2,
+    "education": 2,
+    "food_safety": 2,
 }
 
 
 def _detect_claim_category(corpus: str) -> str:
     lower = corpus.lower()
+    if any(k in lower for k in ("dark pattern", "basket sneaking", "subscription trap",
+                                "forced action", "confirm shaming", "interface interference")):
+        return "dark_pattern"
+    if any(k in lower for k in ("rera", "builder delay", "delayed possession", "flat delay")):
+        if any(k in lower for k in ("structural defect", "construction quality")):
+            return "real_estate_structural"
+        return "real_estate"
+    if any(k in lower for k in ("flight", "airline", "dgca", "denied boarding", "air sewa")):
+        return "airline_travel"
+    if any(k in lower for k in ("credit score", "cibil", "credit report", "wrong credit")):
+        return "credit_score"
+    if any(k in lower for k in ("edtech", "ed-tech", "byju", "unacademy", "placement guarantee",
+                                "course refund", "coaching refund")):
+        return "education"
+    if any(k in lower for k in ("expired food", "food poisoning", "contaminated food",
+                                "fssai", "unsafe food", "blinkit", "zepto", "quick commerce")):
+        return "food_safety"
     if any(k in lower for k in ("product", "defective", "manufacturing", "goods")):
         return "product_liability"
     if any(k in lower for k in ("data", "privacy", "personal information", "leak")):
