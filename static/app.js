@@ -267,7 +267,7 @@ const App = (() => {
 
         recognition = new Ctor();
         recognition.lang = recogLang;
-        recognition.continuous = false;
+        recognition.continuous = true;
         recognition.interimResults = true;
         recognition.maxAlternatives = 1;
 
