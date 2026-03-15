@@ -97,12 +97,13 @@ def send_notice_email(
         msg["X-Confirm-Reading-To"] = config.from_email
 
     msg.set_content(body_text)
-    msg.add_attachment(
-        pdf_bytes,
-        maintype="application",
-        subtype="pdf",
-        filename=pdf_filename,
-    )
+    if pdf_bytes and pdf_filename:
+        msg.add_attachment(
+            pdf_bytes,
+            maintype="application",
+            subtype="pdf",
+            filename=pdf_filename,
+        )
 
     all_recipients = [to_email] + (cc_emails or [])
 
