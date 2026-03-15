@@ -22,6 +22,7 @@ class Settings(BaseModel):
     )
     admin_password: str = Field(default=os.getenv("ADMIN_PASSWORD", "lawly2024"))
     data_bucket: str | None = Field(default=os.getenv("DATA_BUCKET"))
+    bing_webmaster_api_key: str | None = Field(default=os.getenv("BING_WEBMASTER_API_KEY"))
 
 
 @lru_cache(maxsize=1)

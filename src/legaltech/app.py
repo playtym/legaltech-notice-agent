@@ -1927,6 +1927,58 @@ async def get_analytics_events(limit: int = 200, _=Depends(require_admin)):
     return notice_store.get_analytics_events(limit)
 
 
+# ── Search Insights (Bing Webmaster) ────────────────────────────────
+
+from legaltech.services import search_insights
+
+
+@app.get("/api/admin/insights")
+async def get_search_insights(_=Depends(require_admin)):
+    """Aggregated Bing Webmaster search insights for the admin dashboard."""
+    return await search_insights.get_insights_summary()
+
+
+@app.get("/api/admin/insights/queries")
+async def get_insights_queries(_=Depends(require_admin)):
+    return await search_insights.get_query_stats()
+
+
+@app.get("/api/admin/insights/crawl")
+async def get_insights_crawl(_=Depends(require_admin)):
+    return await search_insights.get_crawl_stats()
+
+
+@app.get("/api/admin/insights/pages")
+async def get_insights_pages(_=Depends(require_admin)):
+    return await search_insights.get_page_stats()
+
+
+class SubmitUrlRequest(BaseModel):
+    url: str
+
+
+class SubmitUrlBatchRequest(BaseModel):
+    urls: list[str]
+
+
+@app.post("/api/admin/insights/submit-url")
+async def insights_submit_url(body: SubmitUrlRequest, _=Depends(require_admin)):
+    """Submit a URL to Bing for indexing."""
+    result = await search_insights.submit_url(body.url)
+    if result.get("ok"):
+        notice_store.log_activity("Bing URL submitted", body.url)
+    return result
+
+
+@app.post("/api/admin/insights/submit-batch")
+async def insights_submit_batch(body: SubmitUrlBatchRequest, _=Depends(require_admin)):
+    """Submit multiple URLs to Bing for indexing."""
+    result = await search_insights.submit_url_batch(body.urls)
+    if result.get("ok"):
+        notice_store.log_activity("Bing batch submitted", f"{len(body.urls)} URLs")
+    return result
+
+
 # ── Support / Contact Tickets ────────────────────────────────────────
 
 class CreateTicketRequest(BaseModel):

@@ -461,6 +461,7 @@
     <button class="admin-tab" data-tab="aeo">🤖 AEO</button>
     <button class="admin-tab" data-tab="email">📧 Email</button>
     <button class="admin-tab" data-tab="analytics">📈 Analytics</button>
+    <button class="admin-tab" data-tab="insights">🔎 Search Insights</button>
     <button class="admin-tab" data-tab="support">🎫 Support</button>
     <button class="admin-tab" data-tab="activity">🕐 Activity</button>
     <button class="admin-tab" data-tab="lawyer">👨‍⚖️ Lawyer</button>
@@ -964,6 +965,53 @@
     </div>
 </div>
 
+<!-- ═══ SEARCH INSIGHTS TAB ═══ -->
+<div class="tab-panel" id="tab-insights">
+    <h2 style="font-size:1.15rem;margin-bottom:16px;">🔎 Search Insights <span style="font-size:.75rem;color:var(--muted);font-weight:400;">(Bing Webmaster)</span></h2>
+
+    <!-- KPIs -->
+    <div class="analytics-grid" id="insights-kpis">
+        <div class="analytics-kpi"><div class="kpi-val" id="ik-impressions">—</div><div class="kpi-label">Impressions</div></div>
+        <div class="analytics-kpi"><div class="kpi-val" id="ik-clicks">—</div><div class="kpi-label">Clicks</div></div>
+        <div class="analytics-kpi"><div class="kpi-val" id="ik-ctr">—</div><div class="kpi-label">CTR</div></div>
+        <div class="analytics-kpi"><div class="kpi-val" id="ik-crawled">—</div><div class="kpi-label">Pages Crawled</div></div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="chart-grid" style="margin-bottom:20px;">
+        <div class="chart-card"><h3>Impressions & Clicks (Daily)</h3><canvas id="insights-chart-traffic"></canvas></div>
+        <div class="chart-card"><h3>Crawl Activity</h3><canvas id="insights-chart-crawl"></canvas></div>
+    </div>
+
+    <!-- Top Keywords -->
+    <div class="card" style="margin-bottom:20px;">
+        <h3 style="font-size:.95rem;margin-bottom:12px;">🔑 Top Search Keywords</h3>
+        <div style="overflow-x:auto;">
+        <table class="data-table" id="insights-keywords-table">
+            <thead><tr><th>Keyword</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Avg Position</th></tr></thead>
+            <tbody id="insights-keywords-body"><tr><td colspan="5" class="empty-state">No keyword data yet</td></tr></tbody>
+        </table>
+        </div>
+    </div>
+
+    <!-- URL Submission -->
+    <div class="card" style="margin-bottom:20px;">
+        <h3 style="font-size:.95rem;margin-bottom:12px;">🚀 Submit URLs to Bing for Indexing</h3>
+        <div id="insights-quota" style="font-size:.8rem;color:var(--muted);margin-bottom:10px;">Quota: —</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="insights-submit-url" placeholder="https://lawly.store/blog/post-slug" style="flex:1;min-width:250px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;">
+            <button class="btn btn-primary" onclick="Admin.submitBingUrl()" style="white-space:nowrap;">Submit URL</button>
+            <button class="btn" onclick="Admin.submitAllPages()" style="white-space:nowrap;" title="Submit homepage, blog index, and sitemap pages">Submit All Pages</button>
+        </div>
+    </div>
+
+    <!-- Crawl Details -->
+    <div class="card">
+        <h3 style="font-size:.95rem;margin-bottom:12px;">🕷️ Crawl Summary</h3>
+        <div id="insights-crawl-info" class="empty-state">No crawl data yet</div>
+    </div>
+</div>
+
 <!-- ═══ SUPPORT / TICKETS TAB ═══ -->
 <div class="tab-panel" id="tab-support">
     <h2 style="font-size:1.15rem;margin-bottom:16px;">🎫 Support Tickets</h2>
@@ -1390,6 +1438,7 @@ const Admin = (() => {
             aeo: loadAEO,
             email: loadEmail,
             analytics: loadAnalytics,
+            insights: loadInsights,
             support: loadSupport,
             activity: loadActivity,
             lawyer: loadLawyer,
@@ -2791,6 +2840,132 @@ const Admin = (() => {
         ).join('');
     }
 
+    /* ── Search Insights (Bing Webmaster) ───────────────── */
+    let insightsChartTraffic = null, insightsChartCrawl = null;
+
+    async function loadInsights() {
+        try {
+            const res = await apiFetch('/api/admin/insights');
+            const data = await res.json();
+            if (!data.configured) {
+                qs('#tab-insights').innerHTML = '<div class="empty-state" style="padding:40px;text-align:center;">' +
+                    '<h3>Bing Webmaster API Not Configured</h3>' +
+                    '<p style="margin-top:8px;color:var(--muted);">Set the <code>BING_WEBMASTER_API_KEY</code> environment variable to enable search insights.</p></div>';
+                return;
+            }
+            renderInsightsKPIs(data);
+            renderInsightsCharts(data);
+            renderKeywordsTable(data.top_keywords || []);
+            renderCrawlInfo(data.crawl || {});
+            renderQuota(data.submission_quota || {});
+        } catch (err) { showToast('Failed to load insights', 'error'); }
+    }
+
+    function renderInsightsKPIs(d) {
+        const t = d.totals || {};
+        qs('#ik-impressions').textContent = (t.impressions || 0).toLocaleString();
+        qs('#ik-clicks').textContent = (t.clicks || 0).toLocaleString();
+        qs('#ik-ctr').textContent = (t.ctr || 0) + '%';
+        qs('#ik-crawled').textContent = (d.crawl?.total_pages_crawled || 0).toLocaleString();
+    }
+
+    function renderInsightsCharts(data) {
+        if (typeof Chart === 'undefined') return;
+        const daily = data.daily_traffic || {};
+        const dates = Object.keys(daily).sort();
+        const impressions = dates.map(d => daily[d]?.impressions || 0);
+        const clicks = dates.map(d => daily[d]?.clicks || 0);
+
+        if (insightsChartTraffic) insightsChartTraffic.destroy();
+        insightsChartTraffic = new Chart(qs('#insights-chart-traffic'), {
+            type: 'bar',
+            data: {
+                labels: dates.length ? dates : ['No data'],
+                datasets: [
+                    { label: 'Impressions', data: impressions.length ? impressions : [0], backgroundColor: 'rgba(37,99,235,.3)', borderColor: '#2563EB', borderWidth: 1 },
+                    { label: 'Clicks', data: clicks.length ? clicks : [0], backgroundColor: 'rgba(5,150,105,.3)', borderColor: '#059669', borderWidth: 1 },
+                ],
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } },
+        });
+
+        // Crawl chart from raw crawl data
+        const crawl = data.crawl || {};
+        if (insightsChartCrawl) insightsChartCrawl.destroy();
+        // Use daily_traffic dates as proxy; actual crawl is in crawl.latest
+        insightsChartCrawl = new Chart(qs('#insights-chart-crawl'), {
+            type: 'bar',
+            data: {
+                labels: ['Pages Crawled', 'Crawl Errors'],
+                datasets: [{
+                    label: 'Crawl Stats',
+                    data: [crawl.total_pages_crawled || 0, crawl.total_errors || 0],
+                    backgroundColor: ['rgba(37,99,235,.4)', 'rgba(220,38,38,.4)'],
+                    borderColor: ['#2563EB', '#DC2626'],
+                    borderWidth: 1,
+                }],
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+        });
+    }
+
+    function renderKeywordsTable(keywords) {
+        const tbody = qs('#insights-keywords-body');
+        if (!keywords.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No keyword data yet — Bing needs a few days to collect data after site verification.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = keywords.map(kw =>
+            `<tr><td><strong>${esc(kw.query)}</strong></td><td>${kw.impressions.toLocaleString()}</td><td>${kw.clicks.toLocaleString()}</td><td>${kw.ctr}%</td><td>${kw.avg_position}</td></tr>`
+        ).join('');
+    }
+
+    function renderCrawlInfo(crawl) {
+        const el = qs('#insights-crawl-info');
+        if (!crawl.total_pages_crawled && !crawl.total_errors) {
+            el.innerHTML = '<span class="empty-state">No crawl data yet — Bing will start reporting after it crawls your site.</span>';
+            return;
+        }
+        const latest = crawl.latest || {};
+        el.innerHTML = `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                <div><strong>${(crawl.total_pages_crawled || 0).toLocaleString()}</strong><br><span style="color:var(--muted);font-size:.8rem;">Total Pages Crawled</span></div>
+                <div><strong style="color:${crawl.total_errors ? 'var(--red)' : 'inherit'};">${(crawl.total_errors || 0).toLocaleString()}</strong><br><span style="color:var(--muted);font-size:.8rem;">Crawl Errors</span></div>
+                <div><strong>${(latest.in_index || 0).toLocaleString()}</strong><br><span style="color:var(--muted);font-size:.8rem;">Pages in Index</span></div>
+                <div><strong>${(latest.in_links || 0).toLocaleString()}</strong><br><span style="color:var(--muted);font-size:.8rem;">Inbound Links</span></div>
+            </div>`;
+    }
+
+    function renderQuota(quota) {
+        qs('#insights-quota').textContent = `Daily quota: ${quota.daily_quota ?? '—'} · Monthly quota: ${quota.monthly_quota ?? '—'}`;
+    }
+
+    async function submitBingUrl() {
+        const input = qs('#insights-submit-url');
+        const url = input.value.trim();
+        if (!url) { showToast('Enter a URL', 'error'); return; }
+        try {
+            const res = await apiFetch('/api/admin/insights/submit-url', { method: 'POST', body: { url } });
+            const data = await res.json();
+            if (data.ok) { showToast('URL submitted to Bing!', 'success'); input.value = ''; }
+            else showToast(data.error || 'Submission failed', 'error');
+        } catch (err) { showToast('Failed to submit URL', 'error'); }
+    }
+
+    async function submitAllPages() {
+        const urls = [
+            'https://lawly.store/',
+            'https://lawly.store/blog',
+            'https://lawly.store/sitemap.xml',
+        ];
+        try {
+            const res = await apiFetch('/api/admin/insights/submit-batch', { method: 'POST', body: { urls } });
+            const data = await res.json();
+            if (data.ok) showToast(`${data.count} URLs submitted to Bing!`, 'success');
+            else showToast(data.error || 'Batch submission failed', 'error');
+        } catch (err) { showToast('Failed to submit urls', 'error'); }
+    }
+
     /* ── Support Tickets ────────────────────────────────── */
     let ticketsCache = [];
     let currentTicketId = null;
@@ -2974,6 +3149,7 @@ const Admin = (() => {
         downloadDbPdf,
         saveEmailSettings, sendTestEmail,
         filterTickets, openTicket, updateTicket, sendTicketReply, closeTicketModal,
+        submitBingUrl, submitAllPages,
     };
 })();
 </script>

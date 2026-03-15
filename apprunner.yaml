@@ -23,3 +23,5 @@ run:
       value: "Lawly/0.2 (+https://lawly.store)"
     - name: DATA_BUCKET
       value: "lawly-data-prod"
+    - name: BING_WEBMASTER_API_KEY
+      value: "ec74915dca1748b58ea80f42ab2cf5bb"
