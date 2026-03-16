@@ -2135,7 +2135,7 @@ const Admin = (() => {
             const res = await apiFetch('/api/admin/seo/audit');
             const data = await res.json();
             renderSEOAudit(data);
-        } catch (err) {}
+        } catch (err) { console.warn('SEO audit load failed:', err); }
     }
 
     async function runSEOAudit() {
@@ -2307,7 +2307,8 @@ const Admin = (() => {
         try {
             const res = await apiFetch('/api/admin/seo/ping-sitemap', { method: 'POST' });
             const data = await res.json();
-            const parts = data.results.map(r => `${r.engine}: ${r.status === 'ok' ? '✅' : '❌ ' + (r.error || 'failed')}`);
+            const parts = Object.entries(data).map(([engine, r]) =>
+                `${engine}: ${r.ok ? '✅' : '❌ ' + (r.error || 'failed')}`);
             el.textContent = parts.join(' · ');
             showToast('Sitemap pinged', 'success');
         } catch (err) {
@@ -2384,7 +2385,7 @@ const Admin = (() => {
             const res = await apiFetch('/api/admin/aeo/audit');
             const data = await res.json();
             renderAEOAudit(data);
-        } catch (err) {}
+        } catch (err) { console.warn('AEO audit load failed:', err); }
     }
 
     async function runAEOAudit() {
@@ -3417,14 +3418,11 @@ const Admin = (() => {
         if (!r || !r.faqs) return;
         for (const faq of r.faqs) {
             addFaqItem();
-            const entries = document.querySelectorAll('#faq-entries .faq-entry');
-            const last = entries[entries.length - 1];
-            if (last) {
-                const inputs = last.querySelectorAll('input, textarea');
-                if (inputs[0]) inputs[0].value = faq.question || '';
-                if (inputs[1]) inputs[1].value = faq.answer || '';
-            }
+            const idx = faqItems.length - 1;
+            faqItems[idx].question = faq.question || '';
+            faqItems[idx].answer = faq.answer || '';
         }
+        renderFaqEntries(faqItems);
         showToast(`Added ${r.faqs.length} AI-generated FAQs`, 'success');
     }
 
@@ -3459,15 +3457,11 @@ const Admin = (() => {
         if (!r || !r.snippets) return;
         for (const s of r.snippets) {
             addSnippet();
-            const entries = document.querySelectorAll('#snippet-entries .snippet-entry');
-            const last = entries[entries.length - 1];
-            if (last) {
-                const inputs = last.querySelectorAll('input, textarea');
-                if (inputs[0]) inputs[0].value = s.query || '';
-                if (inputs[1]) inputs[1].value = s.answer || '';
-                if (inputs[2]) inputs[2].value = s.category || '';
-            }
+            const idx = snippetItems.length - 1;
+            snippetItems[idx].query = s.query || '';
+            snippetItems[idx].answer = s.answer || '';
         }
+        renderSnippets(snippetItems);
         showToast(`Added ${r.snippets.length} AI snippets`, 'success');
     }
 
@@ -3481,15 +3475,11 @@ const Admin = (() => {
         if (!r || !r.clusters) return;
         for (const c of r.clusters) {
             addCluster();
-            const entries = document.querySelectorAll('#cluster-entries .cluster-entry');
-            const last = entries[entries.length - 1];
-            if (last) {
-                const inputs = last.querySelectorAll('input, textarea');
-                if (inputs[0]) inputs[0].value = c.name || '';
-                if (inputs[1]) inputs[1].value = c.pillar || '';
-                if (inputs[2]) inputs[2].value = (c.subtopics || []).join(', ');
-            }
+            const idx = clusterItems.length - 1;
+            clusterItems[idx].pillar = c.pillar || c.name || '';
+            clusterItems[idx].subtopics = c.subtopics || [];
         }
+        renderClusters(clusterItems);
         showToast(`Added ${r.clusters.length} topic clusters`, 'success');
     }
 
