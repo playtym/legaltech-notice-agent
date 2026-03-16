@@ -15,8 +15,12 @@ from dataclasses import dataclass
 from email.message import EmailMessage
 from email.utils import formataddr
 
+import re
+
 import boto3
 from botocore.exceptions import ClientError
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 @dataclass
@@ -56,7 +60,9 @@ def send_notice_email(
     msg["Subject"] = subject
 
     if cc_emails:
-        msg["Cc"] = ", ".join(cc_emails)
+        safe_cc = [e for e in cc_emails if _EMAIL_RE.match(e) and "\n" not in e and "\r" not in e]
+        if safe_cc:
+            msg["Cc"] = ", ".join(safe_cc)
 
     if request_read_receipt:
         msg["Disposition-Notification-To"] = from_email
@@ -71,7 +77,7 @@ def send_notice_email(
             filename=pdf_filename,
         )
 
-    all_recipients = [to_email] + (cc_emails or [])
+    all_recipients = [to_email] + (safe_cc if cc_emails else [])
 
     try:
         ses_client = boto3.client("ses", region_name=aws_region)

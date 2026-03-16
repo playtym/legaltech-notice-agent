@@ -20,11 +20,17 @@ class Settings(BaseModel):
             "Lawly/0.2 (+https://lawly.store)",
         )
     )
-    admin_password: str = Field(default=os.getenv("ADMIN_PASSWORD", "lawly2024"))
+    admin_password: str = Field(default=os.getenv("ADMIN_PASSWORD", ""))
     data_bucket: str | None = Field(default=os.getenv("DATA_BUCKET"))
     bing_webmaster_api_key: str | None = Field(default=os.getenv("BING_WEBMASTER_API_KEY"))
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()
+    s = Settings()
+    if not s.admin_password:
+        import logging
+        logging.getLogger(__name__).warning(
+            "ADMIN_PASSWORD is not set — admin login is disabled until configured"
+        )
+    return s

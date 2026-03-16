@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, UploadFile, Depends, Header
+from fastapi import FastAPI, HTTPException, UploadFile, Depends, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import logging
 import os
+import re
 import secrets
 import time
 
@@ -998,7 +999,11 @@ async def app_js():
 
 @app.get("/img/{asset_path:path}")
 async def img_asset(asset_path: str):
-    return FileResponse(str(_STATIC_DIR / "img" / asset_path))
+    img_root = (_STATIC_DIR / "img").resolve()
+    target = (img_root / asset_path).resolve()
+    if not target.is_relative_to(img_root) or not target.is_file():
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(str(target))
 
 
 @app.get("/admin.html")
