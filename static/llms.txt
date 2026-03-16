@@ -1,0 +1,41 @@
+# Lawly — AI-Powered Legal Notice Generator for Indian Consumers
+
+> Lawly helps Indian consumers generate professional, legally-sound consumer protection notices in minutes using AI. Backed by 25+ Indian statutes including the Consumer Protection Act 2019.
+
+## What Lawly Does
+Lawly is India's first AI-powered legal notice generator purpose-built for consumer complaints. Users describe their grievance in plain language, and Lawly's multi-agent AI pipeline produces a fully-formatted legal notice citing the exact statutes, precedents, and remedies applicable to their case.
+
+## Core Capabilities
+- **AI Legal Notice Generation**: Multi-agent pipeline analyzes complaints, identifies applicable laws, and generates professional legal notices
+- **Indian Consumer Law Expertise**: Deep coverage of CPA 2019, Sale of Goods Act 1930, E-Commerce Rules 2020, RERA 2016, IT Act 2000, DGCA CAR, RBI circulars, IRDAI regulations, FSSA 2006, and 15+ more statutes
+- **Three Service Tiers**: Self-Send (₹199), Professional Review, and Lawyer-Drafted (₹599) options
+- **Instant PDF Generation**: Download properly formatted legal notices as PDFs ready to send via registered post
+- **Evidence Analysis**: AI scores and organizes supporting evidence for stronger notices
+- **Jurisdiction Detection**: Automatically identifies the correct consumer forum based on claim value and location
+
+## Use Cases Covered
+- UPI & Payment Failures (RBI TAT circular, Payment & Settlement Systems Act)
+- Dark Patterns on Apps (CCPA Guidelines 2023, CPA 2019 §2(47))
+- Ed-Tech Refunds (Byju's, Unacademy — E-Commerce Rules 2020, UGC Guidelines)
+- Flight Cancellation & Delay (DGCA CAR Section 3, Series M, Part IV)
+- RERA Builder Delays (RERA 2016 §18 — SBI MCLR + 2% interest)
+- Insurance Claim Rejections (IRDAI Regulation 17(7), Insurance Act §45)
+- Wrong CIBIL / Credit Score (CICRA 2005 §15)
+- Expired Food — Quick Commerce (FSSA 2006 §59, FSSAI)
+- Cheque Bounce (Negotiable Instruments Act §138)
+- Recovery of Money/Dues
+- Defamation Notices
+- Defective Products (Chapter VI Product Liability, CPA 2019)
+
+## Who It's For
+- Indian consumers with unresolved complaints against companies
+- People facing issues with e-commerce refunds, defective products, deficient services, insurance denials, real estate delays, or banking disputes
+- Anyone who needs a legal notice but cannot afford traditional lawyer fees (₹5,000–₹25,000)
+
+## Pricing
+- Self-Send Tier: ₹199 — AI-generated notice, user sends it themselves
+- Lawyer-Drafted: ₹599 — Full attorney involvement with Lawly AI as a drafting assistant
+
+## Links
+- Website: https://lawly.store
+- Full AI reference: https://lawly.store/llms-full.txt

@@ -137,6 +137,57 @@
         ]
     }
     </script>
+    <!-- hreflang for regional targeting -->
+    <link rel="alternate" hreflang="en" href="https://lawly.store/">
+    <link rel="alternate" hreflang="en-IN" href="https://lawly.store/">
+    <link rel="alternate" hreflang="x-default" href="https://lawly.store/">
+    <!-- Organization schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Lawly",
+        "url": "https://lawly.store",
+        "logo": "https://lawly.store/img/lawly-logo.png",
+        "description": "India's first AI-powered legal notice generator for consumer protection. Generates professional legal notices backed by 25+ Indian statutes, starting at \u20b9199.",
+        "foundingDate": "2024",
+        "founder": { "@type": "Person", "name": "Ankur Garg" },
+        "sameAs": [
+            "https://twitter.com/lawlystore",
+            "https://www.linkedin.com/company/lawly"
+        ],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "email": "support@lawly.store",
+            "availableLanguage": ["English", "Hindi"]
+        }
+    }
+    </script>
+    <!-- BreadcrumbList schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://lawly.store/" }
+        ]
+    }
+    </script>
+    <!-- WebSite schema for sitelinks search box -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Lawly",
+        "url": "https://lawly.store/",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://lawly.store/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -223,6 +274,10 @@
                         <span class="uc-icon">✈️</span>
                         <span class="uc-label">Flight Cancellation &amp; Delay</span>
                     </a>
+                    <a class="uc-card" href="d2c-brand-fraud.html">
+                        <span class="uc-icon">🛍️</span>
+                        <span class="uc-label">D2C Brand Frauds &amp; Scams</span>
+                    </a>
                     <a class="uc-card" href="rera-builder-delay.html">
                         <span class="uc-icon">🏘️</span>
                         <span class="uc-label">RERA — Builder Delay</span>
@@ -300,8 +355,16 @@
         </div>
         <form id="form-company" onsubmit="return false;">
             <div class="form-group">
-                <label for="company-name">Company / Brand Name <span class="req">*</span></label>
+                <label for="company-name">Company Name <span class="req">*</span></label>
                 <input type="text" id="company-name" placeholder="e.g. Flipkart, Amazon, Ola Electric" required maxlength="200">
+            <div class="quick-chips" style="margin-top: 12px; margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <span class="chip" onclick="App.setCompany('Amazon', 'https://amazon.in')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Amazon</span>
+                <span class="chip" onclick="App.setCompany('Flipkart', 'https://flipkart.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Flipkart</span>
+                <span class="chip" onclick="App.setCompany('Swiggy', 'https://swiggy.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Swiggy</span>
+                <span class="chip" onclick="App.setCompany('Zomato', 'https://zomato.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Zomato</span>
+                <span class="chip" onclick="App.setCompany('Ola Electric', 'https://olaelectric.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Ola Electric</span>
+                <span class="chip" onclick="App.setCompany('boAt', 'https://boat-lifestyle.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">boAt (D2C)</span>
+            </div>
             </div>
             <div class="form-group">
                 <label for="company-website">Website <span class="opt">(optional)</span></label>
@@ -346,6 +409,12 @@
             <!-- ── Complaint composer ── -->
             <div class="form-section">
                 <div class="composer composer-hero">
+                    <div id="issue-chips-container" class="quick-chips" style="margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span class="chip" onclick="App.setIssue('I ordered a product but it was delivered defective. Despite multiple complaints, the company has refused to provide a refund or replacement.')" style="cursor:pointer; background:#e0e7ff; color: #3730a3; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #c7d2fe; transition: 0.2s;">📦 Defective Product</span>
+                    <span class="chip" onclick="App.setIssue('My flight was cancelled without prior notice. The airline has not provided the mandatory compensation as per DGCA regulations.')" style="cursor:pointer; background:#e0f2fe; color: #312e81; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #bae6fd; transition: 0.2s;">✈️ Flight Cancelled</span>
+                    <span class="chip" onclick="App.setIssue('A UPI payment failed and the amount was deducted from my bank account, but it has not been refunded within the RBI mandated turnaround time.')" style="cursor:pointer; background:#fce7f3; color: #075985; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #fbcfe8; transition: 0.2s;">💳 UPI Failure</span>
+                    <span class="chip" onclick="App.setIssue('I purchased an online course but it did not match the advertised curriculum. The ed-tech company is denying my rightful refund request.')" style="cursor:pointer; background:#f3e8ff; color: #831843; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #fbcfe8; transition: 0.2s;">🎓 Ed-Tech Refund</span>
+                </div>
                     <textarea id="issue-summary" rows="5" placeholder="What happened? Include what you ordered or signed up for, what went wrong, how the company responded (or didn't), and what you want them to do about it..." required minlength="20" maxlength="10000"></textarea>
                     <div class="composer-bar">
                         <button type="button" class="composer-btn" title="Attach files" onclick="document.getElementById('file-input').click()">
@@ -623,8 +692,27 @@
     </div>
 </section>
 
-<!-- ── Step 8 : Result ────────────────────────────────────── -->
+<!-- ── Step 8 : Edit Draft ────────────────────────────────── -->
 <section class="step" id="step-8">
+    <div class="card">
+        <div class="card-header">
+            <h2>Review & Edit Draft</h2>
+            <p class="card-sub">Please review the generated draft below. You can safely edit names, dates, or demands before finalizing.</p>
+        </div>
+        <div style="padding: 0 24px 24px;">
+            <textarea id="notice-text-editor" style="width: 100%; min-height: 500px; padding: 16px; font-family: monospace; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; line-height: 1.6; resize: vertical; margin-bottom: 24px; background: #fafafa;"></textarea>
+            
+            <div class="lawyer-nudge" id="lawyer-nudge-edit" style="display:none; background: #eef2ff; color: #3730a3; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-size: 0.95rem; border: 1px solid #c7d2fe;">
+                <strong>Lawyer-Assisted Tier Active:</strong> Make any personal tweaks here. Once finalized, this draft will be sent securely to our advocate network for formal review and letterhead attestation.
+            </div>
+
+            <button class="btn btn-primary btn-block btn-lg" onclick="App.finalizeNotice()">Approve & Finalize Document &rarr;</button>
+        </div>
+    </div>
+</section>
+
+<!-- ── Step 9 : Result ────────────────────────────────────── -->
+<section class="step" id="step-9">
     <div class="card">
         <div class="result-header">
             <div class="result-check">
@@ -707,5 +795,23 @@
 </footer>
 
 <script src="app.js"></script>
+
+<!-- Setup Mock Payment Overlay -->
+<div id="payment-overlay" class="overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card" style="max-width:400px; width:100%; margin: 20px; animation: slideUp 0.3s ease-out;">
+        <div class="card-header" style="text-align: center;">
+            <h2>Complete Payment</h2>
+            <p class="card-sub" id="payment-desc">You are about to generate a custom legal notice.</p>
+        </div>
+        <div style="padding: 2rem; text-align: center;">
+            <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #111827;" id="payment-amt">₹199</h1>
+            <p style="color: #4b5563; margin-bottom: 2rem; font-size: 0.9rem;">Secured by Razorpay. Includes instant PDF generation and automatic email delivery.</p>
+            <button id="pay-btn" class="btn btn-primary btn-block btn-lg" onclick="App.processPayment()">Proceed to Pay Securely &rarr;</button>
+            <p id="payment-status" style="margin-top: 1rem; font-weight: 500; display: none;"></p>
+        </div>
+        <button class="btn btn-ghost btn-block" onclick="document.getElementById('payment-overlay').style.display='none'" style="margin-bottom: 1rem;">Cancel</button>
+    </div>
+</div>
+
 </body>
 </html>

@@ -1,5 +1,34 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+Disallow: /admin
+Disallow: /api/
+Disallow: /static/react-app/
+
+# AI Crawlers
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /admin.html
+Disallow: /api/
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 Sitemap: https://lawly.store/sitemap.xml
+
+# AI content files
+# llms.txt: https://lawly.store/llms.txt
+# llms-full.txt: https://lawly.store/llms-full.txt

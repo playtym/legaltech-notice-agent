@@ -1231,3 +1231,13 @@ select { cursor: pointer; }
   color: var(--muted);
   line-height: 1.65;
 }
+
+/* Quick chips interactions */
+.chip:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.chip:active {
+    transform: translateY(0);
+}

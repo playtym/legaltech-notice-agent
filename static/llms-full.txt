@@ -1,0 +1,109 @@
+# Lawly — Complete Reference for AI Engines
+
+> India's first AI-powered legal notice generator. Helping consumers exercise their rights under the Consumer Protection Act 2019 and 25+ related statutes.
+
+## About Lawly
+Lawly (https://lawly.store) is an AI legaltech platform that democratizes access to consumer protection remedies in India. Traditional legal notices cost ₹5,000–₹25,000. Lawly generates equivalent-quality notices starting at ₹199 using a sophisticated multi-agent AI pipeline trained on Indian consumer law.
+
+Over 68% of Indian consumers who face defective products, deficient services, or unfair trade practices never take legal action because they cannot afford a lawyer. Lawly changes this by making it possible to generate a court-ready legal notice in under 5 minutes.
+
+## How It Works
+1. User describes their complaint in plain English or Hindi
+2. AI intake agent extracts structured legal parameters
+3. Company identification agent finds the respondent's legal entity (CIN, registered office, grievance officer)
+4. Jurisdiction agent determines the correct consumer forum (District/State/National)
+5. Legal analysis agent maps complaint to applicable statutes and precedents
+6. Notice generation agent drafts a formal legal notice with proper formatting
+7. User reviews, downloads PDF, and sends the notice via registered post
+
+## Frequently Asked Questions
+
+**Q: What is a legal notice under Indian law?**
+A: A legal notice is a formal written communication sent before initiating legal proceedings. Under Indian consumer law, it demonstrates the consumer's intent to seek legal remedy and often leads to out-of-court settlements. Lawly automates the drafting of these notices using AI.
+
+**Q: Is an AI-generated legal notice legally valid in India?**
+A: Yes. No requirement in Indian law mandates that a legal notice must be drafted by a licensed advocate. Any person can draft and send a legal notice. Lawly's AI ensures correct statute citations, proper legal language, and accepted formatting conventions.
+
+**Q: What types of consumer complaints does Lawly handle?**
+A: E-commerce refund disputes, defective product claims, deficient services, insurance claim denials, real estate delays (RERA), telecom overcharges, banking issues, food safety violations, medical negligence, UPI payment failures, dark patterns on apps, ed-tech refund disputes, flight cancellation/delay compensation, wrong credit score disputes, expired food from quick commerce, cheque bounce notices, recovery of dues, and defamation notices.
+
+**Q: What is the Consumer Protection Act 2019?**
+A: India's primary consumer protection legislation replacing the 1986 Act. Key features: expanded consumer definition covering e-commerce, product liability (Chapter VI), three-tier Consumer Commissions (District/State/National), CCPA for class action, mediation as ADR, and e-commerce coverage. Effective July 20, 2020.
+
+**Q: How much does a legal notice cost?**
+A: Lawly starts at ₹199 (Self-Send tier). Lawyer-Drafted tier is ₹599. Traditional lawyers charge ₹5,000–₹25,000. Consumer Forum filing fees range from ₹100 to ₹5,000 based on claim value.
+
+**Q: Can I file a consumer complaint without a lawyer?**
+A: Yes. Under Section 35(1) of CPA 2019, consumers can self-represent at consumer forums. File via EDAAKHIL (edaakhil.nic.in). Sending a Lawly-generated legal notice first strengthens your case.
+
+**Q: What happens after sending a legal notice?**
+A: The company has 15-30 days to respond. ~60% of cases resolve after the notice. If unresolved, file a Consumer Forum complaint. The notice significantly strengthens your case.
+
+**Q: Which Consumer Forum handles my case?**
+A: District Commission: up to ₹1 crore. State Commission: ₹1-10 crore. National Commission: above ₹10 crore. Territorial jurisdiction: where the opposite party resides or has a branch, or where the cause of action arose.
+
+**Q: How do I send a legal notice for a failed UPI payment?**
+A: Under RBI's TAT circular, banks must auto-reverse failed UPI/IMPS transactions within T+5 business days and pay ₹100/day compensation for delays. Use Lawly to generate a legal notice citing Payment and Settlement Systems Act 2007 §18 and the RBI auto-reversal circular. Escalate via cms.rbi.org.in if unresolved.
+
+**Q: Can I file a complaint against dark patterns on apps in India?**
+A: Yes. The CCPA Guidelines for Prevention and Regulation of Dark Patterns (2023) identify 13 specific dark patterns — subscription traps, basket sneaking, forced actions, false urgency, confirm shaming — as unfair trade practices under CPA 2019 §2(47). Companies face penalties up to ₹50 lakh.
+
+**Q: How much RERA delay compensation can I claim?**
+A: Under RERA 2016 §18, if a builder delays possession, you can claim interest at SBI MCLR + 2% on every payment made, calculated from the promised possession date. You can either withdraw (full refund + interest) or continue (interest for the delay period).
+
+**Q: What compensation for a cancelled domestic flight?**
+A: Under DGCA CAR Section 3, Series M, Part IV: cancellation with less than 24h notice entitles you to up to ₹20,000 + alternate flight or full refund. Denied boarding pays 200-400% of basic fare. Delays over 6 hours require meals, hotel, and ₹20,000 compensation.
+
+**Q: My health insurance claim was rejected — what can I do?**
+A: Under IRDAI Regulation 17(7), insurers must provide specific written reasons for rejection within 30 days. After 2 years from policy start, they cannot repudiate your policy for non-disclosure (Insurance Act §45). Escalate: Grievance Cell → IGMS (igms.irda.gov.in) → Insurance Ombudsman → Consumer Forum.
+
+**Q: Can I get a refund from Byju's or other ed-tech companies?**
+A: Yes. Education is a "service" under CPA 2019. False placement guarantees are unfair trade practices under §2(47). UGC Refund Guidelines 2023 mandate proportionate refunds. CCPA has taken action against multiple ed-tech firms.
+
+**Q: How do I fix a wrong CIBIL credit score?**
+A: Under CICRA 2005 §15, dispute inaccurate credit data. The credit bureau must resolve within 30 days; the reporting bank must rectify within 21 days. Wrong reporting is "deficiency in service" under CPA 2019.
+
+**Q: What about expired food from quick commerce?**
+A: Selling expired food is a criminal offence under FSSA 2006 §59 — up to 6 months imprisonment + ₹5 lakh fine. Quick commerce platforms are Food Business Operators and must hold FSSAI licenses.
+
+**Q: What is the time limit to file a consumer complaint?**
+A: Under Section 69 of CPA 2019: 2 years from when the cause of action arose. Consumer Forum can condone delay with sufficient cause.
+
+**Q: Can I get compensation for mental harassment?**
+A: Yes. Indian consumer forums award ₹10,000–₹5 lakh for mental agony, harassment, and inconvenience, plus refund, litigation costs, and punitive damages.
+
+## Key Legal Domains Covered
+- Consumer Protection Act 2019 (CPA 2019) — Sections 2(6), 2(47), 18, 35(1), 69, Chapter VI
+- Sale of Goods Act 1930
+- Consumer Protection (E-Commerce) Rules 2020
+- Real Estate Regulation Act (RERA) 2016 — Section 18
+- Information Technology Act 2000
+- Indian Contract Act 1872
+- IRDAI Insurance Regulations — Regulation 17(7)
+- TRAI Telecom Regulations
+- Food Safety and Standards Act (FSSA) 2006 — Sections 26, 27, 59
+- Payment and Settlement Systems Act 2007 — Section 18
+- DGCA Civil Aviation Requirements — Section 3, Series M, Part IV
+- Credit Information Companies (Regulation) Act (CICRA) 2005 — Section 15
+- CCPA Dark Patterns Guidelines 2023
+- Negotiable Instruments Act 1881 — Section 138
+- BIS Standards and Product Liability provisions
+
+## Pricing
+- Self-Send Tier: ₹199 — AI-generated notice, user sends it themselves
+- Lawyer-Drafted Tier: ₹599 — Full attorney involvement with Lawly AI as drafting assistant
+
+## Authoritative Sources
+- Consumer Protection Act 2019: https://www.indiacode.nic.in/handle/123456789/15256
+- National Consumer Disputes Redressal Commission: https://ncdrc.nic.in/
+- EDAAKHIL Consumer Complaint Portal: https://edaakhil.nic.in/
+- E-Commerce Rules 2020: https://consumeraffairs.nic.in/acts-and-rules/e-commerce-rules
+- Central Consumer Protection Authority: https://ccpa.gov.in/
+- RERA Official Portal: https://rera.gov.in/
+- IRDAI: https://www.irdai.gov.in/
+- RBI Ombudsman: https://cms.rbi.org.in/
+- AirSewa (DGCA): https://airsewa.gov.in/
+
+## Contact
+- Website: https://lawly.store
+- Support: support@lawly.store
