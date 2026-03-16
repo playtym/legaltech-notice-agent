@@ -847,7 +847,7 @@ const App = (() => {
         csBox.className = `case-strength-box ${level}`;
         csBox.innerHTML = `
             <h3>${level === 'strong' ? '💪 Strong Case' : level === 'moderate' ? '⚖️ Moderate Case' : '⚠️ Weak Case'}</h3>
-            <p>${a.case_strength_reasoning || ''}</p>
+            <p>${esc(a.case_strength_reasoning || '')}</p>
         `;
 
         // Questions
@@ -1225,7 +1225,7 @@ const App = (() => {
         const emailMsg = document.createElement('div');
         emailMsg.className = 'alert alert-success';
         emailMsg.style.marginTop = '1rem';
-        emailMsg.innerHTML = `<strong>Delivery Initiated:</strong> A PDF copy has been emailed to <strong>${state.complainant.email}</strong>.`;
+        emailMsg.innerHTML = `<strong>Delivery Initiated:</strong> A PDF copy has been emailed to <strong>${esc(state.complainant.email)}</strong>.`;
         
         // Append it before the notice-text container
         const textContainer = document.getElementById('notice-text').parentElement;

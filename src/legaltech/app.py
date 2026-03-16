@@ -41,20 +41,40 @@ async def lifespan(application: FastAPI):
 app = FastAPI(title="Indian Legal Notice Agent", version="0.4.0", lifespan=lifespan)
 pipeline = LegalNoticePipeline()
 
+_cors_origins = [
+    "https://lawly.store",
+    "https://www.lawly.store",
+    "https://d3ipaitzvby9v2.cloudfront.net",
+    "https://d1exs4vnzimint.cloudfront.net",
+]
+if os.getenv("ENV", "production").lower() in ("dev", "development", "local"):
+    _cors_origins += ["http://127.0.0.1:8000", "http://localhost:8000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://lawly.store",
-        "https://www.lawly.store",
-        "https://d3ipaitzvby9v2.cloudfront.net",
-        "https://d1exs4vnzimint.cloudfront.net",
-        "http://127.0.0.1:8000",
-        "http://localhost:8000",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Serve static files
 if _STATIC_DIR.exists():
@@ -67,22 +87,40 @@ if _STATIC_DIR.exists():
 _admin_tokens: dict[str, float] = {}  # token → expiry timestamp
 _TOKEN_TTL = 24 * 60 * 60  # 24 hours
 
+# Rate limiting for login: track failed attempts per IP
+_login_attempts: dict[str, list[float]] = {}  # ip → list of timestamps
+_MAX_LOGIN_ATTEMPTS = 5
+_LOGIN_WINDOW = 300  # 5 minutes
+
 
 class AdminLoginRequest(BaseModel):
     password: str
 
 
 @app.post("/api/admin/login")
-async def admin_login(body: AdminLoginRequest):
+async def admin_login(body: AdminLoginRequest, request: StarletteRequest):
+    # Rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    attempts = _login_attempts.get(client_ip, [])
+    attempts = [t for t in attempts if now - t < _LOGIN_WINDOW]
+    if len(attempts) >= _MAX_LOGIN_ATTEMPTS:
+        raise HTTPException(status_code=429, detail="Too many login attempts. Try again later.")
+
     settings = get_settings()
     stored_pw = notice_store.get_stored_password()
     expected = stored_pw if stored_pw else settings.admin_password
+    if not expected:
+        raise HTTPException(status_code=403, detail="Admin login is not configured")
     if not hmac.compare_digest(body.password, expected):
+        attempts.append(now)
+        _login_attempts[client_ip] = attempts
         raise HTTPException(status_code=401, detail="Invalid password")
+    # Clear attempts on success
+    _login_attempts.pop(client_ip, None)
     token = secrets.token_urlsafe(32)
     _admin_tokens[token] = time.time() + _TOKEN_TTL
     # Cleanup expired tokens
-    now = time.time()
     expired = [t for t, exp in _admin_tokens.items() if exp < now]
     for t in expired:
         _admin_tokens.pop(t, None)
@@ -808,9 +846,13 @@ class RenderPDFRequest(BaseModel):
 
 
 
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
 @app.post("/notice/deliver")
-async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), to_name: str = Query(...)):
+async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), to_name: str = Query(..., max_length=200)):
     """Deliver already-generated notice via email."""
+    if not _EMAIL_RE.match(to_email):
+        raise HTTPException(status_code=400, detail="Invalid email address")
     if not payload.notice_text or not payload.notice_text.strip():
         raise HTTPException(status_code=400, detail="notice_text is required")
         
