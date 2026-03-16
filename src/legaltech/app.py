@@ -396,6 +396,14 @@ async def create_notice_typed(payload: NoticeRequest):
         )
         result["notice_id"] = notice_id
 
+        # ── Log activity ──────────────────────────────────────────
+        notice_store.log_activity(
+            "Notice generated",
+            details=f"{company_label} ({tier_val})",
+            entity_type="notice",
+            entity_id=notice_id,
+        )
+
         # ── Persist to database ──────────────────────────────────
         try:
             user_id = await db.upsert_user(
@@ -560,6 +568,15 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
             },
         )
         result = packet.model_dump()
+        tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
+        company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
+
+        # ── Log activity ──────────────────────────────────────────
+        notice_store.log_activity(
+            "Notice generated (voice)",
+            details=f"{company_label} ({tier_val})",
+            entity_type="notice",
+        )
 
         # ── Persist to database ──────────────────────────────────
         try:
@@ -569,8 +586,6 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
                 phone=getattr(payload.complainant, "phone", None),
                 address=getattr(payload.complainant, "address", None),
             )
-            tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
-            company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
             db_nid = await db.save_notice_full(
                 user_id=user_id,
                 company_name=company_label,
@@ -797,6 +812,14 @@ async def create_notice_typed_pdf(payload: NoticeRequest):
         company_label = packet.company.legal_name or packet.company.brand_name or "Company"
         filename = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
 
+        # ── Log activity ──────────────────────────────────────────
+        tier_val_pdf = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
+        notice_store.log_activity(
+            "Notice PDF generated",
+            details=f"{company_label} ({tier_val_pdf})",
+            entity_type="notice",
+        )
+
         # ── Persist to database ──────────────────────────────────────
         try:
             user_id = await db.upsert_user(
@@ -881,7 +904,13 @@ async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), 
             pdf_bytes=pdf_bytes,
             pdf_filename=filename
         )
-        
+
+        notice_store.log_activity(
+            "Notice delivered",
+            details=f"{payload.company_name} → {to_email}",
+            entity_type="notice",
+        )
+
         return {"success": True, "delivered_to": to_email, "email_status": result.success, "message": result.message}
     except Exception as exc:
         logger.exception("PDF generation and delivery failed")
