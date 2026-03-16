@@ -146,6 +146,46 @@ class LegalNoticePipeline:
             return []
         return required
 
+    _CLASSIFY_SYSTEM = (
+        "You are a legal case classifier for an Indian consumer legal-notice platform. "
+        "Classify the complaint into ONE of these categories:\n"
+        "1. **consumer** — A consumer/customer vs a company/business/service-provider dispute "
+        "(product defects, service failures, refunds, billing issues, delivery problems, e-commerce, "
+        "telecom, banking, insurance, etc.). This is the ONLY type we handle.\n"
+        "2. **criminal** — Involves criminal matters: physical assault, theft, robbery, murder, "
+        "kidnapping, domestic violence, dowry harassment, sexual harassment, cybercrime/hacking, "
+        "drug offences, forgery, criminal intimidation, FIR, police complaint, cheating (person-to-person), "
+        "fraud by an individual (not a company), extortion, blackmail, stalking, etc.\n"
+        "3. **individual_dispute** — A dispute between two private individuals (not involving a "
+        "company/business): property disputes between neighbours, family disputes, personal loan "
+        "between friends, landlord-tenant (individual landlord), boundary disputes, personal "
+        "defamation, etc.\n\n"
+        "IMPORTANT GUIDANCE:\n"
+        "- If a COMPANY committed fraud, cheating, or deceptive trade practices against a consumer, "
+        "that is still 'consumer' — not 'criminal'.\n"
+        "- If the user mentions filing an FIR/police complaint alongside a consumer issue, still "
+        "classify as 'consumer' if the primary dispute is against a company.\n"
+        "- Only classify as 'criminal' if the core matter is a criminal offence between persons.\n"
+        "- Only classify as 'individual_dispute' if both parties are private individuals.\n\n"
+        "Respond in JSON:\n"
+        '{"case_type": "consumer"|"criminal"|"individual_dispute", '
+        '"reason": "one-line explanation"}'
+    )
+
+    async def _classify_case(self, issue_summary: str, company_name: str | None) -> tuple[str, str]:
+        """Return (case_type, reason). Uses the fast model for speed."""
+        user_msg = f"Complaint summary:\n{issue_summary}\n\nCompany/opposing party: {company_name or 'Not specified'}"
+        try:
+            data = await self.llm_fast.complete_json(self._CLASSIFY_SYSTEM, user_msg)
+            case_type = data.get("case_type", "consumer")
+            reason = data.get("reason", "")
+            if case_type not in ("consumer", "criminal", "individual_dispute"):
+                case_type = "consumer"
+            return case_type, reason
+        except Exception as exc:
+            logger.warning("Case classification failed (defaulting to consumer): %s", exc)
+            return "consumer", ""
+
     async def analyze(
         self,
         complaint: ComplaintInput,
@@ -159,6 +199,28 @@ class LegalNoticePipeline:
         previous_answers until ready_to_generate is True (or user wants to proceed anyway).
         """
         complaint_ctx = self._prepare_complaint_context(complaint, previous_answers)
+
+        # ── Classify the case type (fast model) ─────────────────────
+        case_type, case_type_reason = await self._classify_case(
+            complaint_ctx.issue_summary, complaint_ctx.company_name_hint,
+        )
+
+        if case_type in ("criminal", "individual_dispute"):
+            label = "criminal matter" if case_type == "criminal" else "individual-vs-individual dispute"
+            return CaseAnalysisResponse(
+                case_strength="n/a",
+                case_strength_reasoning=(
+                    f"This appears to be a {label}. Lawly specialises in consumer legal notices "
+                    "against companies and businesses under the Consumer Protection Act, 2019. "
+                    "For this type of matter, we strongly recommend consulting a qualified lawyer."
+                ),
+                ready_to_generate=False,
+                blocked=True,
+                case_type=case_type,
+                case_type_reason=case_type_reason,
+                questions=[],
+                llm_cost_estimate=self.llm.pricing_info,
+            )
 
         # Run intake + company in parallel (they are independent)
         intake, company = await asyncio.gather(
@@ -247,6 +309,9 @@ class LegalNoticePipeline:
             ready_to_generate=gap_result.ready_to_generate,
             questions=questions,
             llm_cost_estimate=self.llm.pricing_info,
+            case_type="consumer",
+            case_type_reason=case_type_reason,
+            blocked=False,
             company_name_found=company.legal_name or company.brand_name,
             company_domain=company.domain,
             contacts_found=contacts_found,

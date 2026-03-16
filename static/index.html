@@ -305,16 +305,48 @@
                 </div>
             </div>
 
-            <!-- ── Know Your Rights ── -->
-            <div style="background:linear-gradient(135deg,#eef2ff,#f0fdf4);border:1px solid #c7d2fe;border-radius:12px;padding:20px 24px;margin-bottom:32px;">
-                <h3 style="font-size:16px;font-weight:700;margin:0 0 10px;color:#1e1b4b;">⚖️ Your Legal Right to Self-Represent</h3>
-                <ul style="margin:0;padding-left:20px;font-size:13.5px;line-height:1.8;color:#374151;">
-                    <li><strong>Any individual can send a legal notice</strong> on their own behalf &mdash; no lawyer required.</li>
-                    <li>For most <strong>consumer &amp; civil disputes</strong>, a well-drafted notice citing relevant statutes is a strong enough deterrent for the other party to respond.</li>
-                    <li>You can <strong>argue your own case</strong> in District Consumer Forums, State Commissions, and lower civil courts.</li>
-                    <li>Lawly <strong>compiles relevant clauses</strong> from 25+ Indian statutes (CPA 2019, RERA, DGCA, RBI, IRDAI, FSSA, IT Act, and more) into a professional, court-ready format.</li>
-                    <li>This is <strong>not legal advice</strong>. For complex or criminal matters, please consult a qualified lawyer.</li>
-                </ul>
+            <!-- ── Know Your Rights — Infographic ── -->
+            <div class="rights-infographic">
+                <div class="ri-header">
+                    <div class="ri-icon-wrap"><span class="ri-icon">⚖️</span></div>
+                    <h3 class="ri-title">Your Legal Right to Self-Represent</h3>
+                    <p class="ri-subtitle">Section 35(1), Consumer Protection Act 2019</p>
+                </div>
+
+                <div class="ri-grid">
+                    <div class="ri-card">
+                        <span class="ri-card-icon">📝</span>
+                        <strong>No Lawyer Needed</strong>
+                        <p>Any individual citizen can draft &amp; send a legal notice on their own behalf under Indian law.</p>
+                    </div>
+                    <div class="ri-card">
+                        <span class="ri-card-icon">🏛️</span>
+                        <strong>Self-Represent in Court</strong>
+                        <p>Argue your own case at District Consumer Forums, State Commissions &amp; lower civil courts.</p>
+                    </div>
+                    <div class="ri-card">
+                        <span class="ri-card-icon">📊</span>
+                        <strong>~60% Cases Settle</strong>
+                        <p>A well-drafted notice citing relevant statutes is a strong enough deterrent — most companies respond.</p>
+                    </div>
+                    <div class="ri-card">
+                        <span class="ri-card-icon">📚</span>
+                        <strong>25+ Statutes Auto-Cited</strong>
+                        <p>CPA 2019, RERA, DGCA, RBI, IRDAI, FSSA, IT Act, Contract Act &amp; more — compiled by Lawly's AI.</p>
+                    </div>
+                </div>
+
+                <div class="ri-flow">
+                    <div class="ri-step"><span class="ri-step-num">1</span><span>Describe complaint</span></div>
+                    <div class="ri-arrow">→</div>
+                    <div class="ri-step"><span class="ri-step-num">2</span><span>AI maps to law</span></div>
+                    <div class="ri-arrow">→</div>
+                    <div class="ri-step"><span class="ri-step-num">3</span><span>Download PDF</span></div>
+                    <div class="ri-arrow">→</div>
+                    <div class="ri-step"><span class="ri-step-num">4</span><span>Send via email</span></div>
+                </div>
+
+                <p class="ri-disclaimer">This is not legal advice. For complex or criminal matters, please consult a qualified lawyer.</p>
             </div>
 
             <!-- ── FAQ section (AEO-optimized, visible) ── -->
@@ -539,6 +571,25 @@
             <h2 class="step-title">Case analysis</h2>
         </div>
 
+        <!-- Lawyer recommendation for blocked cases -->
+        <div id="lawyer-recommendation" class="hidden" style="background:linear-gradient(135deg,#fff3e0,#ffe0b2);border:2px solid #f57c00;border-radius:12px;padding:28px 24px;text-align:center;margin-bottom:24px">
+            <div style="font-size:2.5rem;margin-bottom:12px">⚖️</div>
+            <h3 style="color:#e65100;margin:0 0 12px;font-size:1.35rem" id="blocked-title">Lawyer Recommended</h3>
+            <p style="color:#4e342e;line-height:1.6;margin:0 0 18px;max-width:600px;display:inline-block" id="blocked-reason"></p>
+            <div style="background:#fff8e1;border-radius:8px;padding:16px;text-align:left;max-width:520px;margin:0 auto 18px">
+                <p style="margin:0 0 8px;font-weight:600;color:#e65100">What you can do:</p>
+                <ul style="margin:0;padding-left:20px;color:#4e342e;line-height:1.8">
+                    <li>Consult an advocate through your local Bar Association</li>
+                    <li>Visit your nearest District Legal Services Authority for free legal aid</li>
+                    <li>Call the National Legal Helpline: <strong>15100</strong> (Tele-Law)</li>
+                    <li>File an FIR at your local police station (for criminal matters)</li>
+                </ul>
+            </div>
+            <a href="https://nalsa.gov.in/lsams/" target="_blank" rel="noopener" class="btn btn-primary" style="background:#f57c00;border-color:#f57c00;margin-right:8px">Find Free Legal Aid</a>
+            <button type="button" class="btn btn-ghost" onclick="App.goTo(3)">&larr; Edit complaint</button>
+        </div>
+
+        <div id="analysis-normal-content">
         <div class="found-grid" id="found-data"></div>
 
         <div class="case-strength-box" id="case-strength-box"></div>
@@ -599,10 +650,13 @@
             </div>
         </div>
 
-        <div class="card-actions">
+        </div>
+
+        <div class="card-actions" id="analysis-actions">
             <button type="button" class="btn btn-ghost" onclick="App.goTo(3)">&larr; Edit complaint</button>
             <button type="button" class="btn btn-primary btn-lg" onclick="App.goTo(6)">Choose plan &rarr;</button>
         </div>
+        </div><!-- /analysis-normal-content -->
     </div>
 </section>
 

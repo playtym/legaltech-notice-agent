@@ -309,6 +309,21 @@ async def create_notice_typed(payload: NoticeRequest):
             desired_resolution=payload.desired_resolution,
             jurisdiction=payload.jurisdiction,
         )
+
+        # ── Block criminal / individual-vs-individual cases ──────
+        case_type, _ = await pipeline._classify_case(
+            payload.issue_summary, payload.company_name_hint,
+        )
+        if case_type in ("criminal", "individual_dispute"):
+            label = "criminal matter" if case_type == "criminal" else "individual-vs-individual dispute"
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"This appears to be a {label}. Lawly only generates consumer legal notices "
+                    "against companies. Please consult a qualified lawyer for this type of matter."
+                ),
+            )
+
         # Analyze uploaded documents if any
         doc_analysis = None
         if payload.upload_ids:

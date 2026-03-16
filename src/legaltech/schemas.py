@@ -180,6 +180,10 @@ class CaseAnalysisResponse(BaseModel):
     ready_to_generate: bool
     questions: list[FollowUpQuestionOut] = Field(default_factory=list)
     llm_cost_estimate: dict | None = None
+    # Case classification — blocks criminal & individual-vs-individual cases
+    case_type: str = "consumer"  # "consumer", "criminal", "individual_dispute"
+    case_type_reason: str = ""
+    blocked: bool = False
     # Fetched data surfaced to the user
     company_name_found: str | None = None
     company_domain: str | None = None

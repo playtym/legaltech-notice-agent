@@ -806,6 +806,21 @@ const App = (() => {
     // ── Render analysis results (step 5) ────────────────────────────
     function renderAnalysis() {
         const a = state.analysisResult;
+
+        // ── Blocked case (criminal / individual dispute) ────────
+        const lawyerBox = document.getElementById('lawyer-recommendation');
+        const normalContent = document.getElementById('analysis-normal-content');
+        if (a.blocked) {
+            const typeLabel = a.case_type === 'criminal' ? 'Criminal Matter Detected' : 'Individual Dispute Detected';
+            document.getElementById('blocked-title').textContent = typeLabel;
+            document.getElementById('blocked-reason').textContent = a.case_strength_reasoning || '';
+            lawyerBox.classList.remove('hidden');
+            normalContent.classList.add('hidden');
+            return;
+        }
+        lawyerBox.classList.add('hidden');
+        normalContent.classList.remove('hidden');
+
         const grid = document.getElementById('found-data');
 
         const cards = [];
