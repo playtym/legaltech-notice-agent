@@ -791,6 +791,44 @@ class RenderPDFRequest(BaseModel):
     is_lawyer_tier: bool = False
 
 
+
+@app.post("/notice/deliver")
+async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), to_name: str = Query(...)):
+    """Deliver already-generated notice via email."""
+    if not payload.notice_text or not payload.notice_text.strip():
+        raise HTTPException(status_code=400, detail="notice_text is required")
+        
+    try:
+        from .services.pdf_generator import generate_pdf
+        from .services.email_service import send_notice_email, build_self_send_body, build_lawyer_send_body
+        
+        pdf_bytes = generate_pdf(
+            payload.notice_text,
+            is_lawyer_tier=payload.is_lawyer_tier,
+        )
+        filename = f"Legal_Notice_{payload.company_name.replace(' ', '_')}.pdf"
+        
+        if payload.is_lawyer_tier:
+            body = build_lawyer_send_body(to_name, payload.company_name, "")
+            subject = f"Legal Notice on behalf of {to_name} v. {payload.company_name}"
+        else:
+            body = build_self_send_body(to_name, payload.company_name)
+            subject = f"Your Legal Notice against {payload.company_name}"
+            
+        result = send_notice_email(
+            to_email=to_email,
+            to_name=to_name,
+            subject=subject,
+            body_text=body,
+            pdf_bytes=pdf_bytes,
+            pdf_filename=filename
+        )
+        
+        return {"success": True, "delivered_to": to_email, "email_status": result.success, "message": result.message}
+    except Exception as exc:
+        logger.exception("PDF generation and delivery failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred during delivery.") from exc
+
 @app.post("/notice/render-pdf")
 async def render_pdf(payload: RenderPDFRequest):
     """Convert already-generated notice text into a PDF (no pipeline re-run)."""
@@ -2116,6 +2154,235 @@ async def revert_version(body: RevertRequest, _=Depends(require_admin)):
     result = notice_store.revert_file_version(body.key, body.version_id, b)
     notice_store.log_activity("Reverted file", f"{body.key} → version {body.version_id[:8]}…", "version")
     return result
+
+
+# ── AI Tools for Admin ───────────────────────────────────────────────
+
+class AIGenerateRequest(BaseModel):
+    tool: str          # e.g. "blog_post", "seo_meta", "email_template", "ticket_reply", etc.
+    context: dict = {} # tool-specific input data
+
+
+@app.post("/api/admin/ai/generate")
+async def ai_generate(body: AIGenerateRequest, _=Depends(require_admin)):
+    """AI-powered content generation for admin tools."""
+    llm = pipeline.llm_fast  # Use Haiku for speed + lower cost
+
+    tool = body.tool
+    ctx = body.context
+
+    try:
+        if tool == "blog_post":
+            topic = ctx.get("topic", "").strip()
+            keywords = ctx.get("keywords", "").strip()
+            tone = ctx.get("tone", "professional, informative")
+            if not topic:
+                raise HTTPException(status_code=400, detail="topic is required")
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are an expert legal content writer for an Indian consumer protection platform called Lawly (lawly.store). "
+                    "Write blog posts that are SEO-optimized, informative, and helpful for Indian consumers. "
+                    "Return JSON with keys: title, slug, meta_description (max 155 chars), meta_keywords (comma-separated), "
+                    "content (full HTML blog post body with <h2>, <h3>, <p>, <ul>, <strong> tags — no <html>/<body>/<head> wrappers). "
+                    "Content should be 800-1200 words, well-structured with subheadings, practical advice, and references to Indian law."
+                ),
+                user_prompt=f"Topic: {topic}\nTarget keywords: {keywords}\nTone: {tone}",
+                max_tokens=4096,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "blog_improve":
+            content = ctx.get("content", "").strip()
+            title = ctx.get("title", "").strip()
+            instruction = ctx.get("instruction", "Improve readability, SEO, and add more detail")
+            if not content:
+                raise HTTPException(status_code=400, detail="content is required")
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are an expert editor for a legal consumer protection blog. "
+                    "Improve the given blog post content based on the instruction. "
+                    "Return JSON with keys: content (improved HTML), meta_description (max 155 chars), "
+                    "meta_keywords (comma-separated), suggestions (array of strings — brief improvement notes)."
+                ),
+                user_prompt=f"Title: {title}\nInstruction: {instruction}\nCurrent content:\n{content[:6000]}",
+                max_tokens=4096,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "seo_meta":
+            page_title = ctx.get("title", "").strip()
+            page_content = ctx.get("content", "").strip()
+            page_url = ctx.get("url", "").strip()
+            if not page_title and not page_content:
+                raise HTTPException(status_code=400, detail="title or content is required")
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are an SEO specialist for Lawly, an Indian consumer legal notice platform. "
+                    "Generate optimized meta tags for the given page. "
+                    "Return JSON with keys: site_title (50-60 chars), meta_description (120-155 chars), "
+                    "meta_keywords (comma-separated, 5-8 keywords), og_title (under 60 chars), og_description (under 155 chars). "
+                    "Focus on Indian consumer protection search intent."
+                ),
+                user_prompt=f"Page title: {page_title}\nURL: {page_url}\nContent excerpt: {page_content[:2000]}",
+                max_tokens=1024,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "seo_faq":
+            topic = ctx.get("topic", "Indian consumer legal notice").strip()
+            existing_faqs = ctx.get("existing_faqs", [])
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are an SEO expert. Generate FAQ schema items for an Indian consumer protection legal notice platform. "
+                    "Return JSON with key: faqs (array of objects with 'question' and 'answer' keys). "
+                    "Generate 5 high-value FAQ items that target common search queries. "
+                    "Answers should be concise (2-3 sentences), authoritative, and cite Indian laws where relevant."
+                ),
+                user_prompt=f"Topic: {topic}\nExisting FAQs to avoid duplicating: {existing_faqs[:5]}",
+                max_tokens=2048,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "aeo_snippets":
+            topic = ctx.get("topic", "").strip()
+            existing = ctx.get("existing_snippets", [])
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are an AI Engine Optimization (AEO) expert for Lawly, an Indian consumer protection platform. "
+                    "Generate AI-ready answer snippets that AI assistants (ChatGPT, Google SGE, Perplexity) would surface. "
+                    "Return JSON with key: snippets (array of objects with 'query' (the question users ask), "
+                    "'answer' (concise 2-4 sentence authoritative answer), 'category' (topic area)). "
+                    "Generate 4 snippets targeting high-intent consumer protection queries."
+                ),
+                user_prompt=f"Focus area: {topic or 'Indian consumer rights and legal notices'}\nExisting snippets to avoid: {[s.get('query','') for s in existing[:5]]}",
+                max_tokens=2048,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "aeo_llms_txt":
+            seo = notice_store.get_seo_settings()
+            aeo = notice_store.get_aeo_settings()
+            posts = notice_store.get_published_blog_posts()
+            result = await llm.complete_text(
+                system_prompt=(
+                    "Generate a comprehensive llms.txt file for an AI-powered Indian consumer legal notice platform called Lawly (lawly.store). "
+                    "This file helps AI crawlers understand the site. Follow the llms.txt standard format:\n"
+                    "- Start with # Site Name\n- > One-line description\n- ## Sections with content\n"
+                    "Include: About, Key Features, Services, Pricing, Legal Framework, How It Works, FAQ, Contact Info."
+                ),
+                user_prompt=f"Site title: {seo.get('site_title','')}\nDescription: {seo.get('meta_description','')}\n"
+                           f"Blog posts: {[p.get('title','') for p in posts[:10]]}\n"
+                           f"Existing org info: {aeo.get('org_schema',{})}",
+                max_tokens=2048,
+            )
+            return {"ok": True, "result": {"llms_txt": result.strip()}}
+
+        elif tool == "aeo_topic_clusters":
+            existing = ctx.get("existing_clusters", [])
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are a content strategist for Lawly, an Indian consumer protection platform. "
+                    "Generate topic authority clusters that demonstrate expertise. "
+                    "Return JSON with key: clusters (array of objects with 'name' (cluster topic), "
+                    "'pillar' (main pillar content idea), 'subtopics' (array of 4-6 related subtopic strings)). "
+                    "Generate 3 clusters focused on Indian consumer law."
+                ),
+                user_prompt=f"Existing clusters: {[c.get('name','') for c in existing[:5]]}",
+                max_tokens=2048,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "email_template":
+            template_type = ctx.get("type", "notice_ready").strip()
+            custom_instruction = ctx.get("instruction", "").strip()
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are an email copywriting expert for Lawly, an Indian consumer legal notice platform. "
+                    "Generate a professional transactional email template. "
+                    "Use these placeholders: {{name}}, {{company}}, {{notice_id}}, {{amount}}, {{tier}}, {{days}}, {{time}}, {{email}}, {{notice_link}}. "
+                    "Return JSON with keys: subject (email subject line), body (plain text email body). "
+                    "Keep it professional, empathetic, and action-oriented."
+                ),
+                user_prompt=f"Template type: {template_type}\nAdditional instructions: {custom_instruction}",
+                max_tokens=1024,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "ticket_reply":
+            ticket = ctx.get("ticket", {})
+            instruction = ctx.get("instruction", "Draft a helpful, empathetic reply")
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are a customer support specialist for Lawly, an Indian consumer legal notice platform. "
+                    "Draft a professional, empathetic support reply. "
+                    "Return JSON with keys: reply (the reply text), suggested_status (one of: open, in_progress, resolved, closed). "
+                    "Be helpful, reference Indian consumer protection rights where relevant, and suggest next steps."
+                ),
+                user_prompt=f"Ticket subject: {ticket.get('subject','')}\n"
+                           f"Customer message: {ticket.get('message','')}\n"
+                           f"Category: {ticket.get('category','')}\n"
+                           f"Current status: {ticket.get('status','open')}\n"
+                           f"Previous replies: {ticket.get('replies', [])[-3:]}\n"
+                           f"Instruction: {instruction}",
+                max_tokens=1024,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "notice_review":
+            notice_text = ctx.get("notice_text", "").strip()
+            if not notice_text:
+                raise HTTPException(status_code=400, detail="notice_text is required")
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are a senior Indian consumer law expert reviewing a legal notice. "
+                    "Analyze the notice for legal accuracy, completeness, and effectiveness. "
+                    "Return JSON with keys: score (0-100), grade (A/B/C/D/F), "
+                    "strengths (array of strings), weaknesses (array of strings), "
+                    "suggestions (array of strings), reviewer_notes (summary paragraph for admin)."
+                ),
+                user_prompt=f"Legal notice to review:\n{notice_text[:8000]}",
+                max_tokens=2048,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "page_meta":
+            path = ctx.get("path", "").strip()
+            title = ctx.get("title", "").strip()
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are an SEO specialist for Lawly, an Indian consumer legal notice platform. "
+                    "Generate optimized page metadata. "
+                    "Return JSON with keys: title, meta_description (120-155 chars), meta_keywords (comma-separated), "
+                    "og_title, og_description."
+                ),
+                user_prompt=f"Page path: {path}\nPage title hint: {title}\nSite: Lawly — AI-powered consumer legal notices for India",
+                max_tokens=512,
+            )
+            return {"ok": True, "result": result}
+
+        elif tool == "keyword_ideas":
+            seed = ctx.get("seed_keyword", "consumer legal notice India").strip()
+            result = await llm.complete_json(
+                system_prompt=(
+                    "You are an SEO keyword researcher for Indian consumer protection topics. "
+                    "Generate keyword ideas with search intent classification. "
+                    "Return JSON with key: keywords (array of objects with 'keyword', 'intent' (informational/transactional/navigational), "
+                    "'difficulty' (low/medium/high), 'suggestion' (how to target it))). "
+                    "Generate 10 keywords."
+                ),
+                user_prompt=f"Seed keyword: {seed}",
+                max_tokens=2048,
+            )
+            return {"ok": True, "result": result}
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown AI tool: {tool}")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("AI generation failed for tool=%s", tool)
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {e}")
 
 
 # ── 301 Redirect handler (catch-all, must be last) ──────────────────

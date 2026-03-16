@@ -355,16 +355,21 @@
         </div>
         <form id="form-company" onsubmit="return false;">
             <div class="form-group">
-                <label for="company-name">Company Name <span class="req">*</span></label>
-                <input type="text" id="company-name" placeholder="e.g. Flipkart, Amazon, Ola Electric" required maxlength="200">
-            <div class="quick-chips" style="margin-top: 12px; margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
-                <span class="chip" onclick="App.setCompany('Amazon', 'https://amazon.in')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Amazon</span>
-                <span class="chip" onclick="App.setCompany('Flipkart', 'https://flipkart.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Flipkart</span>
-                <span class="chip" onclick="App.setCompany('Swiggy', 'https://swiggy.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Swiggy</span>
-                <span class="chip" onclick="App.setCompany('Zomato', 'https://zomato.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Zomato</span>
-                <span class="chip" onclick="App.setCompany('Ola Electric', 'https://olaelectric.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">Ola Electric</span>
-                <span class="chip" onclick="App.setCompany('boAt', 'https://boat-lifestyle.com')" style="cursor:pointer; background:#f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">boAt (D2C)</span>
+                <label>Select Company Category</label>
+                <div class="quick-chips" style="margin-top: 8px; margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;" id="category-selection-chips">
+                    <span class="chip cat-chip" onclick="App.setCategory('ecommerce', this)" style="cursor:pointer; background:#f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">🛒 E-Commerce / Marketplaces</span>
+                    <span class="chip cat-chip" onclick="App.setCategory('d2c', this)" style="cursor:pointer; background:#f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">🛍️ D2C Brands</span>
+                    <span class="chip cat-chip" onclick="App.setCategory('quick_commerce', this)" style="cursor:pointer; background:#f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">🛵 Quick Commerce & Food</span>
+                    <span class="chip cat-chip" onclick="App.setCategory('fintech', this)" style="cursor:pointer; background:#f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">🏦 Banks & Fintech</span>
+                    <span class="chip cat-chip" onclick="App.setCategory('travel', this)" style="cursor:pointer; background:#f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">✈️ Airlines & Travel</span>
+                    <span class="chip cat-chip" onclick="App.setCategory('edtech', this)" style="cursor:pointer; background:#f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">🎓 Ed-Tech</span>
+                    <span class="chip cat-chip" onclick="App.setCategory('mobility', this)" style="cursor:pointer; background:#f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">🚕 EV & Mobility</span>
+                    <span class="chip cat-chip" onclick="App.setCategory('other', this)" style="cursor:pointer; background:#f3f4f6; padding: 6px 12px; border-radius: 16px; font-size: 0.85rem; border: 1px solid #e5e7eb; transition: 0.2s;">⚙️ Other</span>
+                </div>
             </div>
+            <div class="form-group" style="margin-top: 24px;">
+                <label for="company-name">Company Name <span class="req">*</span></label>
+                <input type="text" id="company-name" placeholder="e.g. Amazon, boAt, Swiggy, HDFC" required maxlength="200">
             </div>
             <div class="form-group">
                 <label for="company-website">Website <span class="opt">(optional)</span></label>

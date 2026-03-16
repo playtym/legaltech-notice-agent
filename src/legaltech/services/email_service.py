@@ -1,32 +1,22 @@
-"""Email delivery service for legal notices.
+"""Email delivery service for legal notices via AWS SES.
 
 Sends the PDF notice via email to either:
 - The complainant (self-send tier, ₹199) — user gets PDF to forward/print/send
 - The company + complainant copy (lawyer tier, ₹599) — sent from advocate's
   verified email address with read-receipt request
 
-In production, wire this to a transactional email provider (AWS SES,
-SendGrid, Postmark) for deliverability and tracking.
+In production, wired to AWS SES for deliverability.
 """
 
 from __future__ import annotations
 
 import os
-import smtplib
 from dataclasses import dataclass
 from email.message import EmailMessage
 from email.utils import formataddr
 
-
-@dataclass
-class EmailConfig:
-    smtp_host: str
-    smtp_port: int
-    smtp_user: str
-    smtp_password: str
-    from_name: str
-    from_email: str
-    use_tls: bool = True
+import boto3
+from botocore.exceptions import ClientError
 
 
 @dataclass
@@ -35,18 +25,6 @@ class DeliveryResult:
     message: str
     recipients: list[str]
     message_id: str | None = None
-
-
-def _load_config() -> EmailConfig:
-    return EmailConfig(
-        smtp_host=os.getenv("SMTP_HOST", "smtp.gmail.com"),
-        smtp_port=int(os.getenv("SMTP_PORT", "587")),
-        smtp_user=os.getenv("SMTP_USER", ""),
-        smtp_password=os.getenv("SMTP_PASSWORD", ""),
-        from_name=os.getenv("NOTICE_FROM_NAME", "LegalNotice AI"),
-        from_email=os.getenv("NOTICE_FROM_EMAIL", ""),
-        use_tls=os.getenv("SMTP_USE_TLS", "true").lower() == "true",
-    )
 
 
 def send_notice_email(
@@ -60,32 +38,20 @@ def send_notice_email(
     pdf_filename: str = "Legal_Notice.pdf",
     request_read_receipt: bool = False,
 ) -> DeliveryResult:
-    """Send a legal notice PDF as an email attachment.
+    """Send a legal notice PDF as an email attachment via AWS SES."""
+    from_email = os.getenv("NOTICE_FROM_EMAIL", "support@lawly.store")
+    from_name = os.getenv("NOTICE_FROM_NAME", "Lawly")
+    aws_region = os.getenv("AWS_REGION", "ap-south-1")
 
-    Args:
-        to_email: Primary recipient email.
-        to_name: Primary recipient display name.
-        cc_emails: Optional CC recipients.
-        subject: Email subject line.
-        body_text: Plain text email body.
-        pdf_bytes: The PDF file content.
-        pdf_filename: Attachment filename.
-        request_read_receipt: If True, adds Disposition-Notification-To header.
-
-    Returns:
-        DeliveryResult with success status.
-    """
-    config = _load_config()
-
-    if not config.smtp_user or not config.from_email:
+    if not from_email:
         return DeliveryResult(
             success=False,
-            message="Email not configured. Set SMTP_USER, SMTP_PASSWORD, and NOTICE_FROM_EMAIL in .env",
+            message="Email not configured. Set NOTICE_FROM_EMAIL in .env",
             recipients=[to_email],
         )
 
     msg = EmailMessage()
-    msg["From"] = formataddr((config.from_name, config.from_email))
+    msg["From"] = formataddr((from_name, from_email))
     msg["To"] = formataddr((to_name, to_email))
     msg["Subject"] = subject
 
@@ -93,8 +59,8 @@ def send_notice_email(
         msg["Cc"] = ", ".join(cc_emails)
 
     if request_read_receipt:
-        msg["Disposition-Notification-To"] = config.from_email
-        msg["X-Confirm-Reading-To"] = config.from_email
+        msg["Disposition-Notification-To"] = from_email
+        msg["X-Confirm-Reading-To"] = from_email
 
     msg.set_content(body_text)
     if pdf_bytes and pdf_filename:
@@ -108,30 +74,31 @@ def send_notice_email(
     all_recipients = [to_email] + (cc_emails or [])
 
     try:
-        if config.use_tls:
-            with smtplib.SMTP(config.smtp_host, config.smtp_port) as server:
-                server.ehlo()
-                server.starttls()
-                server.ehlo()
-                server.login(config.smtp_user, config.smtp_password)
-                server.send_message(msg)
-                message_id = msg.get("Message-ID", "")
-        else:
-            with smtplib.SMTP(config.smtp_host, config.smtp_port) as server:
-                server.login(config.smtp_user, config.smtp_password)
-                server.send_message(msg)
-                message_id = msg.get("Message-ID", "")
-
+        ses_client = boto3.client("ses", region_name=aws_region)
+        response = ses_client.send_raw_email(
+            Source=from_email,
+            Destinations=all_recipients,
+            RawMessage={"Data": msg.as_bytes()},
+        )
         return DeliveryResult(
             success=True,
             message=f"Notice delivered to {', '.join(all_recipients)}",
             recipients=all_recipients,
-            message_id=message_id,
+            message_id=response.get("MessageId"),
         )
-    except smtplib.SMTPException as e:
+    except ClientError as e:
+        error_msg = e.response["Error"]["Message"]
+        print(f"AWS SES Delivery failed: {error_msg}")
         return DeliveryResult(
             success=False,
-            message=f"SMTP error: {e}",
+            message=f"AWS SES error: {error_msg}",
+            recipients=all_recipients,
+        )
+    except Exception as e:
+        print(f"Failed to send email: {str(e)}")
+        return DeliveryResult(
+            success=False,
+            message=f"Delivery failed: {str(e)}",
             recipients=all_recipients,
         )
 
@@ -150,19 +117,13 @@ def build_self_send_body(complainant_name: str, company_name: str) -> str:
         f"4. Save all sent-email confirmations and read receipts for your records\n"
         f"5. If no response within the cure period stated in the notice, you may file a\n"
         f"   consumer complaint via e-daakhil.nic.in\n\n"
-        f"This notice was generated by an AI system and has NOT been reviewed by a lawyer.\n"
-        f"For legal review, consider upgrading to the Lawyer-Assisted tier (₹599).\n\n"
+        f"This notice was generated by an AI system. For legal review, consider "
+        f"upgrading to the Lawyer-Assisted tier.\n\n"
         f"Regards,\n"
-        f"LegalNotice AI"
+        f"Lawly"
     )
 
-
-def build_lawyer_send_body(
-    complainant_name: str,
-    company_name: str,
-    company_email: str,
-) -> str:
-    """Build email body for lawyer-assisted (₹599) tier — sent to company."""
+def build_lawyer_send_body(complainant_name: str, company_name: str, company_email: str) -> str:
     return (
         f"Dear Sir/Madam,\n\n"
         f"Under instructions from my client, {complainant_name}, I am serving upon you "

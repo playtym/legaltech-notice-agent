@@ -56,6 +56,15 @@
         .btn-block { width: 100%; justify-content: center; }
         .btn-green { background: var(--green); color: var(--white); }
         .btn-green:hover { background: #047857; }
+        .btn-ai { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; border: none; cursor: pointer; font-size: .78rem; padding: 4px 10px; border-radius: 6px; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; transition: opacity .2s; }
+        .btn-ai:hover { opacity: .85; }
+        .btn-ai:disabled { opacity: .5; cursor: wait; }
+        .btn-ai .ai-spin { display: none; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: aispin .6s linear infinite; }
+        .btn-ai.loading .ai-spin { display: inline-block; }
+        .btn-ai.loading .ai-label { display: none; }
+        @keyframes aispin { to { transform: rotate(360deg); } }
+        .ai-toolbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .ai-toolbar .btn-ai { font-size: .76rem; }
 
         /* ── Header ────────────────────────────────── */
         .admin-header {
@@ -517,7 +526,10 @@
 <div class="tab-panel" id="tab-blog">
     <div class="toolbar-row">
         <h2 style="font-size:1.15rem;">📝 Blog Posts</h2>
-        <button class="btn btn-primary btn-sm" onclick="Admin.openBlogEditor()">+ New Post</button>
+        <div style="display:flex;gap:8px;">
+            <button class="btn-ai" onclick="Admin.aiBlogFromTopic()"><span class="ai-spin"></span><span class="ai-label">✨ AI Generate Post</span></button>
+            <button class="btn btn-primary btn-sm" onclick="Admin.openBlogEditor()">+ New Post</button>
+        </div>
     </div>
     <div id="blog-list"><div class="empty-state">Loading...</div></div>
 </div>
@@ -557,7 +569,7 @@
 
     <!-- ── Core Meta Settings ── -->
     <div class="seo-section">
-        <h3>🏷️ Core Meta Tags</h3>
+        <h3>🏷️ Core Meta Tags <button class="btn-ai" onclick="Admin.aiSeoMeta(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Generate All</span></button></h3>
         <form id="seo-form" onsubmit="return false;">
             <div class="form-group">
                 <label>Site Title <small>(recommended: 50-60 chars)</small></label>
@@ -632,7 +644,7 @@
 
     <!-- ── FAQ Schema ── -->
     <div class="seo-section">
-        <h3>❓ FAQ Schema (FAQPage JSON-LD)</h3>
+        <h3>❓ FAQ Schema (FAQPage JSON-LD) <button class="btn-ai" onclick="Admin.aiSeoFaq(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Generate FAQs</span></button></h3>
         <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
             Add FAQ pairs to generate rich snippet FAQ results in Google. Great for ranking on question keywords.
         </p>
@@ -677,7 +689,7 @@
         </div>
 
         <div class="keyword-result" id="keyword-analysis">
-            <h4>Keyword Density</h4>
+            <h4>Keyword Density <button class="btn-ai" onclick="Admin.aiKeywordIdeas(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Keyword Ideas</span></button></h4>
             <p style="color:var(--gray-400);font-size:.82rem;">Add keywords above to see density analysis</p>
         </div>
     </div>
@@ -736,7 +748,7 @@
 
     <!-- llms.txt Editor -->
     <div class="seo-section">
-        <h3>📄 llms.txt — AI Crawler Instructions</h3>
+        <h3>📄 llms.txt — AI Crawler Instructions <button class="btn-ai" onclick="Admin.aiLlmsTxt(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Generate</span></button></h3>
         <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
             Like robots.txt for search engines, llms.txt tells AI crawlers (ChatGPT, Perplexity, Claude) what your site offers.
             <a href="/llms.txt" target="_blank" style="color:var(--primary);">View live →</a>
@@ -795,7 +807,7 @@
 
     <!-- AI Answer Snippets -->
     <div class="seo-section">
-        <h3>💬 AI Answer Snippets</h3>
+        <h3>💬 AI Answer Snippets <button class="btn-ai" onclick="Admin.aiAeoSnippets(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Generate Snippets</span></button></h3>
         <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
             Write concise, authoritative answers to common queries. AI engines extract these for direct answers.
             Think: "What would ChatGPT / Perplexity quote from your site?"
@@ -816,7 +828,7 @@
 
     <!-- Topic Authority Clusters -->
     <div class="seo-section">
-        <h3>🎯 Topic Authority Clusters</h3>
+        <h3>🎯 Topic Authority Clusters <button class="btn-ai" onclick="Admin.aiTopicClusters(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Generate Clusters</span></button></h3>
         <p style="color:var(--gray-400);font-size:.82rem;margin-bottom:12px;">
             Map your expertise areas. AI engines assess topical authority — broad + deep coverage = higher trust.
         </p>
@@ -915,7 +927,7 @@
 
     <!-- Email Templates -->
     <div class="form-card" style="margin-bottom:20px;">
-        <h3 style="font-size:.95rem;margin-bottom:12px;">📋 Email Templates</h3>
+        <h3 style="font-size:.95rem;margin-bottom:12px;">📋 Email Templates <button class="btn-ai" onclick="Admin.aiEmailTemplate(this)" style="font-size:.72rem;"><span class="ai-spin"></span><span class="ai-label">✨ AI Generate Template</span></button></h3>
         <p style="color:var(--gray-400);font-size:.78rem;margin-bottom:12px;">Variables: <code>{{name}}</code> <code>{{company}}</code> <code>{{notice_id}}</code> <code>{{amount}}</code> <code>{{tier}}</code> <code>{{days}}</code> <code>{{email}}</code> <code>{{time}}</code> <code>{{notice_link}}</code></p>
         <div id="email-templates-area"></div>
     </div>
@@ -1198,8 +1210,13 @@
             <div class="modal-grid" id="modal-n-analysis-grid"></div>
         </div>
         <pre id="modal-n-notice"></pre>
+        <div id="ai-notice-review" class="hidden" style="margin-bottom:12px;padding:12px;border-radius:8px;background:var(--gray-50);border:1px solid var(--gray-200);font-size:.85rem;">
+            <h4 style="font-size:.82rem;margin-bottom:6px;color:#6d28d9;">✨ AI Review</h4>
+            <div id="ai-review-content"></div>
+        </div>
         <div class="modal-actions">
             <button class="btn btn-ghost" onclick="Admin.closeNoticeModal()">Close</button>
+            <button class="btn-ai" onclick="Admin.aiNoticeReview(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Review</span></button>
             <button class="btn btn-outline" id="modal-btn-pdf" onclick="Admin.downloadPDF()">⬇ PDF</button>
             <button class="btn btn-primary btn-sm hidden" id="modal-btn-db-pdf" onclick="Admin.downloadDbPdf()">⬇ Stored PDF</button>
             <button class="btn btn-green" id="modal-btn-approve" onclick="Admin.approveNotice()">✓ Approve & Send</button>
@@ -1225,15 +1242,18 @@
             </div>
             <div class="form-group">
                 <label>Content</label>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+                    <button class="btn-ai" onclick="Admin.aiBlogImprove(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Improve</span></button>
+                </div>
                 <div id="blog-editor"></div>
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label>Meta Description</label>
+                    <label>Meta Description <button class="btn-ai" style="float:right;" onclick="Admin.aiBlogMeta(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI</span></button></label>
                     <textarea id="b-meta-desc" rows="2" placeholder="SEO description (max 160 chars)" maxlength="160"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Meta Keywords</label>
+                    <label>Meta Keywords <button class="btn-ai" style="float:right;" onclick="Admin.aiBlogKeywords(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI</span></button></label>
                     <input type="text" id="b-meta-kw" placeholder="keyword1, keyword2, ...">
                 </div>
             </div>
@@ -1269,7 +1289,7 @@
                     <input type="text" id="pg-path" required placeholder="/about">
                 </div>
                 <div class="form-group">
-                    <label>Title</label>
+                    <label>Title <button class="btn-ai" style="float:right;" onclick="Admin.aiPageMeta(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Fill Meta</span></button></label>
                     <input type="text" id="pg-title" placeholder="Page Title">
                 </div>
             </div>
@@ -1355,6 +1375,10 @@
         <h4 style="font-size:.88rem;margin-bottom:8px;">Replies</h4>
         <div id="ticket-replies" class="reply-thread"></div>
         <div class="form-group" style="margin-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <label style="margin:0;">Reply</label>
+                <button class="btn-ai" onclick="Admin.aiTicketReply(this)"><span class="ai-spin"></span><span class="ai-label">✨ AI Draft Reply</span></button>
+            </div>
             <textarea id="ticket-reply-text" rows="3" placeholder="Type your reply..."></textarea>
         </div>
         <div class="modal-actions">
@@ -1426,6 +1450,26 @@ const Admin = (() => {
         const res = await fetch(url, { ...opts, headers });
         if (res.status === 401) { logout(); throw new Error('Session expired'); }
         return res;
+    }
+
+    /* ── AI Helper ─────────────────────────────────────── */
+    async function aiGenerate(tool, context, btn) {
+        if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+        try {
+            const res = await apiFetch('/api/admin/ai/generate', {
+                method: 'POST',
+                body: JSON.stringify({ tool, context }),
+            });
+            const data = await res.json();
+            if (!res.ok) { showToast(data.detail || 'AI generation failed', 'error'); return null; }
+            showToast('AI content generated!', 'success');
+            return data.result;
+        } catch (err) {
+            showToast('AI generation failed: ' + err.message, 'error');
+            return null;
+        } finally {
+            if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+        }
     }
 
     /* ── Auth ───────────────────────────────────────────── */
@@ -3252,6 +3296,229 @@ const Admin = (() => {
         currentTicketId = null;
     }
 
+    /* ── AI Tool Functions ───────────────────────────────── */
+
+    // ── Blog AI ──
+    async function aiBlogFromTopic() {
+        const topic = prompt('Blog topic (e.g. "How to file a consumer complaint under CPA 2019"):');
+        if (!topic) return;
+        const keywords = prompt('Target keywords (optional, comma-separated):', '') || '';
+        const btn = event.currentTarget;
+        const r = await aiGenerate('blog_post', { topic, keywords }, btn);
+        if (!r) return;
+        // Open blog editor and fill in
+        openBlogEditor();
+        qs('#b-title').value = r.title || '';
+        qs('#b-slug').value = r.slug || '';
+        if (r.content && quill) quill.root.innerHTML = r.content;
+        qs('#b-meta-desc').value = r.meta_description || '';
+        qs('#b-meta-kw').value = r.meta_keywords || '';
+    }
+
+    async function aiBlogImprove(btn) {
+        if (!quill) return;
+        const content = quill.root.innerHTML;
+        const title = qs('#b-title').value;
+        if (!content || content === '<p><br></p>') { showToast('Write some content first', 'error'); return; }
+        const instruction = prompt('Improvement instruction:', 'Improve readability, SEO, and add more detail') || 'Improve readability, SEO, and add more detail';
+        const r = await aiGenerate('blog_improve', { content, title, instruction }, btn);
+        if (!r) return;
+        if (r.content) quill.root.innerHTML = r.content;
+        if (r.meta_description) qs('#b-meta-desc').value = r.meta_description;
+        if (r.meta_keywords) qs('#b-meta-kw').value = r.meta_keywords;
+        if (r.suggestions && r.suggestions.length) {
+            showToast('Suggestions: ' + r.suggestions.join('; '), 'info');
+        }
+    }
+
+    async function aiBlogMeta(btn) {
+        const title = qs('#b-title').value;
+        const content = quill ? quill.getText().substring(0, 500) : '';
+        if (!title) { showToast('Enter a blog title first', 'error'); return; }
+        const r = await aiGenerate('seo_meta', { title, content }, btn);
+        if (!r) return;
+        if (r.meta_description) qs('#b-meta-desc').value = r.meta_description;
+    }
+
+    async function aiBlogKeywords(btn) {
+        const title = qs('#b-title').value;
+        const content = quill ? quill.getText().substring(0, 500) : '';
+        if (!title) { showToast('Enter a blog title first', 'error'); return; }
+        const r = await aiGenerate('seo_meta', { title, content }, btn);
+        if (!r) return;
+        if (r.meta_keywords) qs('#b-meta-kw').value = r.meta_keywords;
+    }
+
+    // ── SEO AI ──
+    async function aiSeoMeta(btn) {
+        const title = qs('#seo-title').value;
+        const desc = qs('#seo-desc').value;
+        const r = await aiGenerate('seo_meta', { title: title || 'Lawly', content: desc, url: 'https://lawly.store' }, btn);
+        if (!r) return;
+        if (r.site_title) qs('#seo-title').value = r.site_title;
+        if (r.meta_description) qs('#seo-desc').value = r.meta_description;
+        if (r.meta_keywords) qs('#seo-keywords').value = r.meta_keywords;
+        if (r.og_title) qs('#seo-og-title').value = r.og_title;
+        if (r.og_description) qs('#seo-og-desc').value = r.og_description;
+        updateSEOPreview();
+    }
+
+    async function aiSeoFaq(btn) {
+        const topic = prompt('FAQ topic (or leave blank for general):', '') || '';
+        // Gather existing FAQ data
+        const existingFaqs = [];
+        document.querySelectorAll('#faq-entries .faq-entry').forEach(el => {
+            const q = el.querySelector('input')?.value;
+            if (q) existingFaqs.push(q);
+        });
+        const r = await aiGenerate('seo_faq', { topic, existing_faqs: existingFaqs }, btn);
+        if (!r || !r.faqs) return;
+        for (const faq of r.faqs) {
+            addFaqItem();
+            const entries = document.querySelectorAll('#faq-entries .faq-entry');
+            const last = entries[entries.length - 1];
+            if (last) {
+                const inputs = last.querySelectorAll('input, textarea');
+                if (inputs[0]) inputs[0].value = faq.question || '';
+                if (inputs[1]) inputs[1].value = faq.answer || '';
+            }
+        }
+        showToast(`Added ${r.faqs.length} AI-generated FAQs`, 'success');
+    }
+
+    async function aiKeywordIdeas(btn) {
+        const seed = prompt('Seed keyword:', qs('#seo-keywords').value || 'consumer legal notice India') || 'consumer legal notice India';
+        const r = await aiGenerate('keyword_ideas', { seed_keyword: seed }, btn);
+        if (!r || !r.keywords) return;
+        const html = r.keywords.map(k =>
+            `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--gray-200);font-size:.82rem;">
+                <span><strong>${esc(k.keyword)}</strong></span>
+                <span style="color:var(--gray-500);">${esc(k.intent)} · ${esc(k.difficulty)}</span>
+            </div>`
+        ).join('');
+        qs('#keyword-analysis').innerHTML = `<h4>✨ AI Keyword Ideas</h4>${html}`;
+    }
+
+    // ── AEO AI ──
+    async function aiLlmsTxt(btn) {
+        const r = await aiGenerate('aeo_llms_txt', {}, btn);
+        if (!r) return;
+        if (r.llms_txt) qs('#aeo-llms-txt').value = r.llms_txt;
+    }
+
+    async function aiAeoSnippets(btn) {
+        const topic = prompt('Focus area for snippets (or leave blank):', '') || '';
+        const existing = [];
+        document.querySelectorAll('#snippet-entries .snippet-entry').forEach(el => {
+            const q = el.querySelector('input')?.value;
+            if (q) existing.push({ query: q });
+        });
+        const r = await aiGenerate('aeo_snippets', { topic, existing_snippets: existing }, btn);
+        if (!r || !r.snippets) return;
+        for (const s of r.snippets) {
+            addSnippet();
+            const entries = document.querySelectorAll('#snippet-entries .snippet-entry');
+            const last = entries[entries.length - 1];
+            if (last) {
+                const inputs = last.querySelectorAll('input, textarea');
+                if (inputs[0]) inputs[0].value = s.query || '';
+                if (inputs[1]) inputs[1].value = s.answer || '';
+                if (inputs[2]) inputs[2].value = s.category || '';
+            }
+        }
+        showToast(`Added ${r.snippets.length} AI snippets`, 'success');
+    }
+
+    async function aiTopicClusters(btn) {
+        const existing = [];
+        document.querySelectorAll('#cluster-entries .cluster-entry').forEach(el => {
+            const name = el.querySelector('input')?.value;
+            if (name) existing.push({ name });
+        });
+        const r = await aiGenerate('aeo_topic_clusters', { existing_clusters: existing }, btn);
+        if (!r || !r.clusters) return;
+        for (const c of r.clusters) {
+            addCluster();
+            const entries = document.querySelectorAll('#cluster-entries .cluster-entry');
+            const last = entries[entries.length - 1];
+            if (last) {
+                const inputs = last.querySelectorAll('input, textarea');
+                if (inputs[0]) inputs[0].value = c.name || '';
+                if (inputs[1]) inputs[1].value = c.pillar || '';
+                if (inputs[2]) inputs[2].value = (c.subtopics || []).join(', ');
+            }
+        }
+        showToast(`Added ${r.clusters.length} topic clusters`, 'success');
+    }
+
+    // ── Email AI ──
+    async function aiEmailTemplate(btn) {
+        const templateType = prompt('Template type (notice_ready, payment_receipt, follow_up, admin_alert):', 'notice_ready') || 'notice_ready';
+        const instruction = prompt('Custom instruction (optional):', '') || '';
+        const r = await aiGenerate('email_template', { type: templateType, instruction }, btn);
+        if (!r) return;
+        const subEl = qs(`#tpl-${templateType}-subject`);
+        const bodyEl = qs(`#tpl-${templateType}-body`);
+        if (subEl && r.subject) subEl.value = r.subject;
+        if (bodyEl && r.body) bodyEl.value = r.body;
+        showToast(`AI template generated for ${templateType}`, 'success');
+    }
+
+    // ── Support AI ──
+    async function aiTicketReply(btn) {
+        if (!currentTicketId) return;
+        const ticket = {
+            subject: qs('#ticket-modal-title')?.textContent || '',
+            message: qs('#ticket-message')?.textContent || '',
+            status: qs('#ticket-status')?.value || 'open',
+            category: '',
+            replies: [],
+        };
+        // Gather existing replies
+        document.querySelectorAll('#ticket-replies .reply-bubble').forEach(el => {
+            ticket.replies.push(el.textContent || '');
+        });
+        const r = await aiGenerate('ticket_reply', { ticket }, btn);
+        if (!r) return;
+        qs('#ticket-reply-text').value = r.reply || '';
+        if (r.suggested_status) qs('#ticket-status').value = r.suggested_status;
+    }
+
+    // ── Notice AI ──
+    async function aiNoticeReview(btn) {
+        const noticeText = qs('#modal-n-notice')?.textContent || '';
+        if (!noticeText || noticeText.length < 50) { showToast('No notice content to review', 'error'); return; }
+        const r = await aiGenerate('notice_review', { notice_text: noticeText }, btn);
+        if (!r) return;
+        const reviewDiv = qs('#ai-notice-review');
+        const contentDiv = qs('#ai-review-content');
+        reviewDiv.classList.remove('hidden');
+        contentDiv.innerHTML = `
+            <div style="display:flex;gap:16px;align-items:center;margin-bottom:8px;">
+                <div style="font-size:1.5rem;font-weight:700;color:${r.score >= 70 ? 'var(--green)' : r.score >= 50 ? 'var(--orange)' : 'var(--primary)'};">${r.score || '—'}/100</div>
+                <div style="font-size:1.1rem;font-weight:600;">Grade: ${esc(r.grade || '—')}</div>
+            </div>
+            ${r.strengths?.length ? `<div style="margin-bottom:6px;"><strong style="color:var(--green);">Strengths:</strong><ul style="margin:4px 0 0 16px;">${r.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>` : ''}
+            ${r.weaknesses?.length ? `<div style="margin-bottom:6px;"><strong style="color:var(--primary);">Weaknesses:</strong><ul style="margin:4px 0 0 16px;">${r.weaknesses.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>` : ''}
+            ${r.suggestions?.length ? `<div style="margin-bottom:6px;"><strong style="color:var(--blue);">Suggestions:</strong><ul style="margin:4px 0 0 16px;">${r.suggestions.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>` : ''}
+            ${r.reviewer_notes ? `<div style="margin-top:8px;padding:8px;background:#fff;border-radius:6px;"><em>${esc(r.reviewer_notes)}</em></div>` : ''}
+        `;
+    }
+
+    // ── Pages AI ──
+    async function aiPageMeta(btn) {
+        const path = qs('#pg-path').value;
+        const title = qs('#pg-title').value;
+        if (!path && !title) { showToast('Enter a path or title first', 'error'); return; }
+        const r = await aiGenerate('page_meta', { path, title }, btn);
+        if (!r) return;
+        if (r.title) qs('#pg-title').value = r.title;
+        if (r.meta_description) qs('#pg-desc').value = r.meta_description;
+        if (r.meta_keywords) qs('#pg-keywords').value = r.meta_keywords;
+        if (r.og_title) qs('#pg-og-title').value = r.og_title;
+        if (r.og_description) qs('#pg-og-desc').value = r.og_description;
+    }
+
     /* ── Init ────────────────────────────────────────────── */
     document.addEventListener('DOMContentLoaded', () => {
         // Tab click handlers
@@ -3302,6 +3569,11 @@ const Admin = (() => {
         filterTickets, openTicket, updateTicket, sendTicketReply, closeTicketModal,
         submitBingUrl, submitAllPages,
         loadVersions, viewFileVersions, previewVersion, revertVersion, versionsBack, closePreview,
+        aiBlogFromTopic, aiBlogImprove, aiBlogMeta, aiBlogKeywords,
+        aiSeoMeta, aiSeoFaq, aiKeywordIdeas,
+        aiLlmsTxt, aiAeoSnippets, aiTopicClusters,
+        aiEmailTemplate, aiTicketReply,
+        aiNoticeReview, aiPageMeta,
     };
 })();
 </script>
