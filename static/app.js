@@ -23,6 +23,34 @@ const App = (() => {
         uploadedFiles: [],  // [{file_id, filename, content_type, size, thumbUrl?}]
     };
 
+    // ── Analytics tracking ───────────────────────────────────────
+    function _getTrackingContext() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            referrer: document.referrer || '',
+            source: params.get('utm_source') || params.get('ref') || '',
+            medium: params.get('utm_medium') || '',
+            campaign: params.get('utm_campaign') || '',
+            page: window.location.pathname,
+        };
+    }
+
+    function trackEvent(event, extra) {
+        const data = { ..._getTrackingContext(), ...(extra || {}) };
+        apiFetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event, data }),
+        }).catch(() => {}); // fire-and-forget
+    }
+
+    // Fire page_view once on load
+    if (!window._lawlyPageViewFired) {
+        window._lawlyPageViewFired = true;
+        // Delay slightly so apiFetch is available
+        setTimeout(() => trackEvent('page_view'), 200);
+    }
+
     // ── Loading tips (rotate during wait) ─────────────────────────
     
     // ── Safe Local Storage Recovery ───────────────────────────────────
@@ -751,6 +779,7 @@ const App = (() => {
         _analyzeInFlight = true;
         state.issueSummary = summary;
         state.desiredResolution = resolution;
+        trackEvent('notice_started', { company: state.companyName });
 
         goTo(4); // show loading
         animateStages(['stage-company', 'stage-contacts', 'stage-policies', 'stage-legal', 'stage-strength'], 6000);
@@ -1262,6 +1291,7 @@ const App = (() => {
             if (!res.ok) throw new Error('PDF generation failed');
             const blob = await res.blob();
             downloadBlob(blob, `Legal_Notice_${companyName.replace(/ /g, '_')}.pdf`);
+            trackEvent('pdf_downloaded', { company: companyName, tier: state.tier });
         } catch (err) {
             showError(err.message);
         }

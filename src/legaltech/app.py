@@ -6,8 +6,6 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
 
-import hashlib
-import hmac
 import logging
 import os
 import re
@@ -70,6 +68,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         return response
 
@@ -112,10 +111,12 @@ async def admin_login(body: AdminLoginRequest, request: StarletteRequest):
     expected = stored_pw if stored_pw else settings.admin_password
     if not expected:
         raise HTTPException(status_code=403, detail="Admin login is not configured")
-    if not hmac.compare_digest(body.password, expected):
+    if not notice_store.verify_password(body.password, expected):
         attempts.append(now)
         _login_attempts[client_ip] = attempts
         raise HTTPException(status_code=401, detail="Invalid password")
+    if stored_pw and not notice_store.is_password_hash(stored_pw):
+        notice_store.set_stored_password(body.password)
     # Clear attempts on success
     _login_attempts.pop(client_ip, None)
     token = secrets.token_urlsafe(32)
@@ -1131,10 +1132,10 @@ async def change_admin_password(body: ChangePasswordRequest, _=Depends(require_a
     settings = get_settings()
     stored_pw = notice_store.get_stored_password()
     expected = stored_pw if stored_pw else settings.admin_password
-    if not hmac.compare_digest(body.current_password, expected):
+    if not notice_store.verify_password(body.current_password, expected):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-    if len(body.new_password) < 6:
-        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    if len(body.new_password) < 10:
+        raise HTTPException(status_code=400, detail="New password must be at least 10 characters")
     notice_store.set_stored_password(body.new_password)
     notice_store.log_activity("Changed admin password", "", "auth")
     return {"ok": True}

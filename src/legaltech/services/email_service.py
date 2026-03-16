@@ -23,6 +23,10 @@ from botocore.exceptions import ClientError
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+def _sanitize_header_text(value: str) -> str:
+    return (value or "").replace("\r", " ").replace("\n", " ").strip()
+
+
 @dataclass
 class DeliveryResult:
     success: bool
@@ -44,8 +48,11 @@ def send_notice_email(
 ) -> DeliveryResult:
     """Send a legal notice PDF as an email attachment via AWS SES."""
     from_email = os.getenv("NOTICE_FROM_EMAIL", "support@lawly.store")
-    from_name = os.getenv("NOTICE_FROM_NAME", "Lawly")
+    from_name = _sanitize_header_text(os.getenv("NOTICE_FROM_NAME", "Lawly"))
     aws_region = os.getenv("AWS_REGION", "ap-south-1")
+
+    to_name = _sanitize_header_text(to_name)
+    subject = _sanitize_header_text(subject)
 
     if not from_email:
         return DeliveryResult(

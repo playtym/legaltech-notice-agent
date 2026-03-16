@@ -9,6 +9,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import hashlib
+import hmac
+import secrets
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -30,6 +33,9 @@ _EMAIL_SETTINGS_FILE = _DATA_DIR / "email_settings.json"
 _EMAIL_LOG_FILE = _DATA_DIR / "email_log.json"
 _ANALYTICS_FILE = _DATA_DIR / "analytics_events.json"
 _TICKETS_FILE = _DATA_DIR / "support_tickets.json"
+
+_PW_ALGO = "pbkdf2_sha256"
+_PW_ITERATIONS = 200_000
 
 # ── S3 backend ───────────────────────────────────────────────────────
 
@@ -112,6 +118,38 @@ def save_lawyer(data: dict) -> dict:
 
 # ── Admin password override ──────────────────────────────────────────
 
+def is_password_hash(value: str) -> bool:
+    return value.startswith(f"{_PW_ALGO}$")
+
+
+def _hash_password(password: str) -> str:
+    salt = secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        _PW_ITERATIONS,
+    ).hex()
+    return f"{_PW_ALGO}${_PW_ITERATIONS}${salt}${digest}"
+
+
+def verify_password(candidate: str, stored: str) -> bool:
+    if not stored:
+        return False
+    if not is_password_hash(stored):
+        return hmac.compare_digest(candidate, stored)
+    try:
+        _, iterations, salt, expected = stored.split("$", 3)
+        computed = hashlib.pbkdf2_hmac(
+            "sha256",
+            candidate.encode("utf-8"),
+            salt.encode("utf-8"),
+            int(iterations),
+        ).hex()
+    except Exception:
+        return False
+    return hmac.compare_digest(computed, expected)
+
 def get_stored_password() -> str | None:
     """Return the admin password stored in data/, or None to use env default."""
     data = _read_json(_ADMIN_PW_FILE)
@@ -120,7 +158,7 @@ def get_stored_password() -> str | None:
 
 def set_stored_password(new_password: str) -> None:
     _ensure_dir()
-    _write_json(_ADMIN_PW_FILE, {"password": new_password})
+    _write_json(_ADMIN_PW_FILE, {"password": _hash_password(new_password)})
 
 
 # ── Notices ──────────────────────────────────────────────────────────
@@ -611,6 +649,9 @@ def get_analytics_summary() -> dict:
     revenue_daily: dict[str, float] = {}
     # Tier counts for funnel
     tier_counts: dict[str, int] = {}
+    # Traffic sources
+    sources: dict[str, int] = {}
+    referrers: dict[str, int] = {}
 
     for e in events:
         evt = e.get("event", "")
@@ -643,6 +684,44 @@ def get_analytics_summary() -> dict:
             t = data.get("tier", "self_send")
             tier_counts[t] = tier_counts.get(t, 0) + 1
 
+        # Traffic sources (from page_view events)
+        if evt == "page_view":
+            ref = (data.get("referrer") or "").strip()
+            src = (data.get("source") or "").strip()
+            # Determine source label
+            if src:
+                label = src.lower()
+            elif ref:
+                try:
+                    from urllib.parse import urlparse
+                    host = urlparse(ref).hostname or ""
+                    # Simplify common domains
+                    for domain, name in [
+                        ("reddit.com", "reddit"), ("google.", "google"),
+                        ("bing.com", "bing"), ("facebook.com", "facebook"),
+                        ("twitter.com", "twitter"), ("x.com", "twitter"),
+                        ("linkedin.com", "linkedin"), ("instagram.com", "instagram"),
+                        ("youtube.com", "youtube"), ("t.co", "twitter"),
+                    ]:
+                        if domain in host:
+                            label = name
+                            break
+                    else:
+                        label = host.replace("www.", "")
+                except Exception:
+                    label = "other"
+            else:
+                label = "direct"
+            sources[label] = sources.get(label, 0) + 1
+            if ref:
+                try:
+                    from urllib.parse import urlparse
+                    host = urlparse(ref).hostname or ref
+                    host = host.replace("www.", "")
+                    referrers[host] = referrers.get(host, 0) + 1
+                except Exception:
+                    referrers[ref[:60]] = referrers.get(ref[:60], 0) + 1
+
     # Sort daily by date, last 30
     sorted_days = sorted(daily.keys())[-30:]
     daily_trend = {d: daily[d] for d in sorted_days}
@@ -655,6 +734,8 @@ def get_analytics_summary() -> dict:
         "revenue_daily": dict(sorted(revenue_daily.items())[-30:]),
         "tier_counts": tier_counts,
         "total_events": len(events),
+        "traffic_sources": dict(sorted(sources.items(), key=lambda x: -x[1])),
+        "top_referrers": dict(sorted(referrers.items(), key=lambda x: -x[1])[:20]),
     }
 
 
