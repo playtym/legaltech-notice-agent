@@ -753,16 +753,25 @@
 
 <!-- ── Step 4 : Analyzing ─────────────────────────────────── -->
 <section class="step" id="step-4">
-    <div class="card loading-card">
-        <div class="loader"></div>
-        <h2>Analyzing your case</h2>
-        <p class="card-sub">Our AI agent is building the legal logic graph.</p>
-        <div class="loading-stages">
-            <div class="stage" id="stage-company">Querying entity graph&hellip;</div>
-            <div class="stage" id="stage-contacts">Resolving grievance contacts&hellip;</div>
-            <div class="stage" id="stage-policies">Extracting policy commitments&hellip;</div>
-            <div class="stage" id="stage-legal">Mapping statutory violations&hellip;</div>
-            <div class="stage" id="stage-strength">Computing legal leverage&hellip;</div>
+    <div class="card agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M9 12h6"/><rect x="4" y="12" width="16" height="10" rx="2"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="17" r="1"/></svg>
+            </div>
+            <div class="agent-header-text">
+                <h2>Analyzing your case</h2>
+                <p class="agent-status"><span class="pulse-dot"></span>Lawly Agent is working&hellip;</p>
+            </div>
+        </div>
+        <div class="agent-terminal">
+            <div class="terminal-bar"><span class="terminal-dot red"></span><span class="terminal-dot yellow"></span><span class="terminal-dot green"></span><span class="terminal-title">lawly-agent &mdash; case analysis</span></div>
+            <div class="terminal-body">
+                <div class="agent-stage" id="stage-company"><span class="stage-icon"></span><span class="stage-label">Querying entity graph&hellip;</span><span class="stage-ts"></span></div>
+                <div class="agent-stage" id="stage-contacts"><span class="stage-icon"></span><span class="stage-label">Resolving grievance contacts&hellip;</span><span class="stage-ts"></span></div>
+                <div class="agent-stage" id="stage-policies"><span class="stage-icon"></span><span class="stage-label">Extracting policy commitments&hellip;</span><span class="stage-ts"></span></div>
+                <div class="agent-stage" id="stage-legal"><span class="stage-icon"></span><span class="stage-label">Mapping statutory violations&hellip;</span><span class="stage-ts"></span></div>
+                <div class="agent-stage" id="stage-strength"><span class="stage-icon"></span><span class="stage-label">Computing legal leverage&hellip;</span><span class="stage-ts"></span></div>
+            </div>
         </div>
         <div class="loading-tip" id="loading-tip-4"></div>
     </div>
@@ -957,9 +966,16 @@
 
 <!-- ── Step 7 : Generating ────────────────────────────────── -->
 <section class="step" id="step-7">
-    <div class="card loading-card">
-        <div class="loader"></div>
-        <h2>Generating your legal notice</h2>
+    <div class="card agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 17h6"/><path d="M9 13h6"/></svg>
+            </div>
+            <div class="agent-header-text">
+                <h2>Generating your legal notice</h2>
+                <p class="agent-status"><span class="pulse-dot"></span>Lawly Agent is drafting&hellip;</p>
+            </div>
+        </div>
         <div class="gen-progress-wrap">
             <div class="gen-progress-track">
                 <div class="gen-progress-fill" id="gen-progress-fill"></div>
@@ -969,12 +985,15 @@
                 <strong id="gen-progress-pct">0%</strong>
             </div>
         </div>
-        <div class="loading-stages">
-            <div class="stage" id="gen-stage-1">Building statutory arguments&hellip;</div>
-            <div class="stage" id="gen-stage-2">Dismantling T&amp;C defenses&hellip;</div>
-            <div class="stage" id="gen-stage-3">Assembling escalation strategy&hellip;</div>
-            <div class="stage" id="gen-stage-4">Drafting formal legal notice&hellip;</div>
-            <div class="stage" id="gen-stage-5">Generating PDF&hellip;</div>
+        <div class="agent-terminal">
+            <div class="terminal-bar"><span class="terminal-dot red"></span><span class="terminal-dot yellow"></span><span class="terminal-dot green"></span><span class="terminal-title">lawly-agent &mdash; notice generation</span></div>
+            <div class="terminal-body">
+                <div class="agent-stage" id="gen-stage-1"><span class="stage-icon"></span><span class="stage-label">Building statutory arguments&hellip;</span><span class="stage-ts"></span></div>
+                <div class="agent-stage" id="gen-stage-2"><span class="stage-icon"></span><span class="stage-label">Dismantling T&amp;C defenses&hellip;</span><span class="stage-ts"></span></div>
+                <div class="agent-stage" id="gen-stage-3"><span class="stage-icon"></span><span class="stage-label">Assembling escalation strategy&hellip;</span><span class="stage-ts"></span></div>
+                <div class="agent-stage" id="gen-stage-4"><span class="stage-icon"></span><span class="stage-label">Drafting formal legal notice&hellip;</span><span class="stage-ts"></span></div>
+                <div class="agent-stage" id="gen-stage-5"><span class="stage-icon"></span><span class="stage-label">Generating PDF&hellip;</span><span class="stage-ts"></span></div>
+            </div>
         </div>
         <div class="loading-tip" id="loading-tip-7"></div>
     </div>

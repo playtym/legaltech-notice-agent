@@ -1044,7 +1044,7 @@ const App = (() => {
         status.style.color = '#10b981';
         status.textContent = 'Payment Successful! Redirecting...';
         
-        trackEvent('payment', { tier: state.tier, amount: state.tier === 'lawyer' ? 599 : 199 });
+        try { trackEvent('payment', { tier: state.tier, amount: state.tier === 'lawyer' ? 599 : 199 }); } catch(_) {}
         
         await new Promise(r => setTimeout(r, 800));
         document.getElementById('payment-overlay').style.display = 'none';
@@ -1330,9 +1330,16 @@ const App = (() => {
     }
 
     function animateStages(ids, totalMs) {
+        const startTime = Date.now();
         ids.forEach(id => {
             const el = document.getElementById(id);
-            if (el) { el.classList.remove('active', 'done'); }
+            if (el) {
+                el.classList.remove('active', 'done');
+                const icon = el.querySelector('.stage-icon');
+                if (icon) icon.textContent = '';
+                const ts = el.querySelector('.stage-ts');
+                if (ts) ts.textContent = '';
+            }
         });
         const delay = totalMs / ids.length;
         ids.forEach((id, i) => {
@@ -1341,7 +1348,17 @@ const App = (() => {
                 if (el) el.classList.add('active');
                 if (i > 0) {
                     const prev = document.getElementById(ids[i - 1]);
-                    if (prev) { prev.classList.remove('active'); prev.classList.add('done'); }
+                    if (prev) {
+                        prev.classList.remove('active');
+                        prev.classList.add('done');
+                        const icon = prev.querySelector('.stage-icon');
+                        if (icon) icon.textContent = '\u2713';
+                        const ts = prev.querySelector('.stage-ts');
+                        if (ts) {
+                            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                            ts.textContent = elapsed + 's';
+                        }
+                    }
                 }
             }, delay * i);
         });
