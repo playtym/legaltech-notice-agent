@@ -1,18 +1,17 @@
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, UploadFile, Depends, Header, Query
+from fastapi import FastAPI, HTTPException, UploadFile, Depends, Header, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
 
-import asyncio
+import hashlib
+import hmac
 import logging
 import os
-import re
 import secrets
 import time
-import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -41,52 +40,20 @@ async def lifespan(application: FastAPI):
 app = FastAPI(title="Indian Legal Notice Agent", version="0.4.0", lifespan=lifespan)
 pipeline = LegalNoticePipeline()
 
-# ── Async job store (in-memory) ─────────────────────────────────────
-_jobs: dict[str, dict] = {}  # job_id → {status, result, error, created_at}
-_JOB_TTL = 600  # 10 minutes
-
-
-def _cleanup_old_jobs():
-    cutoff = time.time() - _JOB_TTL
-    expired = [jid for jid, j in _jobs.items() if j.get("created_at", 0) < cutoff]
-    for jid in expired:
-        _jobs.pop(jid, None)
-
-_cors_origins = [
-    "https://lawly.store",
-    "https://www.lawly.store",
-    "https://d3ipaitzvby9v2.cloudfront.net",
-    "https://d1exs4vnzimint.cloudfront.net",
-]
-if os.getenv("ENV", "production").lower() in ("dev", "development", "local"):
-    _cors_origins += ["http://127.0.0.1:8000", "http://localhost:8000"]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=[
+        "https://lawly.store",
+        "https://www.lawly.store",
+        "https://d3ipaitzvby9v2.cloudfront.net",
+        "https://d1exs4vnzimint.cloudfront.net",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request as StarletteRequest
-
-
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: StarletteRequest, call_next):
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        return response
-
-
-app.add_middleware(SecurityHeadersMiddleware)
 
 # Serve static files
 if _STATIC_DIR.exists():
@@ -99,42 +66,22 @@ if _STATIC_DIR.exists():
 _admin_tokens: dict[str, float] = {}  # token → expiry timestamp
 _TOKEN_TTL = 24 * 60 * 60  # 24 hours
 
-# Rate limiting for login: track failed attempts per IP
-_login_attempts: dict[str, list[float]] = {}  # ip → list of timestamps
-_MAX_LOGIN_ATTEMPTS = 5
-_LOGIN_WINDOW = 300  # 5 minutes
-
 
 class AdminLoginRequest(BaseModel):
     password: str
 
 
 @app.post("/api/admin/login")
-async def admin_login(body: AdminLoginRequest, request: StarletteRequest):
-    # Rate limiting
-    client_ip = request.client.host if request.client else "unknown"
-    now = time.time()
-    attempts = _login_attempts.get(client_ip, [])
-    attempts = [t for t in attempts if now - t < _LOGIN_WINDOW]
-    if len(attempts) >= _MAX_LOGIN_ATTEMPTS:
-        raise HTTPException(status_code=429, detail="Too many login attempts. Try again later.")
-
+async def admin_login(body: AdminLoginRequest):
     settings = get_settings()
     stored_pw = notice_store.get_stored_password()
     expected = stored_pw if stored_pw else settings.admin_password
-    if not expected:
-        raise HTTPException(status_code=403, detail="Admin login is not configured")
-    if not notice_store.verify_password(body.password, expected):
-        attempts.append(now)
-        _login_attempts[client_ip] = attempts
+    if not hmac.compare_digest(body.password, expected):
         raise HTTPException(status_code=401, detail="Invalid password")
-    if stored_pw and not notice_store.is_password_hash(stored_pw):
-        notice_store.set_stored_password(body.password)
-    # Clear attempts on success
-    _login_attempts.pop(client_ip, None)
     token = secrets.token_urlsafe(32)
     _admin_tokens[token] = time.time() + _TOKEN_TTL
     # Cleanup expired tokens
+    now = time.time()
     expired = [t for t, exp in _admin_tokens.items() if exp < now]
     for t in expired:
         _admin_tokens.pop(t, None)
@@ -348,10 +295,28 @@ async def pricing():
     }
 
 
-# ── Background job runner for typed notice ──────────────────────────
-async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: ComplaintInput, doc_analysis):
-    """Run the notice pipeline in the background and store the result."""
+@app.post("/notice/typed")
+async def create_notice_typed(payload: NoticeRequest):
     try:
+        complaint = ComplaintInput(
+            mode=IntakeMode.typed,
+            complainant=payload.complainant,
+            company_name_hint=payload.company_name_hint,
+            website=payload.website,
+            issue_summary=payload.issue_summary,
+            timeline=payload.timeline,
+            evidence=payload.evidence,
+            desired_resolution=payload.desired_resolution,
+            jurisdiction=payload.jurisdiction,
+        )
+        # Analyze uploaded documents if any
+        doc_analysis = None
+        if payload.upload_ids:
+            files = upload_store.get_many(payload.upload_ids)
+            if files:
+                from legaltech.services.document_analyzer import analyze_documents
+                doc_analysis = await analyze_documents(pipeline.llm, files)
+
         packet = await pipeline.run(
             complaint,
             tier=payload.tier,
@@ -377,13 +342,7 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
         )
         result["notice_id"] = notice_id
 
-        notice_store.log_activity(
-            "Notice generated",
-            details=f"{company_label} ({tier_val})",
-            entity_type="notice",
-            entity_id=notice_id,
-        )
-
+        # ── Persist to database ──────────────────────────────────
         try:
             user_id = await db.upsert_user(
                 full_name=payload.complainant.full_name,
@@ -407,13 +366,16 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
             )
             result["db_notice_id"] = db_notice_id
             result["db_user_id"] = user_id
+            # Store generated PDF
             is_lawyer = tier_val == "lawyer"
             pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
             pdf_fn = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
             await db.store_pdf(db_notice_id, pdf_bytes, pdf_fn)
         except Exception:
-            logger.warning("DB save failed (non-fatal)", exc_info=True)
+            import logging
+            logging.getLogger(__name__).warning("DB save failed (non-fatal)", exc_info=True)
 
+        # ── Track analytics event ────────────────────────────────
         try:
             notice_store.track_event("notice_generated", {
                 "notice_id": notice_id,
@@ -424,72 +386,10 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
         except Exception:
             pass
 
-        _jobs[job_id]["status"] = "completed"
-        _jobs[job_id]["result"] = result
-    except Exception as exc:
-        logger.exception("Pipeline failed (job %s)", job_id)
-        _jobs[job_id]["status"] = "failed"
-        _jobs[job_id]["error"] = str(exc) or "An internal error occurred."
-
-
-@app.post("/notice/typed")
-async def create_notice_typed(payload: NoticeRequest):
-    _cleanup_old_jobs()
-    try:
-        complaint = ComplaintInput(
-            mode=IntakeMode.typed,
-            complainant=payload.complainant,
-            company_name_hint=payload.company_name_hint,
-            website=payload.website,
-            issue_summary=payload.issue_summary,
-            timeline=payload.timeline,
-            evidence=payload.evidence,
-            desired_resolution=payload.desired_resolution,
-            jurisdiction=payload.jurisdiction,
-        )
-
-        # ── Block criminal / individual-vs-individual cases (quick check) ──
-        case_type, _ = await pipeline._classify_case(
-            payload.issue_summary, payload.company_name_hint,
-        )
-        if case_type in ("criminal", "individual_dispute"):
-            label = "criminal matter" if case_type == "criminal" else "individual-vs-individual dispute"
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    f"This appears to be a {label}. Lawly only generates consumer legal notices "
-                    "against companies. Please consult a qualified lawyer for this type of matter."
-                ),
-            )
-
-        # Analyze uploaded documents if any
-        doc_analysis = None
-        if payload.upload_ids:
-            files = upload_store.get_many(payload.upload_ids)
-            if files:
-                from legaltech.services.document_analyzer import analyze_documents
-                doc_analysis = await analyze_documents(pipeline.llm, files)
-
-        # ── Start background job ─────────────────────────────────
-        job_id = str(uuid.uuid4())
-        _jobs[job_id] = {"status": "processing", "result": None, "error": None, "created_at": time.time()}
-        asyncio.create_task(_run_typed_job(job_id, payload, complaint, doc_analysis))
-        return {"job_id": job_id, "status": "processing"}
-
-    except HTTPException:
-        raise
+        return result
     except Exception as exc:
         logger.exception("Pipeline failed")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
-
-
-@app.get("/notice/job/{job_id}")
-async def get_job_status(job_id: str):
-    """Poll for async job completion."""
-    job = _jobs.get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found or expired")
-    return {"status": job["status"], "result": job.get("result"), "error": job.get("error")}
 
 
 @app.post("/notice/analyze")
@@ -580,7 +480,6 @@ async def notice_cost():
 
 @app.post("/notice/voice")
 async def create_notice_voice(payload: VoiceNoticeRequest):
-    _cleanup_old_jobs()
     try:
         complaint = ComplaintInput(
             mode=IntakeMode.voice,
@@ -594,22 +493,6 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
             desired_resolution=payload.desired_resolution,
             jurisdiction=payload.jurisdiction,
         )
-
-        job_id = str(uuid.uuid4())
-        _jobs[job_id] = {"status": "processing", "result": None, "error": None, "created_at": time.time()}
-        asyncio.create_task(_run_voice_job(job_id, payload, complaint))
-        return {"job_id": job_id, "status": "processing"}
-
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception("Pipeline failed")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
-
-
-async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: ComplaintInput):
-    """Run the voice notice pipeline in the background."""
-    try:
         packet = await pipeline.run(
             complaint,
             tier=payload.tier,
@@ -623,15 +506,8 @@ async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: Co
             },
         )
         result = packet.model_dump()
-        tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
-        company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
 
-        notice_store.log_activity(
-            "Notice generated (voice)",
-            details=f"{company_label} ({tier_val})",
-            entity_type="notice",
-        )
-
+        # ── Persist to database ──────────────────────────────────
         try:
             user_id = await db.upsert_user(
                 full_name=payload.complainant.full_name,
@@ -639,6 +515,8 @@ async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: Co
                 phone=getattr(payload.complainant, "phone", None),
                 address=getattr(payload.complainant, "address", None),
             )
+            tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
+            company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
             db_nid = await db.save_notice_full(
                 user_id=user_id,
                 company_name=company_label,
@@ -648,19 +526,19 @@ async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: Co
             )
             result["db_notice_id"] = db_nid
             result["db_user_id"] = user_id
+            # Store generated PDF
             is_lawyer = tier_val == "lawyer"
             pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
             pdf_fn = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
             await db.store_pdf(db_nid, pdf_bytes, pdf_fn)
         except Exception:
-            logger.warning("DB save failed (non-fatal)", exc_info=True)
+            import logging
+            logging.getLogger(__name__).warning("DB save failed (non-fatal)", exc_info=True)
 
-        _jobs[job_id]["status"] = "completed"
-        _jobs[job_id]["result"] = result
+        return result
     except Exception as exc:
-        logger.exception("Pipeline failed (voice job %s)", job_id)
-        _jobs[job_id]["status"] = "failed"
-        _jobs[job_id]["error"] = str(exc) or "An internal error occurred."
+        logger.exception("Pipeline failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
 @app.post("/translate/to-english")
@@ -865,14 +743,6 @@ async def create_notice_typed_pdf(payload: NoticeRequest):
         company_label = packet.company.legal_name or packet.company.brand_name or "Company"
         filename = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
 
-        # ── Log activity ──────────────────────────────────────────
-        tier_val_pdf = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
-        notice_store.log_activity(
-            "Notice PDF generated",
-            details=f"{company_label} ({tier_val_pdf})",
-            entity_type="notice",
-        )
-
         # ── Persist to database ──────────────────────────────────────
         try:
             user_id = await db.upsert_user(
@@ -922,13 +792,9 @@ class RenderPDFRequest(BaseModel):
 
 
 
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
 @app.post("/notice/deliver")
-async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), to_name: str = Query(..., max_length=200)):
+async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), to_name: str = Query(...)):
     """Deliver already-generated notice via email."""
-    if not _EMAIL_RE.match(to_email):
-        raise HTTPException(status_code=400, detail="Invalid email address")
     if not payload.notice_text or not payload.notice_text.strip():
         raise HTTPException(status_code=400, detail="notice_text is required")
         
@@ -957,13 +823,7 @@ async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), 
             pdf_bytes=pdf_bytes,
             pdf_filename=filename
         )
-
-        notice_store.log_activity(
-            "Notice delivered",
-            details=f"{payload.company_name} → {to_email}",
-            entity_type="notice",
-        )
-
+        
         return {"success": True, "delivered_to": to_email, "email_status": result.success, "message": result.message}
     except Exception as exc:
         logger.exception("PDF generation and delivery failed")
@@ -1123,11 +983,7 @@ async def app_js():
 
 @app.get("/img/{asset_path:path}")
 async def img_asset(asset_path: str):
-    img_root = (_STATIC_DIR / "img").resolve()
-    target = (img_root / asset_path).resolve()
-    if not target.is_relative_to(img_root) or not target.is_file():
-        raise HTTPException(status_code=404, detail="Not found")
-    return FileResponse(str(target))
+    return FileResponse(str(_STATIC_DIR / "img" / asset_path))
 
 
 @app.get("/admin.html")
@@ -1184,10 +1040,10 @@ async def change_admin_password(body: ChangePasswordRequest, _=Depends(require_a
     settings = get_settings()
     stored_pw = notice_store.get_stored_password()
     expected = stored_pw if stored_pw else settings.admin_password
-    if not notice_store.verify_password(body.current_password, expected):
+    if not hmac.compare_digest(body.current_password, expected):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-    if len(body.new_password) < 10:
-        raise HTTPException(status_code=400, detail="New password must be at least 10 characters")
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
     notice_store.set_stored_password(body.new_password)
     notice_store.log_activity("Changed admin password", "", "auth")
     return {"ok": True}
@@ -2466,7 +2322,7 @@ async def ai_generate(body: AIGenerateRequest, _=Depends(require_admin)):
                            f"Customer message: {ticket.get('message','')}\n"
                            f"Category: {ticket.get('category','')}\n"
                            f"Current status: {ticket.get('status','open')}\n"
-                           f"Previous replies: {ticket.get('replies', [])[-3:]}\n"
+                           f"Previous replies: {ticket.get('replies',[][-3:])}\n"
                            f"Instruction: {instruction}",
                 max_tokens=1024,
             )
@@ -2535,14 +2391,24 @@ async def ai_generate(body: AIGenerateRequest, _=Depends(require_admin)):
 async def catch_all_redirect(full_path: str):
     """Serve static files or follow 301 redirects."""
     path = f"/{full_path}" if not full_path.startswith("/") else full_path
+    
     # Check redirects
     redir = notice_store.find_redirect(path)
     if redir:
         from fastapi.responses import RedirectResponse
+        from fastapi import status
         code = redir.get("status_code", 301)
         return RedirectResponse(url=redir["to_path"], status_code=code)
-    # Try static file
+        
+    # Try static file exactly
     static_path = _STATIC_DIR / full_path
     if static_path.is_file():
         return FileResponse(str(static_path))
+        
+    # Try static file handling clean URLs (append .html)
+    if not full_path.endswith(".html"):
+        static_html_path = _STATIC_DIR / f"{full_path}.html"
+        if static_html_path.is_file():
+            return FileResponse(str(static_html_path))
+            
     raise HTTPException(status_code=404, detail="Not found")

@@ -23,34 +23,6 @@ const App = (() => {
         uploadedFiles: [],  // [{file_id, filename, content_type, size, thumbUrl?}]
     };
 
-    // ── Analytics tracking ───────────────────────────────────────
-    function _getTrackingContext() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            referrer: document.referrer || '',
-            source: params.get('utm_source') || params.get('ref') || '',
-            medium: params.get('utm_medium') || '',
-            campaign: params.get('utm_campaign') || '',
-            page: window.location.pathname,
-        };
-    }
-
-    function trackEvent(event, extra) {
-        const data = { ..._getTrackingContext(), ...(extra || {}) };
-        apiFetch('/api/track', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event, data }),
-        }).catch(() => {}); // fire-and-forget
-    }
-
-    // Fire page_view once on load
-    if (!window._lawlyPageViewFired) {
-        window._lawlyPageViewFired = true;
-        // Delay slightly so apiFetch is available
-        setTimeout(() => trackEvent('page_view'), 200);
-    }
-
     // ── Loading tips (rotate during wait) ─────────────────────────
     
     // ── Safe Local Storage Recovery ───────────────────────────────────
@@ -779,7 +751,6 @@ const App = (() => {
         _analyzeInFlight = true;
         state.issueSummary = summary;
         state.desiredResolution = resolution;
-        trackEvent('notice_started', { company: state.companyName });
 
         goTo(4); // show loading
         animateStages(['stage-company', 'stage-contacts', 'stage-policies', 'stage-legal', 'stage-strength'], 6000);
@@ -835,21 +806,6 @@ const App = (() => {
     // ── Render analysis results (step 5) ────────────────────────────
     function renderAnalysis() {
         const a = state.analysisResult;
-
-        // ── Blocked case (criminal / individual dispute) ────────
-        const lawyerBox = document.getElementById('lawyer-recommendation');
-        const normalContent = document.getElementById('analysis-normal-content');
-        if (a.blocked) {
-            const typeLabel = a.case_type === 'criminal' ? 'Criminal Matter Detected' : 'Individual Dispute Detected';
-            document.getElementById('blocked-title').textContent = typeLabel;
-            document.getElementById('blocked-reason').textContent = a.case_strength_reasoning || '';
-            lawyerBox.classList.remove('hidden');
-            normalContent.classList.add('hidden');
-            return;
-        }
-        lawyerBox.classList.add('hidden');
-        normalContent.classList.remove('hidden');
-
         const grid = document.getElementById('found-data');
 
         const cards = [];
@@ -876,7 +832,7 @@ const App = (() => {
         csBox.className = `case-strength-box ${level}`;
         csBox.innerHTML = `
             <h3>${level === 'strong' ? '💪 Strong Case' : level === 'moderate' ? '⚖️ Moderate Case' : '⚠️ Weak Case'}</h3>
-            <p>${esc(a.case_strength_reasoning || '')}</p>
+            <p>${a.case_strength_reasoning || ''}</p>
         `;
 
         // Questions
@@ -1102,7 +1058,7 @@ const App = (() => {
         _generateInFlight = true;
         goTo(7);
         animateStages(['gen-stage-1', 'gen-stage-2', 'gen-stage-3', 'gen-stage-4', 'gen-stage-5'], 8000);
-        animateProgress(60000);
+        animateProgress(40000);
 
         const controls = getCustomerControls();
         const body = {
@@ -1124,62 +1080,55 @@ const App = (() => {
             language: controls.language,
         };
 
-        try {
-            // 1. Submit job (returns immediately with job_id)
-            const submitController = new AbortController();
-            const submitTimeout = setTimeout(() => submitController.abort(), 30000);
-            const submitRes = await apiFetch('/notice/typed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-                signal: submitController.signal,
-            });
-            clearTimeout(submitTimeout);
-            if (!submitRes.ok) {
-                const msg = await responseErrorMessage(submitRes, `Notice generation failed (${submitRes.status})`);
-                throw new Error(msg);
-            }
-            const submitData = await submitRes.json();
-            const jobId = submitData.job_id;
-            if (!jobId) throw new Error('Server did not return a job ID');
+        const maxAttempts = 2;
+        let lastErr = null;
 
-            // 2. Poll for completion
-            const maxWaitMs = 180000; // 3 minutes
-            const pollIntervalMs = 3000;
-            const pollStart = Date.now();
-            while (Date.now() - pollStart < maxWaitMs) {
-                await new Promise(r => setTimeout(r, pollIntervalMs));
-                const pollRes = await apiFetch('/notice/job/' + encodeURIComponent(jobId));
-                if (!pollRes.ok) {
-                    if (pollRes.status === 404) throw new Error('Job expired. Please try again.');
-                    continue; // transient error, keep polling
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 150000);
+
+            try {
+                const res = await apiFetch('/notice/typed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    signal: controller.signal,
+                });
+                clearTimeout(timeout);
+                if (!res.ok) {
+                    const msg = await responseErrorMessage(res, `Notice generation failed (${res.status})`);
+                    throw new Error(msg);
                 }
-                const pollData = await pollRes.json();
-                if (pollData.status === 'completed' && pollData.result) {
-                    state.noticeResult = pollData.result;
-                    state.noticeId = pollData.result.notice_id != null
-                        ? String(pollData.result.notice_id) : null;
-                    completeProgress();
-                    renderNotice();
-                    goTo(8);
-                    _generateInFlight = false;
-                    return;
+                state.noticeResult = await res.json();
+                state.noticeId = state.noticeResult.notice_id != null
+                    ? String(state.noticeResult.notice_id) : null;
+                completeProgress();
+                renderNotice();
+                goTo(8);
+                _generateInFlight = false;
+                return;
+            } catch (err) {
+                clearTimeout(timeout);
+                lastErr = err;
+                const isNetworkDrop = err?.name === 'TypeError'
+                    || (err?.message || '').toLowerCase().includes('failed to fetch')
+                    || (err?.message || '').toLowerCase().includes('network');
+                if (isNetworkDrop && attempt < maxAttempts) {
+                    // Brief pause then retry
+                    await new Promise(r => setTimeout(r, 2000));
+                    continue;
                 }
-                if (pollData.status === 'failed') {
-                    throw new Error(pollData.error || 'Notice generation failed on the server.');
-                }
-                // status === 'processing' → keep polling
+                break;
             }
-            throw new Error('Generation timed out. Please try again.');
-        } catch (err) {
-            const msg = err?.name === 'AbortError'
-                ? 'Generation timed out. Please try again.'
-                : (err?.message || 'Could not generate notice right now. Please try again.');
-            clearInterval(_progressTimer);
-            goTo(6, { resetTier: false });
-            showError(msg);
-            _generateInFlight = false;
         }
+
+        const msg = lastErr?.name === 'AbortError'
+            ? 'Generation timed out. Please try again.'
+            : (lastErr?.message || 'Could not generate notice right now. Please try again.');
+        clearInterval(_progressTimer);
+        goTo(6, { resetTier: false });
+        showError(msg);
+        _generateInFlight = false;
     }
 
     // ── Step 8: Render result ───────────────────────────────────────
@@ -1261,7 +1210,7 @@ const App = (() => {
         const emailMsg = document.createElement('div');
         emailMsg.className = 'alert alert-success';
         emailMsg.style.marginTop = '1rem';
-        emailMsg.innerHTML = `<strong>Delivery Initiated:</strong> A PDF copy has been emailed to <strong>${esc(state.complainant.email)}</strong>.`;
+        emailMsg.innerHTML = `<strong>Delivery Initiated:</strong> A PDF copy has been emailed to <strong>${state.complainant.email}</strong>.`;
         
         // Append it before the notice-text container
         const textContainer = document.getElementById('notice-text').parentElement;
@@ -1298,7 +1247,6 @@ const App = (() => {
             if (!res.ok) throw new Error('PDF generation failed');
             const blob = await res.blob();
             downloadBlob(blob, `Legal_Notice_${companyName.replace(/ /g, '_')}.pdf`);
-            trackEvent('pdf_downloaded', { company: companyName, tier: state.tier });
         } catch (err) {
             showError(err.message);
         }

@@ -141,3 +141,6 @@ for p in pages_data:
 with open('data/pages.json', 'w') as f:
     json.dump(db, f, indent=4)
 print("Updated pages.json.")
+
+import os; os.system("python3 fix_seo.py")
+
