@@ -6,12 +6,14 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
 
+import asyncio
 import hashlib
 import hmac
 import logging
 import os
 import secrets
 import time
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,18 @@ async def lifespan(application: FastAPI):
 
 app = FastAPI(title="Indian Legal Notice Agent", version="0.4.0", lifespan=lifespan)
 pipeline = LegalNoticePipeline()
+
+# ── Async job store (in-memory) ─────────────────────────────────────
+_jobs: dict[str, dict] = {}  # job_id → {status, result, error, created_at}
+_JOB_TTL = 600  # 10 minutes
+
+
+def _cleanup_old_jobs():
+    cutoff = time.time() - _JOB_TTL
+    expired = [jid for jid, j in _jobs.items() if j.get("created_at", 0) < cutoff]
+    for jid in expired:
+        _jobs.pop(jid, None)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -117,6 +131,7 @@ class NoticeRequest(BaseModel):
     complainant: Complainant
     issue_summary: str
     desired_resolution: str
+    company_objection: str | None = None
     company_name_hint: str | None = None
     website: HttpUrl | None = None
     timeline: list[str] = []
@@ -138,6 +153,7 @@ class AnalyzeRequest(BaseModel):
     complainant: Complainant | dict | None = None
     issue_summary: str
     desired_resolution: str
+    company_objection: str | None = None
     company_name_hint: str | None = None
     website: HttpUrl | None = None
     timeline: list[str] = []
@@ -299,28 +315,10 @@ async def pricing():
     }
 
 
-@app.post("/notice/typed")
-async def create_notice_typed(payload: NoticeRequest):
+# ── Background job runner for typed notice ──────────────────────────
+async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: ComplaintInput, doc_analysis):
+    """Run the notice pipeline in the background and store the result."""
     try:
-        complaint = ComplaintInput(
-            mode=IntakeMode.typed,
-            complainant=payload.complainant,
-            company_name_hint=payload.company_name_hint,
-            website=payload.website,
-            issue_summary=payload.issue_summary,
-            timeline=payload.timeline,
-            evidence=payload.evidence,
-            desired_resolution=payload.desired_resolution,
-            jurisdiction=payload.jurisdiction,
-        )
-        # Analyze uploaded documents if any
-        doc_analysis = None
-        if payload.upload_ids:
-            files = upload_store.get_many(payload.upload_ids)
-            if files:
-                from legaltech.services.document_analyzer import analyze_documents
-                doc_analysis = await analyze_documents(pipeline.llm, files)
-
         packet = await pipeline.run(
             complaint,
             tier=payload.tier,
@@ -346,7 +344,13 @@ async def create_notice_typed(payload: NoticeRequest):
         )
         result["notice_id"] = notice_id
 
-        # ── Persist to database ──────────────────────────────────
+        notice_store.log_activity(
+            "Notice generated",
+            details=f"{company_label} ({tier_val})",
+            entity_type="notice",
+            entity_id=notice_id,
+        )
+
         try:
             user_id = await db.upsert_user(
                 full_name=payload.complainant.full_name,
@@ -370,16 +374,13 @@ async def create_notice_typed(payload: NoticeRequest):
             )
             result["db_notice_id"] = db_notice_id
             result["db_user_id"] = user_id
-            # Store generated PDF
             is_lawyer = tier_val == "lawyer"
             pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
             pdf_fn = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
             await db.store_pdf(db_notice_id, pdf_bytes, pdf_fn)
         except Exception:
-            import logging
-            logging.getLogger(__name__).warning("DB save failed (non-fatal)", exc_info=True)
+            logger.warning("DB save failed (non-fatal)", exc_info=True)
 
-        # ── Track analytics event ────────────────────────────────
         try:
             notice_store.track_event("notice_generated", {
                 "notice_id": notice_id,
@@ -390,10 +391,58 @@ async def create_notice_typed(payload: NoticeRequest):
         except Exception:
             pass
 
-        return result
+        _jobs[job_id]["status"] = "completed"
+        _jobs[job_id]["result"] = result
+    except Exception as exc:
+        logger.exception("Pipeline failed (job %s)", job_id)
+        _jobs[job_id]["status"] = "failed"
+        _jobs[job_id]["error"] = str(exc) or "An internal error occurred."
+
+
+@app.post("/notice/typed")
+async def create_notice_typed(payload: NoticeRequest):
+    _cleanup_old_jobs()
+    try:
+        complaint = ComplaintInput(
+            mode=IntakeMode.typed,
+            complainant=payload.complainant,
+            company_name_hint=payload.company_name_hint,
+            website=payload.website,
+            issue_summary=payload.issue_summary,
+            timeline=payload.timeline,
+            evidence=payload.evidence,
+            desired_resolution=payload.desired_resolution,
+            jurisdiction=payload.jurisdiction,
+        )
+
+        # Analyze uploaded documents if any
+        doc_analysis = None
+        if payload.upload_ids:
+            files = upload_store.get_many(payload.upload_ids)
+            if files:
+                from legaltech.services.document_analyzer import analyze_documents
+                doc_analysis = await analyze_documents(pipeline.llm, files)
+
+        # ── Start background job ─────────────────────────────────
+        job_id = str(uuid.uuid4())
+        _jobs[job_id] = {"status": "processing", "result": None, "error": None, "created_at": time.time()}
+        asyncio.create_task(_run_typed_job(job_id, payload, complaint, doc_analysis))
+        return {"job_id": job_id, "status": "processing"}
+
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Pipeline failed")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
+
+
+@app.get("/notice/job/{job_id}")
+async def get_job_status(job_id: str):
+    """Poll for async job completion."""
+    job = _jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found or expired")
+    return {"status": job["status"], "result": job.get("result"), "error": job.get("error")}
 
 
 @app.post("/notice/analyze")
@@ -433,6 +482,7 @@ async def analyze_case(payload: AnalyzeRequest):
             timeline=payload.timeline,
             evidence=payload.evidence,
             desired_resolution=payload.desired_resolution,
+            company_objection=payload.company_objection,
             jurisdiction=payload.jurisdiction,
         )
         # Analyze uploaded documents if any
@@ -482,21 +532,9 @@ async def notice_cost():
     return pipeline.llm.pricing_info
 
 
-@app.post("/notice/voice")
-async def create_notice_voice(payload: VoiceNoticeRequest):
+async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: ComplaintInput):
+    """Run the voice notice pipeline in the background."""
     try:
-        complaint = ComplaintInput(
-            mode=IntakeMode.voice,
-            complainant=payload.complainant,
-            company_name_hint=payload.company_name_hint,
-            website=payload.website,
-            issue_summary=payload.issue_summary,
-            transcript_text=payload.transcript_text,
-            timeline=payload.timeline,
-            evidence=payload.evidence,
-            desired_resolution=payload.desired_resolution,
-            jurisdiction=payload.jurisdiction,
-        )
         packet = await pipeline.run(
             complaint,
             tier=payload.tier,
@@ -510,8 +548,15 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
             },
         )
         result = packet.model_dump()
+        tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
+        company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
 
-        # ── Persist to database ──────────────────────────────────
+        notice_store.log_activity(
+            "Notice generated (voice)",
+            details=f"{company_label} ({tier_val})",
+            entity_type="notice",
+        )
+
         try:
             user_id = await db.upsert_user(
                 full_name=payload.complainant.full_name,
@@ -519,8 +564,6 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
                 phone=getattr(payload.complainant, "phone", None),
                 address=getattr(payload.complainant, "address", None),
             )
-            tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
-            company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
             db_nid = await db.save_notice_full(
                 user_id=user_id,
                 company_name=company_label,
@@ -530,16 +573,45 @@ async def create_notice_voice(payload: VoiceNoticeRequest):
             )
             result["db_notice_id"] = db_nid
             result["db_user_id"] = user_id
-            # Store generated PDF
             is_lawyer = tier_val == "lawyer"
             pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
             pdf_fn = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
             await db.store_pdf(db_nid, pdf_bytes, pdf_fn)
         except Exception:
-            import logging
-            logging.getLogger(__name__).warning("DB save failed (non-fatal)", exc_info=True)
+            logger.warning("DB save failed (non-fatal)", exc_info=True)
 
-        return result
+        _jobs[job_id]["status"] = "completed"
+        _jobs[job_id]["result"] = result
+    except Exception as exc:
+        logger.exception("Pipeline failed (voice job %s)", job_id)
+        _jobs[job_id]["status"] = "failed"
+        _jobs[job_id]["error"] = str(exc) or "An internal error occurred."
+
+
+@app.post("/notice/voice")
+async def create_notice_voice(payload: VoiceNoticeRequest):
+    _cleanup_old_jobs()
+    try:
+        complaint = ComplaintInput(
+            mode=IntakeMode.voice,
+            complainant=payload.complainant,
+            company_name_hint=payload.company_name_hint,
+            website=payload.website,
+            issue_summary=payload.issue_summary,
+            transcript_text=payload.transcript_text,
+            timeline=payload.timeline,
+            evidence=payload.evidence,
+            desired_resolution=payload.desired_resolution,
+            jurisdiction=payload.jurisdiction,
+        )
+
+        job_id = str(uuid.uuid4())
+        _jobs[job_id] = {"status": "processing", "result": None, "error": None, "created_at": time.time()}
+        asyncio.create_task(_run_voice_job(job_id, payload, complaint))
+        return {"job_id": job_id, "status": "processing"}
+
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Pipeline failed")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc

@@ -15,6 +15,7 @@ const App = (() => {
         timeline: [],
         evidence: [],
         desiredResolution: '',
+        companyObjection: '',
         analysisResult: null,
         followUpAnswers: {},
         tier: 'self_send',
@@ -52,6 +53,23 @@ const App = (() => {
             if (el) el.addEventListener('input', saveDraft);
         });
     });
+
+    function saveDraft() {
+        try {
+            const draft = {
+                companyName: document.getElementById('company-name')?.value || '',
+                companyWebsite: document.getElementById('company-website')?.value || '',
+                issueSummary: document.getElementById('issue-summary')?.value || '',
+                fdName: document.getElementById('fd-name')?.value || '',
+                fdEmail: document.getElementById('fd-email')?.value || '',
+                fdPhone: document.getElementById('fd-phone')?.value || '',
+                fdAddress: document.getElementById('fd-address')?.value || '',
+            };
+            localStorage.setItem('lawly_draft', JSON.stringify(draft));
+        } catch (e) {
+            console.warn("Draft save failed", e);
+        }
+    }
 
     const _LOADING_TIPS = [
         "Did you know? Under CPA 2019, companies must resolve complaints within 30 days of receiving a legal notice.",
@@ -745,12 +763,14 @@ const App = (() => {
         if (_analyzeInFlight) return; // prevent double-submit
         const summary = val('issue-summary');
         const resolution = val('desired-resolution');
+        const objection = val('company-objection');
         if (!summary || summary.length < 20) return showError('Please describe your issue in at least 20 characters.');
         if (!resolution) return showError('Please describe what resolution you want.');
 
         _analyzeInFlight = true;
         state.issueSummary = summary;
         state.desiredResolution = resolution;
+        state.companyObjection = objection || '';
 
         goTo(4); // show loading
         animateStages(['stage-company', 'stage-contacts', 'stage-policies', 'stage-legal', 'stage-strength'], 6000);
@@ -759,6 +779,7 @@ const App = (() => {
             complainant: getAnalyzeComplainant(),
             issue_summary: state.issueSummary,
             desired_resolution: state.desiredResolution,
+            company_objection: state.companyObjection || null,
             company_name_hint: state.companyName,
             website: state.companyWebsite,
             timeline: state.timeline,
@@ -1058,13 +1079,14 @@ const App = (() => {
         _generateInFlight = true;
         goTo(7);
         animateStages(['gen-stage-1', 'gen-stage-2', 'gen-stage-3', 'gen-stage-4', 'gen-stage-5'], 8000);
-        animateProgress(40000);
+        animateProgress(60000);
 
         const controls = getCustomerControls();
         const body = {
             complainant: state.complainant,
             issue_summary: state.issueSummary,
             desired_resolution: state.desiredResolution,
+            company_objection: state.companyObjection || null,
             company_name_hint: state.companyName,
             website: state.companyWebsite,
             timeline: state.timeline,
@@ -1080,55 +1102,73 @@ const App = (() => {
             language: controls.language,
         };
 
-        const maxAttempts = 2;
-        let lastErr = null;
-
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 150000);
-
-            try {
-                const res = await apiFetch('/notice/typed', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
-                    signal: controller.signal,
-                });
-                clearTimeout(timeout);
-                if (!res.ok) {
-                    const msg = await responseErrorMessage(res, `Notice generation failed (${res.status})`);
-                    throw new Error(msg);
-                }
-                state.noticeResult = await res.json();
-                state.noticeId = state.noticeResult.notice_id != null
-                    ? String(state.noticeResult.notice_id) : null;
+        try {
+            // 1. Submit job (returns immediately with job_id)
+            const submitController = new AbortController();
+            const submitTimeout = setTimeout(() => submitController.abort(), 30000);
+            const submitRes = await apiFetch('/notice/typed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+                signal: submitController.signal,
+            });
+            clearTimeout(submitTimeout);
+            if (!submitRes.ok) {
+                const msg = await responseErrorMessage(submitRes, `Notice generation failed (${submitRes.status})`);
+                throw new Error(msg);
+            }
+            const submitData = await submitRes.json();
+            const jobId = submitData.job_id;
+            
+            // If the server didn't return a job_id, it might be the old synchronous response (e.g. dev environment).
+            if (!jobId) {
+                state.noticeResult = submitData;
+                state.noticeId = submitData.notice_id != null ? String(submitData.notice_id) : null;
                 completeProgress();
                 renderNotice();
                 goTo(8);
                 _generateInFlight = false;
                 return;
-            } catch (err) {
-                clearTimeout(timeout);
-                lastErr = err;
-                const isNetworkDrop = err?.name === 'TypeError'
-                    || (err?.message || '').toLowerCase().includes('failed to fetch')
-                    || (err?.message || '').toLowerCase().includes('network');
-                if (isNetworkDrop && attempt < maxAttempts) {
-                    // Brief pause then retry
-                    await new Promise(r => setTimeout(r, 2000));
-                    continue;
-                }
-                break;
             }
-        }
 
-        const msg = lastErr?.name === 'AbortError'
-            ? 'Generation timed out. Please try again.'
-            : (lastErr?.message || 'Could not generate notice right now. Please try again.');
-        clearInterval(_progressTimer);
-        goTo(6, { resetTier: false });
-        showError(msg);
-        _generateInFlight = false;
+            // 2. Poll for completion
+            const maxWaitMs = 180000; // 3 minutes
+            const pollIntervalMs = 3000;
+            const pollStart = Date.now();
+            
+            while (Date.now() - pollStart < maxWaitMs) {
+                await new Promise(r => setTimeout(r, pollIntervalMs));
+                const pollRes = await apiFetch('/notice/job/' + encodeURIComponent(jobId));
+                if (!pollRes.ok) {
+                    if (pollRes.status === 404) throw new Error('Job expired. Please try again.');
+                    continue; // transient error, keep polling
+                }
+                const pollData = await pollRes.json();
+                if (pollData.status === 'completed' && pollData.result) {
+                    state.noticeResult = pollData.result;
+                    state.noticeId = pollData.result.notice_id != null
+                        ? String(pollData.result.notice_id) : null;
+                    completeProgress();
+                    renderNotice();
+                    goTo(8);
+                    _generateInFlight = false;
+                    return;
+                }
+                if (pollData.status === 'failed') {
+                    throw new Error(pollData.error || 'Notice generation failed on the server.');
+                }
+                // status === 'processing' → keep polling
+            }
+            throw new Error('Generation timed out. Please try again.');
+        } catch (err) {
+            const msg = err?.name === 'AbortError'
+                ? 'Generation timed out. Please try again.'
+                : (err?.message || 'Could not generate notice right now. Please try again.');
+            clearInterval(_progressTimer);
+            goTo(6, { resetTier: false });
+            showError(msg);
+            _generateInFlight = false;
+        }
     }
 
     // ── Step 8: Render result ───────────────────────────────────────
@@ -1384,6 +1424,7 @@ const App = (() => {
         state.timeline = [];
         state.evidence = [];
         state.desiredResolution = '';
+        state.companyObjection = '';
         state.analysisResult = null;
         state.followUpAnswers = {};
         state.tier = 'self_send';
