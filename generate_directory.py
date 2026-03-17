@@ -5,12 +5,13 @@ entity_links = ""
 glossary_links = ""
 for f in sorted(files):
     filename = f.split("/")[-1]
+    clean_url = filename.replace(".html", "")
     if filename.startswith("legal-notice-against-"):
         title = filename.replace("-", " ").replace(".html", "").title()
-        entity_links += f'<li><a href="{filename}">{title}</a></li>\n'
+        entity_links += f'<li><a href="{clean_url}">{title}</a></li>\n'
     elif filename.startswith("what-is-"):
         title = filename.replace("-", " ").replace(".html", "").title()
-        glossary_links += f'<li><a href="{filename}">{title}</a></li>\n'
+        glossary_links += f'<li><a href="{clean_url}">{title}</a></li>\n'
 
 html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -19,6 +20,28 @@ html = f"""<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Legal Notice Directory | Lawly India</title>
     <meta name="description" content="Directory of programmatic legal notice formats against Indian companies and legal glossary.">
+    <link rel="canonical" href="https://lawly.store/directory">
+    <link rel="alternate" hreflang="en-IN" href="https://lawly.store/directory">
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Lawly India",
+          "item": "https://lawly.store"
+        }},
+        {{
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Legal Resource Directory",
+          "item": "https://lawly.store/directory"
+        }}
+      ]
+    }}
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="use-case.css">
@@ -63,7 +86,7 @@ html = f"""<!DOCTYPE html>
             <p>Lawly | Drafting reliable legal notices across India.</p>
             <nav class="uc-footer-links">
                 <a href="/">Home</a>
-                <a href="/directory.html">Directory</a>
+                <a href="/directory">Directory</a>
             </nav>
             <p class="uc-footer-copy">&copy; 2026 Lawly. All rights reserved.</p>
         </div>
@@ -71,6 +94,6 @@ html = f"""<!DOCTYPE html>
 </body>
 </html>
 """
-with open("static/directory.html", "w") as f:
+with open("static/directory", "w") as f:
     f.write(html)
 print("Generated directory.html")

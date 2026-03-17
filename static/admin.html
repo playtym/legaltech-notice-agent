@@ -976,18 +976,6 @@
             <canvas id="analytics-chart-tiers"></canvas>
         </div>
     </div>
-
-    <!-- Traffic Sources -->
-    <div class="chart-grid" style="margin-top:20px;">
-        <div class="card">
-            <h3 style="font-size:.9rem;margin-bottom:12px;">🌐 Traffic Sources</h3>
-            <div id="analytics-sources"><div class="empty-state">No data yet</div></div>
-        </div>
-        <div class="card">
-            <h3 style="font-size:.9rem;margin-bottom:12px;">🔗 Top Referrers</h3>
-            <ul class="category-list" id="analytics-referrers"><li class="empty-state">No data yet</li></ul>
-        </div>
-    </div>
 </div>
 
 <!-- ═══ SEARCH INSIGHTS TAB ═══ -->
@@ -2135,7 +2123,7 @@ const Admin = (() => {
             const res = await apiFetch('/api/admin/seo/audit');
             const data = await res.json();
             renderSEOAudit(data);
-        } catch (err) { console.warn('SEO audit load failed:', err); }
+        } catch (err) {}
     }
 
     async function runSEOAudit() {
@@ -2307,8 +2295,7 @@ const Admin = (() => {
         try {
             const res = await apiFetch('/api/admin/seo/ping-sitemap', { method: 'POST' });
             const data = await res.json();
-            const parts = Object.entries(data).map(([engine, r]) =>
-                `${engine}: ${r.ok ? '✅' : '❌ ' + (r.error || 'failed')}`);
+            const parts = data.results.map(r => `${r.engine}: ${r.status === 'ok' ? '✅' : '❌ ' + (r.error || 'failed')}`);
             el.textContent = parts.join(' · ');
             showToast('Sitemap pinged', 'success');
         } catch (err) {
@@ -2385,7 +2372,7 @@ const Admin = (() => {
             const res = await apiFetch('/api/admin/aeo/audit');
             const data = await res.json();
             renderAEOAudit(data);
-        } catch (err) { console.warn('AEO audit load failed:', err); }
+        } catch (err) {}
     }
 
     async function runAEOAudit() {
@@ -2962,8 +2949,6 @@ const Admin = (() => {
             renderFunnel(data.funnel);
             renderAnalyticsCharts(data);
             renderCategories(data.categories);
-            renderTrafficSources(data.traffic_sources);
-            renderTopReferrers(data.top_referrers);
         } catch (err) { showToast('Failed to load analytics', 'error'); }
     }
 
@@ -3047,34 +3032,6 @@ const Admin = (() => {
         if (!entries.length) { ul.innerHTML = '<li class="empty-state">No categories recorded yet</li>'; return; }
         ul.innerHTML = entries.slice(0, 15).map(([cat, count]) =>
             `<li><span>${esc(cat)}</span><strong>${count}</strong></li>`
-        ).join('');
-    }
-
-    function renderTrafficSources(sources) {
-        const el = qs('#analytics-sources');
-        const entries = Object.entries(sources || {});
-        if (!entries.length) { el.innerHTML = '<div class="empty-state">No traffic data yet</div>'; return; }
-        const total = entries.reduce((s, [, c]) => s + c, 0);
-        const colors = { reddit: '#FF4500', google: '#4285F4', direct: '#6B7280', bing: '#008373', twitter: '#1DA1F2', facebook: '#1877F2', linkedin: '#0A66C2', instagram: '#E4405F', youtube: '#FF0000' };
-        el.innerHTML = entries.slice(0, 12).map(([src, count]) => {
-            const pct = Math.round((count / total) * 100);
-            const color = colors[src] || '#8B5CF6';
-            return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                <span style="width:90px;font-size:.82rem;font-weight:600;text-transform:capitalize;color:${color}">${esc(src)}</span>
-                <div style="flex:1;background:#f1f5f9;border-radius:6px;height:22px;overflow:hidden">
-                    <div style="width:${Math.max(pct, 3)}%;height:100%;background:${color};border-radius:6px;transition:width .3s"></div>
-                </div>
-                <span style="font-size:.82rem;font-weight:600;min-width:55px;text-align:right">${count} (${pct}%)</span>
-            </div>`;
-        }).join('');
-    }
-
-    function renderTopReferrers(refs) {
-        const ul = qs('#analytics-referrers');
-        const entries = Object.entries(refs || {});
-        if (!entries.length) { ul.innerHTML = '<li class="empty-state">No referrer data yet</li>'; return; }
-        ul.innerHTML = entries.slice(0, 15).map(([ref, count]) =>
-            `<li><span style="font-size:.82rem">${esc(ref)}</span><strong>${count}</strong></li>`
         ).join('');
     }
 
@@ -3418,11 +3375,14 @@ const Admin = (() => {
         if (!r || !r.faqs) return;
         for (const faq of r.faqs) {
             addFaqItem();
-            const idx = faqItems.length - 1;
-            faqItems[idx].question = faq.question || '';
-            faqItems[idx].answer = faq.answer || '';
+            const entries = document.querySelectorAll('#faq-entries .faq-entry');
+            const last = entries[entries.length - 1];
+            if (last) {
+                const inputs = last.querySelectorAll('input, textarea');
+                if (inputs[0]) inputs[0].value = faq.question || '';
+                if (inputs[1]) inputs[1].value = faq.answer || '';
+            }
         }
-        renderFaqEntries(faqItems);
         showToast(`Added ${r.faqs.length} AI-generated FAQs`, 'success');
     }
 
@@ -3457,11 +3417,15 @@ const Admin = (() => {
         if (!r || !r.snippets) return;
         for (const s of r.snippets) {
             addSnippet();
-            const idx = snippetItems.length - 1;
-            snippetItems[idx].query = s.query || '';
-            snippetItems[idx].answer = s.answer || '';
+            const entries = document.querySelectorAll('#snippet-entries .snippet-entry');
+            const last = entries[entries.length - 1];
+            if (last) {
+                const inputs = last.querySelectorAll('input, textarea');
+                if (inputs[0]) inputs[0].value = s.query || '';
+                if (inputs[1]) inputs[1].value = s.answer || '';
+                if (inputs[2]) inputs[2].value = s.category || '';
+            }
         }
-        renderSnippets(snippetItems);
         showToast(`Added ${r.snippets.length} AI snippets`, 'success');
     }
 
@@ -3475,11 +3439,15 @@ const Admin = (() => {
         if (!r || !r.clusters) return;
         for (const c of r.clusters) {
             addCluster();
-            const idx = clusterItems.length - 1;
-            clusterItems[idx].pillar = c.pillar || c.name || '';
-            clusterItems[idx].subtopics = c.subtopics || [];
+            const entries = document.querySelectorAll('#cluster-entries .cluster-entry');
+            const last = entries[entries.length - 1];
+            if (last) {
+                const inputs = last.querySelectorAll('input, textarea');
+                if (inputs[0]) inputs[0].value = c.name || '';
+                if (inputs[1]) inputs[1].value = c.pillar || '';
+                if (inputs[2]) inputs[2].value = (c.subtopics || []).join(', ');
+            }
         }
-        renderClusters(clusterItems);
         showToast(`Added ${r.clusters.length} topic clusters`, 'success');
     }
 
