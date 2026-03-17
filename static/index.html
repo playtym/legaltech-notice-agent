@@ -200,7 +200,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -217,190 +217,394 @@
 </nav>
 
 <!-- ── Step 0 : Landing ───────────────────────────────────── -->
-<section class="step active" id="step-0">
-    <div class="landing">
-        <div class="landing-content">
-            <div class="badge">
-                <span class="badge-dot"></span>
-                AI-Powered Legal Agent
+<section class="step active font-sans" id="step-0" style="padding:0; background:transparent;">
+  <!-- Lawly Navigation -->
+  <nav class="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer" onclick="App.goTo(0)">
+            <div class="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-xl leading-none font-serif">L</span>
             </div>
-            <h1>They ignored your emails.<br><span style="color:var(--amber)">They can't ignore the law.</span></h1>
-            <p class="landing-sub">Stop fighting customer support bots. Our AI maps your case to Indian consumer protection statutes and drafts a court-ready legal notice in minutes.</p>
+            <span class="font-bold text-xl tracking-tight text-gray-900">Lawly</span>
+        </div>
+        <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-6">
+                <a href="#how-it-works" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">How it Works</a>
+                <a href="#use-cases" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Use Cases</a>
+                <a href="#pricing" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
+                <a href="#faq" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">FAQs</a>
+                <a href="/directory" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Legal Guides</a>
+                <button onclick="App.goTo(2)" class="bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors">Draft Notice</button>
+            </div>
+        </div>
+      </div>
+    </div>
+  </nav>
 
-            <button class="btn btn-primary btn-lg" onclick="App.goTo(2)">
-                Draft Notice Now
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+  <!-- Hero Section -->
+  <style>
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+    }
+    .agent-active { animation: pulse-ring 2s infinite; }
+    
+    @keyframes type-line {
+      0% { width: 0; opacity: 0; }
+      1% { opacity: 1; }
+      100% { width: 100%; opacity: 1; }
+    }
+    
+    .typing-line-1 { animation: type-line 1s steps(20, end) 0.5s forwards; opacity: 0; white-space: nowrap; overflow: hidden; border-right: 2px solid transparent;}
+    .typing-line-2 { animation: type-line 1s steps(20, end) 1.5s forwards; opacity: 0; white-space: nowrap; overflow: hidden; border-right: 2px solid transparent;}
+    .typing-line-3 { animation: type-line 1s steps(20, end) 2.5s forwards; opacity: 0; white-space: nowrap; overflow: hidden; border-right: 2px solid transparent;}
+    .typing-cursor { animation: blink 1s step-end infinite; }
+    
+    @keyframes blink { 50% { border-color: transparent } }
+    @keyframes scan {
+        0% { top: 0; opacity: 0.1; }
+        50% { opacity: 0.3; }
+        100% { top: 100%; opacity: 0.1; }
+    }
+    .scannerline {
+        position: absolute; width: 100%; height: 2px; background: rgba(59, 130, 246, 0.5); left: 0; box-shadow: 0 0 4px rgba(59, 130, 246, 0.8); animation: scan 3s linear infinite;
+    }
+  </style>
+  <div class="relative bg-white overflow-hidden border-b border-gray-200">
+    <div class="max-w-7xl mx-auto">
+      <div class="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32 pt-8 px-4 sm:px-6 lg:px-8">
+        <main class="mt-4 mx-auto max-w-7xl sm:mt-8 md:mt-10 lg:mt-12 xl:mt-16">
+          <div class="sm:text-center lg:text-left">
+            <div class="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-semibold mb-6 border border-green-200 shadow-sm">
+                <span class="flex w-2 h-2 bg-green-500 rounded-full mr-2 agent-active"></span> AI-Powered Legal Agent
+            </div>
+            <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl leading-tight">
+              <span class="block xl:inline">They ignored your emails.</span>
+              <span class="block text-amber-600 xl:inline mt-2">They can't ignore the law.</span>
+            </h1>
+            <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+              Stop fighting customer support bots. Our AI maps your case to Indian consumer protection statutes and drafts a court-ready legal notice in minutes.
+            </p>
+            <div class="mt-8 sm:mt-12 sm:flex sm:justify-center lg:justify-start">
+              <div class="rounded-md shadow hover:shadow-lg transition-all transform hover:-translate-y-1">
+                <button onclick="App.goTo(2)" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gray-900 hover:bg-gray-800 md:py-4 md:text-lg md:px-10 transition-colors">
+                  Draft Notice Now
+                  <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+              </div>
+            </div>
+            <div class="mt-8 grid grid-cols-3 gap-4 text-sm font-medium text-gray-500 border-t border-gray-100 pt-6">
+                <div class="flex flex-col items-center lg:items-start">
+                   <span class="text-2xl font-bold text-gray-900">2,500+</span>
+                   <span>Notices Sent</span>
+                </div>
+                <div class="flex flex-col items-center lg:items-start border-l border-gray-100 pl-4">
+                   <span class="text-2xl font-bold text-gray-900">25+</span>
+                   <span>Statutes</span>
+                </div>
+                <div class="flex flex-col items-center lg:items-start border-l border-gray-100 pl-4">
+                   <span class="text-2xl font-bold text-gray-900">₹199</span>
+                   <span>Starts At</span>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex items-center justify-center lg:justify-start gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100 max-w-sm mx-auto lg:mx-0">
+                <img src="img/jago-grahak-jago.png" alt="Jago Grahak Jago" class="h-12 w-auto object-contain " />
+                <div class="text-sm text-left">
+                    <p class="text-gray-900 font-semibold mb-0">Empowering Indian Consumers</p>
+                    <p class="text-gray-500 text-xs mt-0.5">Know your rights under CPA 2019</p>
+                </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 bg-gray-50 flex items-center justify-center p-8 border-l border-gray-100 overflow-hidden">
+        <!-- AI Agent Animation Representation of Notice -->
+        <div class="relative bg-white p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 transform hover:scale-105 transition-transform duration-500 group">
+            <div class="scannerline"></div>
+            <div class="border-b border-gray-100 pb-4 mb-4 flex justify-between items-center">
+               <div class="text-xs font-mono text-blue-600 font-bold flex items-center gap-2">
+                 <span style="animation: blink 1s infinite steps(2);">>></span>
+                 AI ANALYZING CASE...
+               </div>
+               <div class="h-2 w-2 rounded-full bg-blue-500 agent-active"></div>
+            </div>
+            
+            <div class="space-y-4 font-mono text-xs text-gray-700 h-32 relative">
+               <div class="typing-line-1 text-gray-400">>> Extracting Respondent Details... [OK]</div>
+               <div class="typing-line-2 text-gray-400">>> Identifying Facts of Dispute... [OK]</div>
+               <div class="typing-line-3 text-green-600 font-bold">>> Matching Statute: Section 35 CPA 2019 ✓</div>
+               
+               <div class="absolute bottom-2 right-0 left-0">
+                 <div class="h-1 lg:h-1.5 w-full bg-gray-100 rounded overflow-hidden">
+                    <div class="h-full bg-blue-500 w-0 rounded transition-all duration-1000 group-hover:w-full"></div>
+                 </div>
+                 <div class="text-[10px] text-gray-400 mt-1 text-right">GENERATING DRAFT...</div>
+               </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+               <div class="flex items-center gap-3">
+                   <div class="h-8 w-8 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold text-sm">L</div>
+                   <div class="text-xs font-medium text-gray-900">Powered by <span class="font-bold text-blue-600">Lawly</span> AI</div>
+               </div>
+               <span class="text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500 font-mono border border-gray-200">COURT-READY</span>
+            </div>
+        </div>
+        
+        <!-- Decoration elements behind card -->
+        <div class="absolute -z-10 w-96 h-96 bg-blue-100 rounded-full filter blur-3xl opacity-30 top-0 left-0 "></div>
+        <div class="absolute -z-10 w-72 h-72 bg-amber-100 rounded-full filter blur-3xl opacity-30 bottom-0 right-0 "></div>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div id="how-it-works" class="bg-gray-50 py-16 scroll-mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-extrabold text-gray-900">How it works</h2>
+        <p class="mt-4 text-lg text-gray-500">From complaint to court-ready legal notice in 3 simple steps.</p>
+      </div>
+      <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center hover:shadow-md transition-shadow">
+            <div class="w-12 h-12 mx-auto bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-6">1</div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">Tell us what happened</h3>
+            <p class="text-gray-500">Simply describe your issue and upload any evidence (invoices, emails). Our AI will parse the facts perfectly.</p>
+         </div>
+         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center hover:shadow-md transition-shadow relative">
+            <div class="hidden md:block absolute top-1/2 -left-4 w-8 border-t-2 border-dashed border-gray-300"></div>
+            <div class="w-12 h-12 mx-auto bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-6">2</div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">AI Legal Analysis</h3>
+            <p class="text-gray-500">We automatically map your facts to Indian laws (CPA 2019, RERA, RBI guidelines) to validate the claim.</p>
+         </div>
+         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center hover:shadow-md transition-shadow relative">
+            <div class="hidden md:block absolute top-1/2 -left-4 w-8 border-t-2 border-dashed border-gray-300"></div>
+            <div class="w-12 h-12 mx-auto bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-6">3</div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">Download & Send</h3>
+            <p class="text-gray-500">Get a formally drafted, formatted PDF ready to email or post to the company and their grievance officers.</p>
+         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lawyer Option Banner -->
+  <div id="pricing" class="bg-gray-900 py-16 relative overflow-hidden scroll-mt-16">
+    <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-500 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
+    <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-amber-500 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
+    
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+        <span class="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-blue-200 text-sm font-semibold mb-6 border border-white/20">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+            Optional Upgrade
+        </span>
+        <h2 class="text-3xl font-extrabold text-white sm:text-4xl mb-4">
+            Need an expert? Get Lawyer-Assisted Review.
+        </h2>
+        <p class="text-lg text-gray-300 max-w-2xl mx-auto mb-8 leading-relaxed">
+            While our AI generates perfectly drafted PDF notices for you to send, some situations demand a heavy hand. Upgrade to have an Enrolled Advocate review your notice and send it directly on their official letterhead.
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <button onclick="App.goTo(2)" class="px-8 py-3 bg-white text-gray-900 font-bold rounded-lg hover:bg-gray-100 transition-colors shadow-lg">
+                Start Draft (AI-Only: ₹199)
             </button>
-
-            <div class="landing-proof">
-                <div class="proof-item"><strong>2,500+</strong><span>notices generated</span></div>
-                <div class="proof-item"><strong>25+</strong><span>statutes cited</span></div>
-                <div class="proof-item"><strong>₹199</strong><span>starting price</span></div>
-            </div>
-
-            <div class="jago-banner">
-                <img src="img/jago-grahak-jago.png" alt="Jago Grahak Jago — Consumer Awareness" class="jago-img">
-            </div>
-
-            <div class="landing-badges">
-                <span>CPA 2019 Compliant</span>
-                <span>Court-Ready Format</span>
-                <span>Advocate Review Option</span>
-            </div>
-
-            <!-- ── Use-case grid (SEO/AEO content) ── -->
-            <div class="use-cases-section" id="use-cases">
-                <h2 class="use-cases-heading">What can you send a legal notice for?</h2>
-
-                <div class="use-cases-grid">
-
-                    <a class="uc-card" href=\"/cheque-bounce-notice\">
-                        <span class="uc-icon">💰</span>
-                        <span class="uc-label">Cheque Bounce (Sec 138)</span>
-                    </a>
-                    <a class="uc-card" href=\"/recovery-of-dues-notice\">
-                        <span class="uc-icon">💸</span>
-                        <span class="uc-label">Recovery of Money/Dues</span>
-                    </a>
-                    <a class="uc-card" href=\"/defamation-legal-notice\">
-                        <span class="uc-icon">📢</span>
-                        <span class="uc-label">Defamation Notice</span>
-                    </a>
-                    <a class="uc-card" href=\"/upi-payment-failures\">
-                        <span class="uc-icon">💳</span>
-                        <span class="uc-label">UPI &amp; Payment Failures</span>
-                    </a>
-                    <a class="uc-card" href=\"/dark-patterns\">
-                        <span class="uc-icon">🏭</span>
-                        <span class="uc-label">Dark Patterns on Apps</span>
-                    </a>
-                    <a class="uc-card" href=\"/ed-tech-refunds\">
-                        <span class="uc-icon">🏫</span>
-                        <span class="uc-label">Ed-Tech Refunds</span>
-                    </a>
-                    <a class="uc-card" href=\"/flight-cancellation\">
-                        <span class="uc-icon">✈️</span>
-                        <span class="uc-label">Flight Cancellation &amp; Delay</span>
-                    </a>
-                    <a class="uc-card" href=\"/d2c-brand-fraud\">
-                        <span class="uc-icon">🛍️</span>
-                        <span class="uc-label">D2C Brand Frauds &amp; Scams</span>
-                    </a>
-                    <a class="uc-card" href=\"/rera-builder-delay\">
-                        <span class="uc-icon">🏘️</span>
-                        <span class="uc-label">RERA — Builder Delay</span>
-                    </a>
-                    <a class="uc-card" href=\"/insurance-claim-rejected\">
-                        <span class="uc-icon">📋</span>
-                        <span class="uc-label">Insurance Claim Rejected</span>
-                    </a>
-                    <a class="uc-card" href=\"/wrong-cibil-score\">
-                        <span class="uc-icon">📈</span>
-                        <span class="uc-label">Wrong CIBIL Score</span>
-                    </a>
-                    <a class="uc-card" href=\"/expired-food-quick-commerce\">
-                        <span class="uc-icon">🛒</span>
-                        <span class="uc-label">Expired Food — Quick Commerce</span>
-                    </a>
-                </div>
-            </div>
-
-            <!-- ── Know Your Rights — Infographic ── -->
-            <div class="rights-infographic">
-                <div class="ri-header">
-                    <div class="ri-icon-wrap"><span class="ri-icon">⚖️</span></div>
-                    <h3 class="ri-title">Your Legal Right to Self-Represent</h3>
-                    <p class="ri-subtitle">Section 35(1), Consumer Protection Act 2019</p>
-                </div>
-
-                <div class="ri-grid">
-                    <div class="ri-card">
-                        <span class="ri-card-icon">📝</span>
-                        <strong>No Lawyer Needed</strong>
-                        <p>Any individual citizen can draft &amp; send a legal notice on their own behalf under Indian law.</p>
-                    </div>
-                    <div class="ri-card">
-                        <span class="ri-card-icon">🏛️</span>
-                        <strong>Self-Represent in Court</strong>
-                        <p>Argue your own case at District Consumer Forums, State Commissions &amp; lower civil courts.</p>
-                    </div>
-                    <div class="ri-card">
-                        <span class="ri-card-icon">📊</span>
-                        <strong>~60% Cases Settle</strong>
-                        <p>A well-drafted notice citing relevant statutes is a strong enough deterrent — most companies respond.</p>
-                    </div>
-                    <div class="ri-card">
-                        <span class="ri-card-icon">📚</span>
-                        <strong>25+ Statutes Auto-Cited</strong>
-                        <p>CPA 2019, RERA, DGCA, RBI, IRDAI, FSSA, IT Act, Contract Act &amp; more — compiled by Lawly's AI.</p>
-                    </div>
-                </div>
-
-                <div class="ri-flow">
-                    <div class="ri-step"><span class="ri-step-num">1</span><span>Describe complaint</span></div>
-                    <div class="ri-arrow">→</div>
-                    <div class="ri-step"><span class="ri-step-num">2</span><span>AI maps to law</span></div>
-                    <div class="ri-arrow">→</div>
-                    <div class="ri-step"><span class="ri-step-num">3</span><span>Download PDF</span></div>
-                    <div class="ri-arrow">→</div>
-                    <div class="ri-step"><span class="ri-step-num">4</span><span>Send via email</span></div>
-                </div>
-
-                <p class="ri-disclaimer">This is not legal advice. For complex or criminal matters, please consult a qualified lawyer.</p>
-            </div>
-
-            <!-- ── FAQ section (AEO-optimized, visible) ── -->
-            <div class="faq-section" id="faq">
-                <h2 class="faq-heading">Frequently Asked Questions</h2>
-
-                <details class="faq-item">
-                    <summary>How do I get a refund for a failed UPI transaction?</summary>
-                    <p>Under RBI's TAT circular, your bank must auto-reverse any failed UPI/IMPS transaction within <strong>T+5 business days</strong>. If they don't, they owe you <strong>₹100 per day</strong> in compensation. Generate a legal notice on Lawly citing the Payment and Settlement Systems Act §18 and the RBI auto-reversal circular. If unresolved, file a complaint on <strong>cms.rbi.org.in</strong> (RBI Integrated Ombudsman).</p>
-                </details>
-
-                <details class="faq-item">
-                    <summary>What are dark patterns and can I complain about them in India?</summary>
-                    <p>Dark patterns are deceptive UI designs like subscription traps, basket sneaking, forced actions, and false urgency. Since November 2023, the <strong>CCPA Dark Patterns Guidelines</strong> ban 13 specific patterns as unfair trade practices under CPA 2019 §2(47). Companies face penalties up to <strong>₹50 lakh</strong>. Lawly generates notices specifically citing these guidelines.</p>
-                </details>
-
-                <details class="faq-item">
-                    <summary>How much RERA delay compensation can I claim from my builder?</summary>
-                    <p>Under <strong>RERA §18</strong>, you can claim interest at <strong>SBI MCLR + 2%</strong> (or state prescribed rate) on every payment made, calculated from the promised possession date. You have two options: withdraw with full refund + interest, or continue with delay interest. Lawly auto-calculates the exact amount based on your payments and delay period.</p>
-                </details>
-
-                <details class="faq-item">
-                    <summary>What is the compensation for a cancelled domestic flight in India?</summary>
-                    <p>Under <strong>DGCA CAR Section 3, Series M, Part IV</strong>: cancellation with less than 24h notice entitles you to up to <strong>₹20,000 + alternate flight or full refund</strong>. Denied boarding pays <strong>200-400%</strong> of the basic fare. Delays over 6 hours require meals, hotel, and ₹20,000 compensation. File on <strong>AirSewa</strong> (airsewa.gov.in) and use Lawly for the legal notice.</p>
-                </details>
-
-                <details class="faq-item">
-                    <summary>My health insurance claim was rejected — what can I do?</summary>
-                    <p>Under <strong>IRDAI Regulation 17(7)</strong>, insurers must provide specific written reasons for rejection within 30 days. Vague rejections are themselves regulatory violations. After 2 years from policy start, they <strong>cannot repudiate</strong> your policy for non-disclosure (Insurance Act §45). Use Lawly to generate a notice citing IRDAI regulations, then escalate via <strong>IGMS</strong> (igms.irda.gov.in) → Insurance Ombudsman → Consumer Commission.</p>
-                </details>
-
-                <details class="faq-item">
-                    <summary>Can I get a refund from Byju's, Unacademy, or other ed-tech companies?</summary>
-                    <p>Yes. Education is a "service" under CPA 2019. False placement/job guarantees are <strong>unfair trade practices</strong> under §2(47). Ed-tech platforms must comply with <strong>E-Commerce Rules 2020</strong>. UGC Refund Guidelines 2023 mandate proportionate refunds even after course start. CCPA has issued orders against multiple ed-tech firms. Lawly cites all applicable provisions.</p>
-                </details>
-
-                <details class="faq-item">
-                    <summary>How do I fix a wrong CIBIL or credit score in India?</summary>
-                    <p>Under <strong>CICRA 2005 §15</strong>, you can dispute inaccurate credit data. The credit bureau must resolve within <strong>30 days</strong>; the reporting bank must rectify within <strong>21 days</strong>. Wrong reporting is "deficiency in service" under CPA 2019. Use Lawly to send a legal notice to both the bank and the credit bureau demanding correction + compensation for financial loss.</p>
-                </details>
-
-                <details class="faq-item">
-                    <summary>What if I got expired food from Blinkit, Zepto, or Swiggy Instamart?</summary>
-                    <p>Selling expired food is a <strong>criminal offence</strong> under FSSA 2006 §59 — up to 6 months imprisonment + ₹5 lakh fine. Quick commerce platforms are Food Business Operators (FBOs) and must hold FSSAI licenses. Report to the local Food Safety Officer and use Lawly to send a legal notice citing <strong>FSSA §§26, 27, 59</strong> and FSSAI labelling regulations.</p>
-                </details>
-
-                <details class="faq-item">
-                    <summary>Can I send a legal notice without a lawyer?</summary>
-                    <p>Yes — under Indian law, <strong>any individual can send a legal notice on their own behalf</strong>. No lawyer is required. For most consumer and civil disputes, a properly drafted legal notice citing relevant statutes is a powerful deterrent that compels the other party to respond. You also have the right to <strong>represent yourself</strong> ("party-in-person") in District Consumer Dispute Redressal Forums, State Commissions, and lower civil courts. Lawly helps by compiling relevant clauses from 25+ Indian statutes into a professional, court-ready format. For complex or criminal matters, we recommend consulting a qualified lawyer.</p>
-                </details>
-            </div>
-
+            <button onclick="App.goTo(2)" class="px-8 py-3 bg-transparent border-2 border-gray-600 text-white font-bold rounded-lg hover:bg-gray-800 transition-colors">
+                Explore Lawyer Tier
+            </button>
         </div>
     </div>
+  </div>
+
+  <!-- Re-introducing SEO content: SEO Sections from Original -->
+  <!-- Modernized SEO & Use Case Sections -->
+  <div class="bg-white py-20 border-t border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Split Layout for Core Legal Information -->
+      <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-start">
+          
+        <!-- Left Column: Rights & Education -->
+        <div class="space-y-12">
+            <div>
+              <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl mb-4">
+                Your Right to Self-File <span class="text-blue-600">(CPA 2019)</span>
+              </h2>
+              <p class="text-lg text-gray-500 mb-4 leading-relaxed">
+                You <strong>do not need to hire a lawyer</strong> or pay thousands of rupees to send a legitimate legal notice or approach the consumer forum in India.
+              </p>
+              <p class="text-lg text-gray-500 leading-relaxed mb-6">
+                Under the Consumer Protection Act, 2019, any consumer can self-represent and file an online complaint at <a href="https://edaakhil.nic.in" target="_blank" class="text-blue-600 font-medium hover:underline">e-daakhil.nic.in</a>. A legally drafted notice is the required first step to prove that you gave the company a fair chance to resolve the issue (the "Cure Period").
+              </p>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-8 relative overflow-hidden">
+              <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-500 opacity-10 rounded-full blur-xl"></div>
+              <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Why our AI outperforms generic templates
+              </h3>
+              <p class="text-gray-600 mb-4">
+                Using a generic "legal notice template pdf" often fails because it lacks the specific statutory referencing required by Indian courts.
+              </p>
+              <p class="text-gray-600">
+                Lawly's <strong>Legal AI Agent</strong> acts as your paralegal: it ingests your facts, identifies the exact breach of contract, maps the precise laws (e.g., <em>Section 35 of CPA 2019, IRDAI Circulars, RBI Ombudsman</em>), and calculates your actual claim amount including mental agony.
+              </p>
+            </div>
+        </div>
+
+        <!-- Right Column: Interactive FAQs -->
+        <div class="mt-12 lg:mt-0">
+          <h2 class="text-2xl font-bold text-gray-900 mb-8">Frequently Asked Questions</h2>
+          <div class="space-y-4" id="faq">
+             <!-- FAQ 1 -->
+             <details class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
+               <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
+                  <span>Is a digital or email legal notice valid in India?</span>
+                  <span class="transition group-open:rotate-180 text-blue-500">
+                     <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                  </span>
+               </summary>
+               <div class="text-gray-600 p-6 pt-0 bg-gray-50 border-t border-gray-100 leading-relaxed">
+                  Yes. Under Section 4 of the Information Technology Act, 2000, electronic records have equal legal validity. Serving a notice via email—especially to the grievance officer's email address—with a read-receipt is fully recognized by Indian courts as valid service.
+               </div>
+             </details>
+             
+             <!-- FAQ 2 -->
+             <details class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
+               <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
+                  <span>Do I really need an advocate to send a notice?</span>
+                  <span class="transition group-open:rotate-180 text-blue-500">
+                     <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                  </span>
+               </summary>
+               <div class="text-gray-600 p-6 pt-0 bg-gray-50 border-t border-gray-100 leading-relaxed">
+                  No. You can issue a Consumer Legal Notice under your own name. The draft simply must correctly cite the relevant statutes and establish the facts—which is exactly what our AI assists with.
+               </div>
+             </details>
+
+             <!-- FAQ 3 -->
+             <details class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
+               <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
+                  <span>What happens if they don't reply?</span>
+                  <span class="transition group-open:rotate-180 text-blue-500">
+                     <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                  </span>
+               </summary>
+               <div class="text-gray-600 p-6 pt-0 bg-gray-50 border-t border-gray-100 leading-relaxed">
+                  Silence from the company strengthens your case. Once the timeline (cure period) expires, you have the legal right to file a formal case on the E-Daakhil portal or the appropriate Consumer Disputes Redressal Commission.
+               </div>
+             </details>
+
+             <!-- FAQ 4 -->
+             <details class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
+               <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
+                  <span>What is the difference between Self-Send and Advocate options?</span>
+                  <span class="transition group-open:rotate-180 text-blue-500">
+                     <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                  </span>
+               </summary>
+               <div class="text-gray-600 p-6 pt-0 bg-gray-50 border-t border-gray-100 leading-relaxed">
+                  <strong>Self-Send</strong> provides an AI-generated, perfectly formatted PDF you email yourself. The <strong>Lawyer-Assisted</strong> tier means an Enrolled Advocate reviews the draft and adds their letterhead, escalating the urgency.
+               </div>
+             </details>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Use Cases Grid -->
+      <div id="use-cases" class="mt-24 pt-16 border-t border-gray-100 scroll-mt-20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">What We Cover</h2>
+            <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">Explore targeted legal action plans tailored for specific disputes. Our AI identifies the exact violations under consumer and sector-specific laws.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Case 1 -->
+            <a href="/ed-tech-refunds" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Ed-Tech Refunds</h3>
+                <p class="text-sm text-gray-500">Unfair course fee deductions, misleading promises, or refusal to cancel subscriptions.</p>
+            </a>
+            
+            <!-- Case 2 -->
+            <a href="/flight-cancellation" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Flight Cancellations</h3>
+                <p class="text-sm text-gray-500">Claim missing refunds or compensation for sudden flight delays under DGCA rules.</p>
+            </a>
+
+            <!-- Case 3 -->
+            <a href="/wrong-cibil-score" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-green-50 text-green-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Wrong CIBIL Reporting</h3>
+                <p class="text-sm text-gray-500">Dispute inaccurate loan accounts, false defaults, or delayed updates impacting credit score.</p>
+            </a>
+            
+            <!-- Case 4 -->
+            <a href="/upi-payment-failures" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">UPI & Banking Failures</h3>
+                <p class="text-sm text-gray-500">Recover money deducted but not credited, or dispute unauthorized banking charges.</p>
+            </a>
+            
+            <!-- Case 5 -->
+            <a href="/insurance-claim-rejected" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-red-50 text-red-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Insurance Rejections</h3>
+                <p class="text-sm text-gray-500">Challenge wrongful denial of health, motor, or term insurance claims under IRDAI guidelines.</p>
+            </a>
+            
+            <!-- Case 6 -->
+            <a href="/rera-builder-delay" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Real Estate / RERA</h3>
+                <p class="text-sm text-gray-500">Send legal notices to builders for possession delays or breaches of the sale agreement.</p>
+            </a>
+
+            <!-- Case 7 -->
+            <a href="/d2c-brand-fraud" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-pink-50 text-pink-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">D2C Brand Frauds</h3>
+                <p class="text-sm text-gray-500">Defective products, false advertising, or absolute refusal to honor guaranteed return policies.</p>
+            </a>
+
+            <!-- Case 8 -->
+            <a href="/expired-food-quick-commerce" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Quick Commerce Claims</h3>
+                <p class="text-sm text-gray-500">Expired food deliveries or poor quality items via Blinkit, Zepto, or Swiggy Instamart.</p>
+            </a>
+
+            <!-- Case 9 -->
+            <a href="/dark-patterns" class="group block p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+                <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Dark Patterns</h3>
+                <p class="text-sm text-gray-500">Hidden subscription fees, forced inclusions, and manipulated pricing structures.</p>
+            </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ── Step 2 : Company ───────────────────────────────────── -->
@@ -875,16 +1079,25 @@
         <nav style="display:flex;justify-content:center;gap:16px;margin:12px 0;">
             <a href="/#use-cases" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">Use Cases</a>
             <a href="/#faq" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">FAQ</a>
-            <a href=\"/upi-payment-failures\" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">UPI Refund</a>
-            <a href=\"/dark-patterns\" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">Dark Patterns</a>
-            <a href=\"/rera-builder-delay\" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">RERA</a>
-            <a href=\"/insurance-claim-rejected\" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">Insurance</a>
+            <a href="/upi-payment-failures" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">UPI Refund</a>
+            <a href="/dark-patterns" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">Dark Patterns</a>
+            <a href="/rera-builder-delay" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">RERA</a>
+            <a href="/insurance-claim-rejected" style="font-size:13px;font-weight:500;color:var(--text-2);text-decoration:none;">Insurance</a>
         </nav>
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06);">
             <p style="font-size:11px;color:var(--text-2);opacity:0.7;line-height:1.7;max-width:540px;margin:0 auto;"><strong>Disclaimer:</strong> Lawly is not a law firm and does not provide legal advice. The notices generated are informational tools that compile relevant statutory clauses. For complex matters, please consult a qualified lawyer. Under Indian law, any individual has the right to send a legal notice and represent themselves in consumer forums and lower courts for civil/consumer cases.</p>
         </div>
         <p style="font-size:12px;color:var(--text-2);opacity:0.6;margin-top:12px;">&copy; 2026 Lawly. All rights reserved.</p>
     </div>
+
+    <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:24px; padding-top:24px; border-top:1px solid var(--border);">
+        <img src="img/jago-grahak-jago.png" alt="Jago Grahak Jago" style="height:48px; width:auto; object-fit:contain;" />
+        <div style="text-align:left;">
+            <p style="margin:0; font-size:14px; font-weight:600; color:var(--text);">Empowering Indian Consumers</p>
+            <p style="margin:2px 0 0 0; font-size:12px; color:var(--text-2);">Know your rights under CPA 2019</p>
+        </div>
+    </div>
+
 </footer>
 
 <script src="app.js"></script>
