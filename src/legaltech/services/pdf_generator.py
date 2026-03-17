@@ -8,6 +8,7 @@ generation (no wkhtmltopdf or WeasyPrint headless browser needed).
 from __future__ import annotations
 
 import io
+import re
 from datetime import date
 
 from reportlab.lib.pagesizes import A4
@@ -34,99 +35,126 @@ _MARGIN = 2.2 * cm
 
 
 def _build_styles() -> dict[str, ParagraphStyle]:
-    """Create a professional legal letter stylesheet."""
+    """Create a professional legal notice stylesheet."""
     base = getSampleStyleSheet()
-    dark = HexColor("#1a1a1a")
-    accent = HexColor("#2c3e50")
+    dark = HexColor("#111111")
 
     return {
         "title": ParagraphStyle(
             "NoticeTitle",
             parent=base["Heading1"],
-            fontSize=15,
-            leading=20,
+            fontSize=18,
+            leading=24,
             alignment=TA_CENTER,
-            textColor=accent,
-            spaceAfter=4 * mm,
-            fontName="Helvetica-Bold",
+            textColor=dark,
+            spaceBefore=2 * mm,
+            spaceAfter=2 * mm,
+            fontName="Times-Bold",
         ),
-        "subtitle": ParagraphStyle(
-            "SubTitle",
-            parent=base["Normal"],
-            fontSize=10,
-            alignment=TA_CENTER,
-            textColor=HexColor("#555555"),
-            spaceAfter=6 * mm,
-            fontName="Helvetica",
-        ),
-        "heading": ParagraphStyle(
+        "section": ParagraphStyle(
             "SectionHeading",
             parent=base["Heading2"],
             fontSize=11,
             leading=15,
-            textColor=accent,
+            textColor=dark,
+            spaceBefore=6 * mm,
+            spaceAfter=2 * mm,
+            fontName="Times-Bold",
+        ),
+        "heading": ParagraphStyle(
+            "Heading",
+            parent=base["Heading2"],
+            fontSize=11,
+            leading=15,
+            textColor=dark,
             spaceBefore=5 * mm,
             spaceAfter=2 * mm,
-            fontName="Helvetica-Bold",
+            fontName="Times-Bold",
         ),
         "body": ParagraphStyle(
             "BodyText",
             parent=base["Normal"],
-            fontSize=10,
-            leading=14,
+            fontSize=10.5,
+            leading=15,
             alignment=TA_JUSTIFY,
             textColor=dark,
-            spaceAfter=2 * mm,
-            fontName="Helvetica",
+            spaceAfter=3 * mm,
+            fontName="Times-Roman",
         ),
         "body_bold": ParagraphStyle(
             "BodyBold",
             parent=base["Normal"],
+            fontSize=10.5,
+            leading=15,
+            alignment=TA_JUSTIFY,
+            textColor=dark,
+            spaceAfter=3 * mm,
+            fontName="Times-Bold",
+        ),
+        "meta": ParagraphStyle(
+            "MetaInfo",
+            parent=base["Normal"],
             fontSize=10,
-            leading=14,
+            leading=13,
+            textColor=dark,
+            spaceAfter=1 * mm,
+            fontName="Times-Roman",
+        ),
+        "subject": ParagraphStyle(
+            "Subject",
+            parent=base["Normal"],
+            fontSize=10.5,
+            leading=15,
+            textColor=dark,
+            spaceAfter=3 * mm,
+            fontName="Times-Bold",
+        ),
+        "list_item": ParagraphStyle(
+            "ListItem",
+            parent=base["Normal"],
+            fontSize=10.5,
+            leading=15,
             alignment=TA_JUSTIFY,
             textColor=dark,
             spaceAfter=2 * mm,
-            fontName="Helvetica-Bold",
+            fontName="Times-Roman",
+            leftIndent=8 * mm,
+        ),
+        "address": ParagraphStyle(
+            "Address",
+            parent=base["Normal"],
+            fontSize=10.5,
+            leading=14,
+            textColor=dark,
+            fontName="Times-Roman",
         ),
         "legal_quote": ParagraphStyle(
             "LegalQuote",
             parent=base["Normal"],
-            fontSize=9,
-            leading=12.5,
+            fontSize=9.5,
+            leading=13,
             alignment=TA_LEFT,
-            textColor=HexColor("#333333"),
+            textColor=HexColor("#222222"),
             leftIndent=12 * mm,
             rightIndent=8 * mm,
             spaceAfter=2 * mm,
-            fontName="Helvetica-Oblique",
-            borderColor=HexColor("#cccccc"),
-            borderWidth=0,
-            borderPadding=0,
+            fontName="Times-Italic",
         ),
         "small": ParagraphStyle(
             "SmallText",
             parent=base["Normal"],
             fontSize=8,
             leading=10,
-            textColor=HexColor("#888888"),
-            fontName="Helvetica",
-        ),
-        "address": ParagraphStyle(
-            "Address",
-            parent=base["Normal"],
-            fontSize=10,
-            leading=13,
-            textColor=dark,
-            fontName="Helvetica",
+            textColor=HexColor("#666666"),
+            fontName="Times-Roman",
         ),
         "warning": ParagraphStyle(
             "Warning",
             parent=base["Normal"],
             fontSize=10,
-            leading=13,
-            textColor=HexColor("#c0392b"),
-            fontName="Helvetica-Bold",
+            leading=14,
+            textColor=HexColor("#8b0000"),
+            fontName="Times-Bold",
             spaceAfter=2 * mm,
         ),
     }
@@ -135,11 +163,11 @@ def _build_styles() -> dict[str, ParagraphStyle]:
 def _footer(canvas, doc):
     """Draw page number and confidential footer."""
     canvas.saveState()
-    canvas.setFont("Helvetica", 7)
+    canvas.setFont("Times-Roman", 7)
     canvas.setFillColor(HexColor("#999999"))
     canvas.drawCentredString(
         _PAGE_W / 2, 1.2 * cm,
-        f"Page {doc.page} — CONFIDENTIAL & PRIVILEGED — For addressee only"
+        f"Page {doc.page}"
     )
     canvas.restoreState()
 
@@ -151,6 +179,33 @@ def _esc(text: str) -> str:
         .replace("<", "&lt;")
         .replace(">", "&gt;")
     )
+
+
+# ── Section headers recognised as formal headings in the PDF ──────────
+_SECTION_HEADERS = {
+    "STATEMENT OF FACTS", "LEGAL POSITION", "DEMAND AND RELIEF SOUGHT",
+    "CONSEQUENCE OF NON-COMPLIANCE", "DEMANDS", "RELIEF SOUGHT",
+    "LEGAL GROUNDS", "LEGAL ANALYSIS", "FACTS OF THE CASE",
+    "CONSEQUENCES", "DEMAND", "FACTUAL BACKGROUND",
+    "LEGAL SUBMISSIONS", "PRAYER", "RELIEFS CLAIMED",
+}
+
+
+def _strip_md(text: str) -> str:
+    """Remove markdown bold markers."""
+    return text.replace("**", "").strip()
+
+
+def _md_to_rl(text: str) -> str:
+    """Convert **bold** markdown to reportlab <b> tags; XML-escape the rest."""
+    parts = re.split(r"(\*\*.*?\*\*)", text)
+    out: list[str] = []
+    for p in parts:
+        if p.startswith("**") and p.endswith("**"):
+            out.append(f"<b>{_esc(p[2:-2])}</b>")
+        else:
+            out.append(_esc(p))
+    return "".join(out)
 
 
 def generate_pdf(
@@ -182,12 +237,16 @@ def generate_pdf(
     template = PageTemplate(id="letter", frames=[frame], onPage=_footer)
     doc = BaseDocTemplate(buf, pagesize=A4, pageTemplates=[template])
 
+    _dark = HexColor("#111111")
+
     story: list = []
     lines = notice_text.split("\n")
     i = 0
 
     while i < len(lines):
-        line = lines[i].strip()
+        raw_line = lines[i]
+        line = raw_line.strip()
+        stripped = _strip_md(line)  # version without ** for pattern matching
 
         # Skip empty lines
         if not line:
@@ -195,100 +254,116 @@ def generate_pdf(
             i += 1
             continue
 
-        # Title line
-        if line.startswith("LEGAL NOTICE"):
-            story.append(Paragraph(_esc(line), styles["title"]))
+        # ── Title: LEGAL NOTICE ──
+        if stripped.upper() in ("LEGAL NOTICE", "NOTICE"):
             story.append(HRFlowable(
-                width="100%", thickness=0.5, color=HexColor("#2c3e50"),
-                spaceBefore=1 * mm, spaceAfter=4 * mm,
+                width="100%", thickness=1.5, color=_dark,
+                spaceBefore=2 * mm, spaceAfter=2 * mm,
+            ))
+            story.append(Paragraph(_esc(stripped.upper()), styles["title"]))
+            story.append(HRFlowable(
+                width="100%", thickness=1.5, color=_dark,
+                spaceBefore=2 * mm, spaceAfter=6 * mm,
             ))
             i += 1
             continue
 
-        # Date line
-        if line.startswith("Date:"):
-            story.append(Paragraph(_esc(line), styles["body"]))
-            story.append(Spacer(1, 3 * mm))
+        # ── Date / Reference No metadata ──
+        if stripped.startswith("Date:") or stripped.startswith("Reference No") or stripped.startswith("Ref:") or stripped.startswith("Ref."):
+            story.append(Paragraph(_md_to_rl(line), styles["meta"]))
             i += 1
             continue
 
-        # Address blocks (To, / From,)
-        if line in ("To,", "From,"):
-            story.append(Spacer(1, 3 * mm))
-            story.append(Paragraph(f"<b>{_esc(line)}</b>", styles["address"]))
+        # ── To / From address blocks ──
+        if stripped in ("To,", "From,"):
+            story.append(Spacer(1, 4 * mm))
+            story.append(Paragraph(f"<b>{_esc(stripped)}</b>", styles["address"]))
             i += 1
             # Collect address lines until blank
             while i < len(lines) and lines[i].strip():
-                story.append(Paragraph(_esc(lines[i].strip()), styles["address"]))
+                addr_stripped = _strip_md(lines[i].strip())
+                story.append(Paragraph(_esc(addr_stripped), styles["address"]))
                 i += 1
             continue
 
-        # Subject line
-        if line.startswith("Subject:"):
+        # ── Subject line ──
+        if stripped.startswith("Subject:"):
             story.append(Spacer(1, 4 * mm))
-            story.append(Paragraph(f"<b>{_esc(line)}</b>", styles["body_bold"]))
+            story.append(Paragraph(f"<b>{_esc(stripped)}</b>", styles["subject"]))
             story.append(HRFlowable(
-                width="100%", thickness=0.3, color=HexColor("#cccccc"),
-                spaceBefore=2 * mm, spaceAfter=4 * mm,
+                width="100%", thickness=0.4, color=HexColor("#999999"),
+                spaceBefore=2 * mm, spaceAfter=5 * mm,
             ))
             i += 1
             continue
 
-        # Numbered section headers (e.g. "1. Facts and grievance")
-        if len(line) > 2 and line[0].isdigit() and ". " in line[:5]:
-            story.append(Paragraph(_esc(line), styles["heading"]))
+        # ── Dear Sir/Madam salutation ──
+        if stripped.startswith("Dear "):
+            story.append(Paragraph(_esc(stripped), styles["body"]))
+            story.append(Spacer(1, 3 * mm))
             i += 1
             continue
 
-        # Section headers without numbers
-        if line.endswith(":") and len(line) < 60:
-            story.append(Paragraph(f"<b>{_esc(line)}</b>", styles["body_bold"]))
-            i += 1
-            continue
-
-        # WARNING lines
-        if "WARNING" in line or "URGENT" in line or "TIME-BARRED" in line:
-            story.append(Paragraph(_esc(line), styles["warning"]))
-            i += 1
-            continue
-
-        # Quoted statutory text
-        if line.startswith("  [") and "]" in line:
-            story.append(Paragraph(_esc(line), styles["legal_quote"]))
-            i += 1
-            continue
-
-        # Bullet points
-        if line.startswith("- ") or line.startswith("• "):
-            bullet_text = line[2:]
-            story.append(Paragraph(
-                f"&bull;&nbsp;&nbsp;{_esc(bullet_text)}", styles["body"]
+        # ── Section headers (STATEMENT OF FACTS, LEGAL POSITION, etc.) ──
+        if stripped.upper() in _SECTION_HEADERS:
+            story.append(Spacer(1, 3 * mm))
+            story.append(Paragraph(_esc(stripped.upper()), styles["section"]))
+            story.append(HRFlowable(
+                width="100%", thickness=0.3, color=HexColor("#aaaaaa"),
+                spaceBefore=0, spaceAfter=3 * mm,
             ))
             i += 1
             continue
 
-        # Sub-bullets (indented)
-        if line.startswith("    ") and (line.strip().startswith("✓") or line.strip().startswith("✗") or line.strip().startswith("-")):
-            story.append(Paragraph(
-                f"&nbsp;&nbsp;&nbsp;&nbsp;{_esc(line.strip())}", styles["small"]
-            ))
+        # ── Numbered "That" paragraphs (1. 2. etc.) — body text, not headings ──
+        if re.match(r'^\d+\.\s', stripped):
+            story.append(Paragraph(_md_to_rl(line), styles["body"]))
             i += 1
             continue
 
-        # Sign-off
-        if line == "Sincerely,":
+        # ── Lettered items: (a) (b) etc. ──
+        if re.match(r'^\([a-z]\)', stripped):
+            story.append(Paragraph(_md_to_rl(line), styles["list_item"]))
+            i += 1
+            continue
+
+        # ── Sign-off: Yours faithfully, / Yours truly, / Sincerely, ──
+        if stripped.lower() in ("yours faithfully,", "yours truly,", "sincerely,"):
             story.append(Spacer(1, 8 * mm))
-            story.append(Paragraph(_esc(line), styles["body"]))
+            story.append(Paragraph(_esc(stripped), styles["body"]))
             i += 1
-            # Name follows
-            if i < len(lines) and lines[i].strip():
-                story.append(Spacer(1, 12 * mm))
-                story.append(Paragraph(f"<b>{_esc(lines[i].strip())}</b>", styles["body_bold"]))
-                i += 1
             continue
 
-        # Default body text
-        story.append(Paragraph(_esc(line), styles["body"]))
+        # ── Sd/- signature marker ──
+        if stripped == "Sd/-":
+            story.append(Spacer(1, 6 * mm))
+            story.append(Paragraph(_esc(stripped), styles["body_bold"]))
+            i += 1
+            continue
+
+        # ── WARNING lines ──
+        if "WARNING" in stripped.upper() or "URGENT" in stripped.upper():
+            story.append(Paragraph(_md_to_rl(line), styles["warning"]))
+            i += 1
+            continue
+
+        # ── Quoted statutory text ──
+        if line.startswith("  [") and "]" in line:
+            story.append(Paragraph(_md_to_rl(line), styles["legal_quote"]))
+            i += 1
+            continue
+
+        # ── Bullet points ──
+        if stripped.startswith("- ") or stripped.startswith("\u2022 "):
+            bullet_text = stripped[2:]
+            story.append(Paragraph(
+                f"&bull;&nbsp;&nbsp;{_md_to_rl(bullet_text)}", styles["body"]
+            ))
+            i += 1
+            continue
+
+        # ── Default body text (convert any remaining **bold** to <b>) ──
+        story.append(Paragraph(_md_to_rl(line), styles["body"]))
         i += 1
 
     # Lawyer attestation for ₹599 tier
@@ -335,7 +410,7 @@ def _append_annexures(
     story.append(PageBreak())
     story.append(Paragraph("ANNEXURES", styles["title"]))
     story.append(HRFlowable(
-        width="100%", thickness=0.5, color=HexColor("#2c3e50"),
+        width="100%", thickness=0.5, color=HexColor("#111111"),
         spaceBefore=1 * mm, spaceAfter=4 * mm,
     ))
     story.append(Paragraph(

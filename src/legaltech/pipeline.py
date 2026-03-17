@@ -532,6 +532,7 @@ class LegalNoticePipeline:
             escalation_strategy=escalation_result,
             customer_controls=customer_controls,
             document_analysis=document_analysis,
+            tier=tier,
         )
 
         # ── Build output packet ──────────────────────────────────────

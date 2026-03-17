@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 
 from legaltech.schemas import ComplaintInput, CompanyProfile, PolicyEvidence
@@ -196,11 +197,15 @@ For each tactic, provide:
 5. Impact description (why the company should care)
 
 MANDATORY TACTICS (include for ALL disputes):
-- Director personal liability (CPA 2019 §89)
-- CCPA complaint (CPA 2019 §18, penalty up to ₹50 lakh)
+- Consumer Commission filing (always include)
 - Government portal escalation (NCH, INGRAM, CPGRAMS)
-- Public review / social media (Article 19(1)(a))
-- Criminal remedies reservation (BNS 2023 §318-319)
+
+PROPORTIONALITY RULES — match escalation intensity to dispute value:
+- Under ₹1 lakh: Consumer commission + NCH/INGRAM + 1 sector regulator. 
+  Do NOT include director liability, CCPA, criminal, DPDP, GST, or SEBI.
+- ₹1 lakh to ₹10 lakh: Add CCPA and sector regulators. Director liability 
+  only if company stonewalled for >30 days. No criminal unless fraud alleged.
+- Over ₹10 lakh or clear fraud: Full proportionate arsenal.
 
 SECTOR-SPECIFIC (include if applicable):
 - Banking/finance: RBI Ombudsman, RBI Charter of Customer Rights
@@ -290,6 +295,8 @@ class EscalationStrategyAgent:
             f"- Claim amount hint: {claim_amount_hint or 'not specified'}\n"
             f"- Timeline entries: {len(complaint.timeline)}\n"
             f"- Policies scraped: {len(policies)}\n"
+            f"\nIMPORTANT: Keep escalation proportionate to the claim value. "
+            f"A ₹5,000 complaint does not warrant director liability or criminal reservation."
         )
         data = await self.llm.complete_json(_ESCALATION_SYSTEM_PROMPT, user_prompt)
 
@@ -440,8 +447,10 @@ class EscalationStrategyAgent:
                 ),
             ))
 
-        # Data Protection complaint
-        if any(k in corpus for k in ("data", "personal", "account", "privacy", "password", "otp", "aadhaar", "pan")):
+        # Data Protection complaint — only for genuine data/privacy disputes
+        data_keywords = ("personal data", "data breach", "data leak", "privacy",
+                         "aadhaar", "pan number", "unauthorized access", "data stolen", "dpdp")
+        if any(k in corpus for k in data_keywords):
             tactics.append(PressureTactic(
                 tactic="Data Protection Board Complaint",
                 action=(
@@ -458,8 +467,8 @@ class EscalationStrategyAgent:
                 ),
             ))
 
-        # GST implications for delayed refunds
-        if any(k in corpus for k in ("refund", "money", "payment", "charged", "debit")):
+        # GST implications — only when GST/tax is specifically relevant
+        if any(k in corpus for k in ("gst", "tax invoice", "credit note", "igst", "cgst", "sgst")):
             tactics.append(PressureTactic(
                 tactic="GST Refund & Tax Authority Flag",
                 action=(
@@ -512,7 +521,7 @@ class EscalationStrategyAgent:
                 ),
             ))
 
-        # ── 4. Criminal shadow (civil-only but creates fear) ─────────
+        # ── 4. Criminal shadow — only when fraud signals are present ────
 
         criminal_signals = ("fraud", "cheat", "scam", "fake", "counterfeit", "stolen",
                            "forged", "misrepresent", "deceive", "dupe")
@@ -530,23 +539,6 @@ class EscalationStrategyAgent:
                 impact_description=(
                     "Criminal complaint possibility creates strongest personal liability fear; "
                     "directors can be arrested; non-bailable offences under BNS are powerful deterrent"
-                ),
-            ))
-        else:
-            # Even without explicit fraud signals, reserve criminal rights softly
-            tactics.append(PressureTactic(
-                tactic="Reservation of Criminal Remedies",
-                action=(
-                    "Reserve the right to examine whether the conduct constitutes a "
-                    "criminal offence under applicable provisions of the Bharatiya Nyaya "
-                    "Sanhita, 2023 and/or the Information Technology Act, 2000, and to "
-                    "file an appropriate first information report if warranted"
-                ),
-                target_authority="Police / Cyber Crime Cell",
-                legal_basis="BNS 2023; IT Act 2000 (if applicable)",
-                impact_description=(
-                    "Even a reservation of criminal rights signals serious intent and "
-                    "creates urgency for corporate legal teams to settle"
                 ),
             ))
 
@@ -587,6 +579,10 @@ class EscalationStrategyAgent:
             ),
         ))
 
+        # ── Proportionality filter ────────────────────────────────────
+        claim_value = self._parse_claim_amount(claim_amount_hint, corpus)
+        tactics = self._apply_proportionality(tactics, claim_value, corpus)
+
         # ── Determine severity level ─────────────────────────────────
         severity = "standard"
         if len(tactics) > 8:
@@ -615,3 +611,74 @@ class EscalationStrategyAgent:
             if any(k in corpus for k in keywords):
                 detected.append(industry)
         return detected
+
+    @staticmethod
+    def _parse_claim_amount(hint: str | None, corpus: str) -> float | None:
+        """Extract numeric claim value in INR from hint string or corpus."""
+        sources = [s for s in (hint, corpus[:500]) if s]
+        for text in sources:
+            # Match patterns like ₹55,000 / Rs. 1,00,000 / INR 50000 / 5 lakh / 10 crore
+            m = re.search(
+                r'(?:₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)', text, re.I
+            )
+            if m:
+                raw = m.group(1).replace(',', '')
+                try:
+                    return float(raw)
+                except ValueError:
+                    pass
+            # "X lakh" / "X crore"
+            m = re.search(r'([\d.]+)\s*(lakh|lac|crore|cr)', text, re.I)
+            if m:
+                num = float(m.group(1))
+                unit = m.group(2).lower()
+                if unit in ('lakh', 'lac'):
+                    return num * 100_000
+                if unit in ('crore', 'cr'):
+                    return num * 10_000_000
+        return None
+
+    @staticmethod
+    def _apply_proportionality(
+        tactics: list[PressureTactic],
+        claim_value: float | None,
+        corpus: str,
+    ) -> list[PressureTactic]:
+        """Prune tactics that are disproportionate to the claim value."""
+        if claim_value is None:
+            # Unknown claim — keep all but cap at reasonable number
+            return tactics
+
+        fraud_signals = ("fraud", "cheat", "scam", "fake", "counterfeit",
+                         "stolen", "forged", "misrepresent", "deceive", "dupe")
+        has_fraud = any(k in corpus for k in fraud_signals)
+
+        # Large claims or fraud: keep everything
+        if claim_value >= 1_000_000 or has_fraud:
+            return tactics
+
+        # Tactics to exclude per tier
+        heavy_tactics = {
+            "Director Personal Liability",
+            "Criminal Complaint Reservation",
+            "SEBI / Stock Exchange Disclosure",
+            "Data Protection Board Complaint",
+            "GST Refund & Tax Authority Flag",
+        }
+        medium_exclude = {
+            "SEBI / Stock Exchange Disclosure",
+            "Data Protection Board Complaint",
+            "GST Refund & Tax Authority Flag",
+        }
+
+        if claim_value < 100_000:
+            # Small claims: remove heavy tactics + CCPA + social media
+            small_exclude = heavy_tactics | {
+                "CCPA Complaint",
+                "Public Review & Social Media Escalation",
+                "MCA/ROC Non-Compliance Flag",
+            }
+            return [t for t in tactics if t.tactic not in small_exclude]
+        else:
+            # Medium claims (₹1L–₹10L): remove nuclear options
+            return [t for t in tactics if t.tactic not in medium_exclude]

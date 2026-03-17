@@ -101,8 +101,8 @@ _DEFENSE_PATTERNS: list[tuple[re.Pattern[str], str, str, str, str]] = [
             "fresh, informed consent of the consumer."
         ),
         "CPA 2019 §2(46)(i)-(ii) (unfair contract terms), Indian Contract Act 1872 §23 (void terms)",
-        "District Forum, Kolkata in Airtel v. Consumer — retrospective modification of a data plan "
-        "without consent was held to be an unfair trade practice.",
+        "NCDRC principle: retrospective or unilateral modification of contractual terms after "
+        "consumer has acted on the original terms constitutes an unfair trade practice under CPA 2019 §2(47).",
     ),
     (
         re.compile(r"(?:(?:at\s+)?(?:our|sole|absolute)\s+discretion|(?:we|company)\s+(?:may|shall)\s+(?:at\s+(?:its|our)\s+)?(?:sole\s+)?discretion)", re.I),
@@ -210,8 +210,8 @@ KEY INDIAN STATUTORY OVERRIDES:
 - CPA 2019 §35 — consumer forum jurisdiction overrides contracts
 - Emaar MGF v. Aftab Singh (2019) 12 SCC 1 — arbitration no bar
 
-If no T&C text is available, analyse the complaint facts and build a \
-primary-objection strategy based on respondent conduct and reasonableness.
+If no T&C text is available, return an empty counters array — do NOT invent \
+hypothetical defenses or fabricate clause excerpts.
 
 Return JSON:
 {
@@ -255,10 +255,25 @@ class TCCounterAgent:
         policy_evidence: list[PolicyEvidence],
         issue_summary: str,
     ) -> TCCounterResult:
+        # Short-circuit: if no real policy text was scraped, skip LLM call
+        # entirely to avoid hallucinated defenses and phantom citations.
+        real_policies = [
+            p for p in (policy_evidence or [])
+            if p.excerpt and p.excerpt.strip()
+               and "login page" not in p.excerpt.lower()
+               and "navigation" not in p.excerpt.lower()
+               and len(p.excerpt.strip()) > 50
+        ]
+        if not real_policies:
+            return TCCounterResult(
+                counters=[],
+                overall_strategy="No T&C / policy text was available for analysis.",
+            )
+
         policy_text = "\n\n".join(
             f"[Source: {p.source_url}]\n{p.excerpt[:800]}"
-            for p in policy_evidence
-        ) if policy_evidence else "(No T&C text scraped)"
+            for p in real_policies
+        )
 
         user_prompt = (
             f"## Consumer Complaint\n{issue_summary}\n\n"
@@ -320,7 +335,6 @@ class TCCounterAgent:
             )
         else:
             result.overall_strategy = (
-                "No policy clause was available for direct quotation. The notice uses a primary-objection "
-                "strategy based on respondent conduct, reasonableness, and statutory consumer rights."
+                "No T&C / policy text was available for direct quotation."
             )
         return result
