@@ -75,8 +75,12 @@ class AdminLoginRequest(BaseModel):
 async def admin_login(body: AdminLoginRequest):
     settings = get_settings()
     stored_pw = notice_store.get_stored_password()
-    expected = stored_pw if stored_pw else settings.admin_password
-    if not hmac.compare_digest(body.password, expected):
+    if stored_pw and notice_store.is_password_hash(stored_pw):
+        valid = notice_store.verify_password(body.password, stored_pw)
+    else:
+        expected = stored_pw if stored_pw else settings.admin_password
+        valid = hmac.compare_digest(body.password, expected)
+    if not valid:
         raise HTTPException(status_code=401, detail="Invalid password")
     token = secrets.token_urlsafe(32)
     _admin_tokens[token] = time.time() + _TOKEN_TTL
@@ -1039,8 +1043,12 @@ class ChangePasswordRequest(BaseModel):
 async def change_admin_password(body: ChangePasswordRequest, _=Depends(require_admin)):
     settings = get_settings()
     stored_pw = notice_store.get_stored_password()
-    expected = stored_pw if stored_pw else settings.admin_password
-    if not hmac.compare_digest(body.current_password, expected):
+    if stored_pw and notice_store.is_password_hash(stored_pw):
+        valid = notice_store.verify_password(body.current_password, stored_pw)
+    else:
+        expected = stored_pw if stored_pw else settings.admin_password
+        valid = hmac.compare_digest(body.current_password, expected)
+    if not valid:
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     if len(body.new_password) < 6:
         raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
