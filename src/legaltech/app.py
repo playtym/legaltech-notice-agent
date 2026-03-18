@@ -1723,7 +1723,7 @@ def _render_blog_html(post: dict, seo: dict) -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title} — Jago Grahak Jago</title>
+    <title>{title} — Lawly Blog</title>
     <meta name="description" content="{desc}">
     <meta name="keywords" content="{keywords}">
     <meta name="author" content="{author}">
@@ -1732,7 +1732,7 @@ def _render_blog_html(post: dict, seo: dict) -> str:
     <meta property="og:title" content="{title}">
     <meta property="og:description" content="{desc}">
     <meta property="og:url" content="{base}/blog/{slug}">
-    <meta property="og:site_name" content="Jago Grahak Jago">
+    <meta property="og:site_name" content="Lawly">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="{title}">
     <meta name="twitter:description" content="{desc}">{og_image_tag}{hreflang_tags}
@@ -1753,24 +1753,45 @@ def _render_blog_html(post: dict, seo: dict) -> str:
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
-        .blog-article {{ max-width: 720px; margin: 32px auto; padding: 36px 32px; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }}
-        .blog-article h1 {{ font-size: 2rem; margin-bottom: 8px; color: #111827; }}
-        .blog-meta {{ color: #9CA3AF; font-size: .85rem; margin-bottom: 24px; }}
-        .blog-content {{ line-height: 1.8; color: #374151; }}
-        .blog-content h2 {{ font-size: 1.4rem; margin-top: 28px; margin-bottom: 10px; }}
-        .blog-content h3 {{ font-size: 1.15rem; margin-top: 22px; margin-bottom: 8px; }}
-        .blog-content p {{ margin-bottom: 14px; }}
-        .blog-content ul, .blog-content ol {{ margin-bottom: 14px; padding-left: 24px; }}
-        .blog-content li {{ margin-bottom: 6px; }}
-        .blog-content a {{ color: #DC2626; }}
-        .blog-nav {{ max-width: 720px; margin: 0 auto; padding: 16px 32px; }}
-        .blog-nav a {{ color: #DC2626; text-decoration: none; font-weight: 600; }}
-        .blog-cta {{ margin-top: 32px; padding: 20px; background: #FFF8E1; border-radius: 12px; border-left: 4px solid #F59E0B; text-align: center; }}
-        .blog-cta a {{ color: #DC2626; font-weight: 700; }}
+        body {{ margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fafafa; color: #18181b; }}
+        .blog-top-nav {{ background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid #f1f1f1; position: sticky; top: 0; z-index: 50; }}
+        .blog-top-nav-inner {{ max-width: 760px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; }}
+        .blog-top-nav .logo-link {{ display: flex; align-items: center; gap: 8px; text-decoration: none; }}
+        .blog-top-nav .logo-box {{ width: 28px; height: 28px; background: #171717; border-radius: 7px; display: flex; align-items: center; justify-content: center; }}
+        .blog-top-nav .logo-box span {{ color: #fff; font-weight: 700; font-size: 16px; font-family: serif; }}
+        .blog-top-nav .logo-text {{ font-weight: 700; font-size: 18px; color: #171717; letter-spacing: -0.03em; }}
+        .blog-top-nav .nav-links {{ display: flex; gap: 16px; align-items: center; }}
+        .blog-top-nav .nav-links a {{ font-size: 13px; font-weight: 500; color: #6b7280; text-decoration: none; }}
+        .blog-top-nav .nav-links a:hover {{ color: #171717; }}
+        .blog-top-nav .btn-cta {{ background: #171717; color: #fff; padding: 7px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; text-decoration: none; }}
+        .blog-top-nav .btn-cta:hover {{ background: #333; }}
+        .blog-article {{ max-width: 760px; margin: 0 auto; padding: 40px 36px; background: #fff; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-top: 32px; margin-bottom: 48px; }}
+        .blog-article h1 {{ font-size: 2.2rem; margin-bottom: 8px; color: #111827; line-height: 1.3; }}
+        .blog-meta {{ color: #9CA3AF; font-size: .85rem; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid #F3F4F6; }}
+        .blog-content {{ line-height: 1.85; color: #374151; font-size: 1.05rem; }}
+        .blog-content h2 {{ font-size: 1.5rem; margin-top: 32px; margin-bottom: 12px; color: #111827; font-weight: 700; }}
+        .blog-content h3 {{ font-size: 1.2rem; margin-top: 26px; margin-bottom: 10px; color: #1F2937; font-weight: 600; }}
+        .blog-content p {{ margin-bottom: 16px; }}
+        .blog-content ul, .blog-content ol {{ margin-bottom: 16px; padding-left: 28px; }}
+        .blog-content li {{ margin-bottom: 8px; }}
+        .blog-content a {{ color: #171717; text-decoration: underline; text-underline-offset: 2px; }}
+        .blog-content a:hover {{ color: #6b7280; }}
+        .blog-content table {{ width: 100%; border-collapse: collapse; margin: 20px 0; font-size: .95rem; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }}
+        .blog-content table thead {{ background: #F9FAFB; }}
+        .blog-content table th {{ padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 2px solid #E5E7EB; }}
+        .blog-content table td {{ padding: 10px 16px; border-bottom: 1px solid #F3F4F6; color: #4B5563; }}
+        .blog-content blockquote {{ margin: 20px 0; padding: 16px 20px; border-left: 4px solid #171717; background: #f9fafb; border-radius: 0 8px 8px 0; color: #374151; font-style: italic; }}
+        .blog-content img {{ max-width: 100%; height: auto; border-radius: 10px; margin: 20px 0; }}
+        .blog-cta {{ margin-top: 36px; padding: 24px; background: #f9fafb; border-radius: 14px; border: 1px solid #e5e7eb; text-align: center; }}
+        .blog-cta a {{ color: #171717; font-weight: 700; text-decoration: none; }}
+        .blog-cta a:hover {{ text-decoration: underline; }}
+        .blog-footer {{ max-width: 760px; margin: 0 auto; padding: 0 24px 32px; text-align: center; }}
+        .blog-footer p {{ font-size: 13px; color: #9ca3af; }}
+        @media (max-width: 640px) {{ .blog-article {{ margin: 16px; padding: 24px 18px; }} .blog-article h1 {{ font-size: 1.6rem; }} .blog-content {{ font-size: 1rem; }} }}
     </style>
 </head>
 <body>
-    <nav class="blog-nav"><a href="/">\u2190 Back to Jago Grahak Jago</a> &nbsp;|&nbsp; <a href="/blog">All Articles</a></nav>
+    <nav class="blog-top-nav"><div class="blog-top-nav-inner"><a href="/" class="logo-link"><div class="logo-box"><span>L</span></div><span class="logo-text">Lawly</span></a><div class="nav-links"><a href="/blog">Blog</a><a href="/directory.html">Legal Guides</a><a href="/" class="btn-cta">Draft Notice</a></div></div></nav>
     <article class="blog-article">
         <h1>{title}</h1>
         <div class="blog-meta">By {author} &middot; {date_str}</div>
@@ -1780,6 +1801,7 @@ def _render_blog_html(post: dict, seo: dict) -> str:
             <p><a href="/">Generate your AI-powered legal notice in minutes \u2192</a></p>
         </div>
     </article>
+    <div class="blog-footer"><p><a href="/" style="color:#6b7280;text-decoration:none;font-weight:500;">Lawly</a> &middot; AI-powered legal notice generator for Indian consumer disputes</p><p>&copy; 2026 Lawly. All rights reserved.</p></div>
 </body>
 </html>"""
 
@@ -1807,35 +1829,50 @@ def _render_blog_index(posts: list[dict], seo: dict) -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog — Jago Grahak Jago</title>
-    <meta name="description" content="Consumer rights guides, legal tips, and how-to articles for Indian consumers.">
+    <title>Blog — Lawly | Consumer Rights, Legal Tips &amp; Case Studies</title>
+    <meta name="description" content="Practical guides on Indian consumer rights, legal notice strategies, refund tips, and real case studies.">
     <link rel="canonical" href="{base}/blog">
-    <meta property="og:title" content="Blog — Jago Grahak Jago">
-    <meta property="og:description" content="Consumer rights guides, legal tips, and how-to articles.">
+    <meta property="og:title" content="Blog — Lawly">
+    <meta property="og:description" content="Practical guides on Indian consumer rights, legal notice strategies, and real case studies.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
-        .blog-hero {{ text-align: center; padding: 48px 24px; background: linear-gradient(170deg, #FFF8E1, #fff 60%); }}
-        .blog-hero h1 {{ font-size: 2rem; color: #111827; margin-bottom: 8px; }}
-        .blog-hero p {{ color: #6B7280; }}
-        .blog-grid {{ max-width: 720px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }}
-        .blog-card {{ display: block; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.1); text-decoration: none; color: inherit; transition: box-shadow .2s; }}
-        .blog-card:hover {{ box-shadow: 0 4px 12px rgba(0,0,0,.12); }}
-        .blog-card h3 {{ font-size: 1.2rem; color: #111827; margin-bottom: 6px; }}
-        .blog-card-desc {{ color: #6B7280; font-size: .9rem; margin-bottom: 6px; }}
-        .blog-card-date {{ color: #9CA3AF; font-size: .8rem; }}
-        .blog-nav {{ max-width: 720px; margin: 0 auto; padding: 16px 24px; }}
-        .blog-nav a {{ color: #DC2626; text-decoration: none; font-weight: 600; }}
+        body {{ margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fafafa; color: #18181b; }}
+        .blog-top-nav {{ background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid #f1f1f1; position: sticky; top: 0; z-index: 50; }}
+        .blog-top-nav-inner {{ max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; }}
+        .blog-top-nav .logo-link {{ display: flex; align-items: center; gap: 8px; text-decoration: none; }}
+        .blog-top-nav .logo-box {{ width: 28px; height: 28px; background: #171717; border-radius: 7px; display: flex; align-items: center; justify-content: center; }}
+        .blog-top-nav .logo-box span {{ color: #fff; font-weight: 700; font-size: 16px; font-family: serif; }}
+        .blog-top-nav .logo-text {{ font-weight: 700; font-size: 18px; color: #171717; letter-spacing: -0.03em; }}
+        .blog-top-nav .nav-links {{ display: flex; gap: 16px; align-items: center; }}
+        .blog-top-nav .nav-links a {{ font-size: 13px; font-weight: 500; color: #6b7280; text-decoration: none; }}
+        .blog-top-nav .nav-links a:hover {{ color: #171717; }}
+        .blog-top-nav .btn-cta {{ background: #171717; color: #fff; padding: 7px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; text-decoration: none; }}
+        .blog-top-nav .btn-cta:hover {{ background: #333; }}
+        .blog-hero {{ max-width: 1100px; margin: 0 auto; padding: 56px 24px 32px; }}
+        .blog-hero h1 {{ font-size: 36px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 8px; }}
+        .blog-hero p {{ font-size: 17px; color: #6b7280; margin: 0; line-height: 1.6; }}
+        .blog-grid {{ max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }}
+        .blog-card {{ background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; transition: box-shadow 0.2s, border-color 0.2s; text-decoration: none; color: inherit; display: flex; flex-direction: column; padding: 24px; }}
+        .blog-card:hover {{ border-color: #a5b4fc; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }}
+        .blog-card h3 {{ font-size: 18px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.02em; line-height: 1.35; }}
+        .blog-card-desc {{ font-size: 14px; color: #6b7280; line-height: 1.6; margin: 0 0 16px; }}
+        .blog-card-date {{ font-size: 12px; color: #9ca3af; }}
+        .blog-footer {{ border-top: 1px solid #e5e7eb; padding: 32px 24px; text-align: center; }}
+        .blog-footer p {{ font-size: 13px; color: #9ca3af; margin: 4px 0; }}
+        .blog-footer a {{ color: #6b7280; text-decoration: none; font-weight: 500; }}
+        @media (max-width: 640px) {{ .blog-hero h1 {{ font-size: 26px; }} .blog-grid {{ grid-template-columns: 1fr; }} }}
     </style>
 </head>
 <body>
-    <nav class="blog-nav"><a href="/">\u2190 Back to Jago Grahak Jago</a></nav>
+    <nav class="blog-top-nav"><div class="blog-top-nav-inner"><a href="/" class="logo-link"><div class="logo-box"><span>L</span></div><span class="logo-text">Lawly</span></a><div class="nav-links"><a href="/blog" style="color:#171717;">Blog</a><a href="/directory.html">Legal Guides</a><a href="/" class="btn-cta">Draft Notice</a></div></div></nav>
     <div class="blog-hero">
-        <h1>Consumer Rights Blog</h1>
-        <p>Guides, legal tips, and know-your-rights articles for Indian consumers</p>
+        <h1>Blog</h1>
+        <p>Practical guides on consumer rights, legal strategies, and real stories of Indians fighting back.</p>
     </div>
     <div class="blog-grid">{items}</div>
+    <footer class="blog-footer"><p><a href="/">Lawly</a> &middot; AI-powered legal notice generator for Indian consumer disputes</p><p>&copy; 2026 Lawly. All rights reserved.</p></footer>
 </body>
 </html>"""
 
@@ -1845,6 +1882,13 @@ async def blog_index():
     posts = notice_store.get_published_blog_posts()
     seo = notice_store.get_seo_settings()
     return HTMLResponse(content=_render_blog_index(posts, seo))
+
+
+@app.get("/blog.html")
+async def blog_html_redirect():
+    """Redirect /blog.html to /blog for consistency."""
+    from starlette.responses import RedirectResponse
+    return RedirectResponse(url="/blog", status_code=301)
 
 
 @app.get("/blog/{slug}")
