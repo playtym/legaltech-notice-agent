@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F63GR76DSR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-F63GR76DSR');
+    </script>
+    <title>Blog — Lawly | Consumer Rights, Legal Tips &amp; Case Studies</title>
+    <meta name="description" content="Practical guides on Indian consumer rights, legal notice strategies, refund tips, and real case studies. Learn how to fight back against companies legally.">
+    <link rel="canonical" href="https://lawly.store/blog.html">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Blog — Lawly">
+    <meta property="og:description" content="Practical guides on Indian consumer rights, legal notice strategies, and real case studies.">
+    <meta property="og:url" content="https://lawly.store/blog.html">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fafafa; color: #18181b; margin: 0; }
+        .blog-nav { background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid #f1f1f1; position: sticky; top: 0; z-index: 50; }
+        .blog-nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+        .blog-nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+        .blog-nav-logo .logo-box { width: 32px; height: 32px; background: #171717; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .blog-nav-logo .logo-box span { color: #fff; font-weight: 700; font-size: 18px; font-family: serif; }
+        .blog-nav-logo .logo-text { font-weight: 700; font-size: 20px; color: #171717; letter-spacing: -0.03em; }
+        .blog-nav-links { display: flex; gap: 20px; align-items: center; }
+        .blog-nav-links a { font-size: 14px; font-weight: 500; color: #6b7280; text-decoration: none; transition: color 0.2s; }
+        .blog-nav-links a:hover { color: #171717; }
+        .blog-nav-links .btn-nav { background: #171717; color: #fff !important; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; }
+        .blog-nav-links .btn-nav:hover { background: #333; }
+
+        .blog-hero { max-width: 1100px; margin: 0 auto; padding: 56px 24px 32px; }
+        .blog-hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 8px; }
+        .blog-hero p { font-size: 17px; color: #6b7280; margin: 0; line-height: 1.6; }
+
+        .blog-grid { max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .blog-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; transition: box-shadow 0.2s, border-color 0.2s; text-decoration: none; color: inherit; display: flex; flex-direction: column; }
+        .blog-card:hover { border-color: #a5b4fc; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+        .blog-card-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+        .blog-card h2 { font-size: 18px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.02em; line-height: 1.35; }
+        .blog-card .blog-excerpt { font-size: 14px; color: #6b7280; line-height: 1.6; margin: 0 0 16px; flex: 1; }
+        .blog-card .blog-meta { font-size: 12px; color: #9ca3af; display: flex; gap: 12px; align-items: center; }
+
+        .blog-loading { text-align: center; padding: 64px 24px; color: #9ca3af; font-size: 15px; grid-column: 1 / -1; }
+        .blog-empty { text-align: center; padding: 64px 24px; color: #6b7280; font-size: 16px; grid-column: 1 / -1; }
+
+        .blog-footer { border-top: 1px solid #e5e7eb; padding: 32px 24px; text-align: center; }
+        .blog-footer p { font-size: 13px; color: #9ca3af; margin: 0; }
+        .blog-footer a { color: #6b7280; text-decoration: none; font-weight: 500; }
+
+        @media (max-width: 640px) {
+            .blog-hero h1 { font-size: 26px; }
+            .blog-grid { grid-template-columns: 1fr; }
+            .blog-nav-links a:not(.btn-nav) { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="blog-nav">
+    <div class="blog-nav-inner">
+        <a href="/" class="blog-nav-logo">
+            <div class="logo-box"><span>L</span></div>
+            <span class="logo-text">Lawly</span>
+        </a>
+        <div class="blog-nav-links">
+            <a href="/">Home</a>
+            <a href="/directory.html">Legal Guides</a>
+            <a href="/blog.html" style="color:#171717;">Blog</a>
+            <a href="/" class="btn-nav">Draft Notice</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<div class="blog-hero">
+    <h1>Blog</h1>
+    <p>Practical guides on consumer rights, legal strategies, and real stories of Indians fighting back.</p>
+</div>
+
+<!-- Blog Grid (dynamically populated from API) -->
+<div id="blog-grid" class="blog-grid">
+    <div class="blog-loading" id="blog-loading">Loading articles...</div>
+</div>
+
+<!-- Footer -->
+<footer class="blog-footer">
+    <p><a href="/">Lawly</a> &middot; AI-powered legal notice generator for Indian consumer disputes</p>
+    <p style="margin-top:8px;">&copy; 2026 Lawly. All rights reserved.</p>
+</footer>
+
+<script>
+(function() {
+    var API = 'https://lawly.store';
+    var grid = document.getElementById('blog-grid');
+    var loading = document.getElementById('blog-loading');
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function fmtDate(d) {
+        if (!d) return '';
+        try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
+        catch(_) { return d.slice(0, 10); }
+    }
+
+    function render(posts) {
+        if (loading.parentNode) loading.remove();
+        if (!posts || posts.length === 0) {
+            grid.innerHTML = '<div class="blog-empty">No articles yet — check back soon!</div>';
+            return;
+        }
+        grid.innerHTML = posts.map(function(p) {
+            var slug = p.slug || '';
+            var title = esc(p.title || 'Untitled');
+            var desc = esc(p.meta_description || '');
+            var date = fmtDate(p.updated_at || p.created_at);
+            var author = esc(p.author || '');
+            // Link to backend-rendered blog post
+            var href = '/blog/' + encodeURIComponent(slug);
+            return '<a href="' + href + '" class="blog-card">' +
+                '<div class="blog-card-body">' +
+                    '<h2>' + title + '</h2>' +
+                    (desc ? '<p class="blog-excerpt">' + desc + '</p>' : '') +
+                    '<div class="blog-meta">' +
+                        (date ? '<span>\ud83d\udcc5 ' + date + '</span>' : '') +
+                        (author ? '<span>\u270d\ufe0f ' + author + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
+            '</a>';
+        }).join('');
+    }
+
+    // Fetch blog listing from JSON API
+    fetch(API + '/blog')
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            var doc = new DOMParser().parseFromString(html, "text/html");
+            var cards = doc.querySelectorAll(".blog-card");
+            var posts = [];
+            for (var i=0; i<cards.length; i++) {
+                var c = cards[i];
+                var h = c.querySelector("h3, h2");
+                var d = c.querySelector(".blog-excerpt, .blog-card-desc");
+                var dt = c.querySelector(".blog-meta, .blog-card-date");
+                if (!h) continue;
+                posts.push({
+                    title: h.textContent,
+                    slug: (c.getAttribute("href")||"").split("/").pop(),
+                    meta_description: d ? d.textContent : "",
+                    created_at: dt ? dt.textContent : "",
+                });
+            }
+            render(posts);
+        })
+        .catch(function() {
+            if (loading.parentNode) loading.textContent = 'Could not load articles. Please try again later.';
+        });
+})();
+</script>
+
+</body>
+</html>
