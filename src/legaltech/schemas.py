@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, Field, HttpUrl
-
+from pydantic import BaseModel, Field, HttpUrl, field_validator
+import re
 
 class IntakeMode(str, Enum):
     typed = "typed"
@@ -14,11 +14,26 @@ class ServiceTier(str, Enum):
 
 
 class Complainant(BaseModel):
-    full_name: str
-    email: str
-    phone: str | None = None
-    address: str | None = None
+    full_name: str = Field(..., min_length=2, max_length=150)
+    email: str = Field(..., max_length=255, pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+    phone: str | None = Field(default=None, pattern=r"^\+?[0-9\-\s()]{7,25}$")
+    address: str | None = Field(default=None, max_length=1000)
 
+    @field_validator("full_name")
+    def clean_name(cls, v: str) -> str:
+        cleaned = v.strip()
+        if not cleaned:
+            raise ValueError("Full name cannot be empty whitespace.")
+        
+        # Anti-spam checks
+        lower_name = cleaned.lower()
+        blocked_names = {'test', 'john doe', 'jane doe', 'asdf', 'demo', 'abc', 'abcd', '123', 'fake', 'anonymous', 'something'}
+        if lower_name in blocked_names or "test" in lower_name:
+            raise ValueError("Test or fake names are not permitted for legal notice generation.")
+        if len(cleaned) < 4:
+            raise ValueError("Please provide a complete full name.")
+            
+        return cleaned
 
 class ComplaintInput(BaseModel):
     mode: IntakeMode = IntakeMode.typed
@@ -26,12 +41,19 @@ class ComplaintInput(BaseModel):
     company_name_hint: str | None = Field(default=None, max_length=200)
     website: HttpUrl | None = None
     issue_summary: str = Field(min_length=20, max_length=10_000)
-    timeline: list[str] = Field(default_factory=list, max_length=50)
-    evidence: list[str] = Field(default_factory=list, max_length=50)
-    desired_resolution: str = Field(max_length=2000)
-    jurisdiction: str = Field(default="India")
+    timeline: list[str] = Field(default_factory=list, max_items=50)
+    evidence: list[str] = Field(default_factory=list, max_items=50)
+    desired_resolution: str = Field(min_length=5, max_length=2000)
+    company_objection: str | None = Field(default=None, max_length=5000)
+    jurisdiction: str = Field(default="India", max_length=150)
     transcript_text: str | None = Field(default=None, max_length=20_000)
 
+    @field_validator("issue_summary")
+    def clean_issue(cls, v: str) -> str:
+        cleaned = v.strip()
+        if len(cleaned) < 10:
+            raise ValueError("Issue summary is too brief, please provide more detail.")
+        return cleaned
 
 class CompanyProfile(BaseModel):
     legal_name: str | None = None

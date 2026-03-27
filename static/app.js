@@ -1057,6 +1057,25 @@ const App = (() => {
             return showError('Please fill in all required fields (Name, Email, Address).');
         }
 
+        // Anti-Spam: Block obvious fake names
+        const blockedNames = ['test', 'john doe', 'jane doe', 'asdf', 'demo', 'abc', 'abcd', '123', 'fake', 'anonymous', 'user', 'something'];
+        if (blockedNames.includes(name.toLowerCase()) || name.length < 4 || /^[a-zA-Z]$/.test(name) || /test/i.test(name)) {
+            return showError('Please enter a valid full name. Legal notices require your real identity.');
+        }
+
+        // Anti-Spam: Enforce valid Indian phone format if provided
+        if (phone) {
+            const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+            if (!/^(?:\+91|91)?[6789]\d{9}$/.test(cleanPhone)) {
+                return showError('Please enter a valid 10-digit Indian mobile number.');
+            }
+        }
+
+        // Anti-Spam: Ensure address is somewhat realistic
+        if (address.length < 10) {
+            return showError('Please enter a complete mailing address. This is required for court formatting.');
+        }
+
         state.complainant = {
             full_name: name,
             email: email,
