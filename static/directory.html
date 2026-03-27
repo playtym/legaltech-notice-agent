@@ -3,78 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legal Notice Directory | Lawly India</title>
-    <meta name="description" content="Directory of programmatic legal notice formats against Indian companies and legal glossary.">
-    <link rel="canonical" href="https://lawly.store/directory">
-    <link rel="alternate" hreflang="en-IN" href="https://lawly.store/directory">
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Lawly India",
-          "item": "https://lawly.store"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Legal Resource Directory",
-          "item": "https://lawly.store/directory"
-        }
-      ]
-    }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="use-case.css">
+    <title>Legal Guides Directory | Lawly</title>
+    <meta property="og:image" content="https://lawly.store/img/lawly-og.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://lawly.store/img/lawly-og.png">
+
+    <!-- Tailwind Script to Ensure Styles Work without build step locally -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .directory-section ul { list-style-type: none; padding: 0; }
-        .directory-section li { margin-bottom: 0.5rem; }
-        .directory-section a { color: #2563eb; text-decoration: none; font-weight: 500; }
-        .directory-section a:hover { text-decoration: underline; }
+        .bg-grid-pattern { background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 24px 24px; }
     </style>
 </head>
-<body class="uc-page">
-    <div class="uc-container">
-        <header class="uc-header">
-            <a href="/" class="uc-back">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                Home
-            </a>
-            <div class="uc-branding">Lawly</div>
-        </header>
-        <main class="uc-content">
-            <div class="uc-hero">
-                <h1>Legal Resource Directory</h1>
-                <p class="uc-subtitle">Find legal notice templates against major companies and legal definitions.</p>
+<body class="bg-gray-50/50 font-sans min-h-screen flex flex-col pt-20">
+
+  <!-- Modern Minimal Nav -->
+  <nav class="absolute top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <div class="max-w-6xl mx-auto px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <div class="flex-shrink-0 flex items-center gap-3 cursor-pointer" onclick="window.location.href='/'">
+            <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-md">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </div>
-            <section class="uc-section directory-section">
-                <h2>Entity Notices (Programmatic SEO)</h2>
-                <ul>
-                    
-                </ul>
-            </section>
-            <section class="uc-section directory-section">
-                <h2>Legal Glossary</h2>
-                <ul>
-                    
-                </ul>
-            </section>
-        </main>
-    </div>
-    <footer class="uc-footer">
-        <div class="uc-footer-inner">
-            <a href="/" class="uc-footer-brand">Lawly</a>
-            <p>Lawly | Drafting reliable legal notices across India.</p>
-            <nav class="uc-footer-links">
-                <a href="/">Home</a>
-                <a href="/directory.html">Directory</a>
-            </nav>
-            <p class="uc-footer-copy">&copy; 2026 Lawly. All rights reserved.</p>
+            <span class="font-semibold text-xl tracking-tight text-gray-900">Lawly</span>
         </div>
-    </footer>
+        <div class="hidden md:flex items-center space-x-8">
+            <a href="/#how-it-works" class="text-gray-500 hover:text-black text-sm font-medium transition-colors">How it Works</a>
+            <a href="/#use-cases" class="text-gray-500 hover:text-black text-sm font-medium transition-colors">Use Cases</a>
+            <a href="/#pricing" class="text-gray-500 hover:text-black text-sm font-medium transition-colors">Pricing</a>
+            <a href="/directory" class="text-black text-sm font-medium transition-colors">Legal Guides</a>
+            <a href="/blog" class="text-gray-500 hover:text-black text-sm font-medium transition-colors">Blog</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-24 pb-16 bg-white overflow-hidden border-b border-gray-100">
+        <div class="absolute inset-0 bg-grid-pattern opacity-50 z-0"></div>
+        <div class="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-96 h-96 bg-blue-50/40 rounded-full blur-3xl z-0"></div>
+        
+        <div class="max-w-6xl mx-auto px-6 relative z-10">
+            <div class="max-w-3xl">
+                <a href="/" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-black mb-6 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Back to Home
+                </a>
+                <h1 class="text-4xl md:text-5xl font-semibold tracking-tight text-gray-900 mb-6 leading-tight">
+                    Legal Guides <span class="text-gray-400">Directory</span>
+                </h1>
+                <p class="text-lg text-gray-500 font-light leading-relaxed">
+                    Comprehensive legal guides and notice formats for common consumer grievances in India. Understand your rights, statutory time limits, and exact legal pathways.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Directory Content -->
+    <main class="flex-grow py-16">
+        <div class="max-w-6xl mx-auto px-6">
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- Category 1 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
+                        <span class="text-xl">💳</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Financial & Banking</h2>
+                    <ul class="space-y-3">
+                        <li><a href="/upi-payment-failures" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Failed UPI Transfers</a></li>
+                        <li><a href="/wrong-cibil-score" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> CIBIL Score Disputes</a></li>
+                        <li><a href="/unauthorized-credit-card-charge" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Unauthorized Credit Card Charges</a></li>
+                        <li><a href="/hidden-bank-charges" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Hidden Bank Charges</a></li>
+                    </ul>
+                </div>
+
+                <!-- Category 2 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
+                        <span class="text-xl">🛍️</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">E-Commerce & Retail</h2>
+                    <ul class="space-y-3">
+                        <li><a href="/d2c-brand-fraud" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Missing Refunds & Returns</a></li>
+                        <li><a href="/dark-patterns" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Subscription Traps (Dark Patterns)</a></li>
+                        <li><a href="/fake-products-amazon-flipkart" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Fake & Counterfeit Products</a></li>
+                        <li><a href="/defective-electronics" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Defective Electronics Missing Warranty</a></li>
+                    </ul>
+                </div>
+
+                <!-- Category 3 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
+                        <span class="text-xl">✈️</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Travel & Hospitality</h2>
+                    <ul class="space-y-3">
+                        <li><a href="/flight-cancellation" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Flight Delays & Cancellations</a></li>
+                        <li><a href="/lost-baggage-airline" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Lost or Damaged Baggage</a></li>
+                        <li><a href="/hotel-booking-fraud" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Misleading Hotel Bookings</a></li>
+                        <li><a href="/train-ticket-refund-irctc" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> IRCTC/Train Ticket Refunds</a></li>
+                    </ul>
+                </div>
+
+                <!-- Category 4 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
+                        <span class="text-xl">🏗️</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Real Estate & Housing</h2>
+                    <ul class="space-y-3">
+                        <li><a href="/rera-builder-delay" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Builder Possession Delays (RERA)</a></li>
+                        <li><a href="/hidden-maintenance-charges" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Hidden Registration & Maintenance Fees</a></li>
+                        <li><a href="/poor-construction-quality" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Poor Construction Quality</a></li>
+                        <li><a href="/broker-fraud" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Broker / Agent Commission Fraud</a></li>
+                    </ul>
+                </div>
+
+                <!-- Category 5 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
+                        <span class="text-xl">🏥</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Health & Insurance</h2>
+                    <ul class="space-y-3">
+                        <li><a href="/insurance-claim-rejected" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Wrongful Insurance Rejections</a></li>
+                        <li><a href="/medical-negligence" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Overcharging by Hospitals</a></li>
+                        <li><a href="/term-insurance-dispute" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Term Life Insurance Disputes</a></li>
+                        <li><a href="/expired-food-quick-commerce" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Expired / Stale Food Delivery (FSSAI)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Category 6 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
+                        <span class="text-xl">📚</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Education & Ed-Tech</h2>
+                    <ul class="space-y-3">
+                        <li><a href="/ed-tech-refunds" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Ed-Tech Course Cancellation Refunds</a></li>
+                        <li><a href="/false-placement-promises" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Misleading Placement Guarantees</a></li>
+                        <li><a href="/coaching-center-fee-refund" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Offline Coaching Fee Retention</a></li>
+                        <li><a href="/university-degree-delay" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> University Certificate Delays</a></li>
+                    </ul>
+                </div>
+
+            </div>
+            
+            <!-- Quick Suggestion Action -->
+            <div class="mt-16 bg-gray-900 rounded-3xl p-8 md:p-12 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
+                <div>
+                    <h3 class="text-2xl font-semibold text-white mb-2">Can't find your specific issue?</h3>
+                    <p class="text-gray-400 font-light max-w-xl">Our AI engine custom-drafts notices for any arbitrary consumer dispute under Indian Law.</p>
+                </div>
+                <a href="/" class="shrink-0 bg-white text-gray-900 px-8 py-4 rounded-xl font-medium hover:bg-gray-100 transition shadow-lg inline-flex items-center gap-2">
+                    Start AI Questionnaire <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="bg-gray-50 border-t border-gray-200 pt-16 pb-8 font-sans mt-auto">
+    <div class="max-w-6xl mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            <div class="col-span-1 md:col-span-2">
+                <a href="/" class="flex items-center gap-2 mb-4 group w-max">
+                    <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center transition-transform group-hover:scale-105 shadow-md">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <span class="font-semibold text-xl tracking-tight text-gray-900 block relative">Lawly</span>
+                </a>
+                <p class="text-gray-500 font-light text-sm leading-relaxed max-w-sm mb-6">AI-powered legal notice generator for Indian consumer disputes. Court-ready formats compiling 25+ Indian statutes perfectly.</p>
+                <div class="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white w-max shadow-sm">
+                    <img src="img/jago-grahak-jago.png" alt="Jago Grahak Jago" class="h-6 w-auto mix-blend-multiply opacity-70 grayscale" />
+                    <div class="text-left">
+                        <p class="text-[11px] font-semibold text-gray-900 leading-none">Empowering Consumers</p>
+                        <p class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-semibold">CPA 2019 COMPLIANT</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-900 mb-4 tracking-tight">Legal Resources</h4>
+                <ul class="space-y-3 text-sm text-gray-500 font-light">
+                    <li><a href="/directory" class="hover:text-black transition-colors">Legal Guides Directory</a></li>
+                    <li><a href="/blog" class="hover:text-black transition-colors">Lawly Blog</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-900 mb-4 tracking-tight">Company</h4>
+                <ul class="space-y-3 text-sm text-gray-500 font-light">
+                    <li><a href="/#use-cases" class="hover:text-black transition-colors">Use Cases</a></li>
+                    <li><a href="/#pricing" class="hover:text-black transition-colors">Pricing</a></li>
+                    <li><a href="/#faq" class="hover:text-black transition-colors">FAQ</a></li>
+                    <li><a href="/contact" class="hover:text-black transition-colors">Contact Support</a></li>
+                    <li><a href="/admin" class="hover:text-black transition-colors flex items-center gap-1 group">Admin Login <svg class="w-3 h-3 text-gray-400 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="pt-8 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p class="text-[11px] text-gray-400 font-light leading-relaxed max-w-2xl text-center md:text-left">
+                <strong class="font-medium text-gray-500">Disclaimer:</strong> Lawly is a software platform, not a law firm. The notices generated are informational and compile statutory clauses. For complex matters, consult a qualified advocate. Under Indian law, any individual has the right to send a legal notice and represent themselves in consumer forums.
+            </p>
+            <div class="flex gap-4 text-xs font-medium text-gray-400 shrink-0">
+                <a href="/terms" class="hover:text-gray-900 transition-colors">Terms</a>
+                <a href="/privacy" class="hover:text-gray-900 transition-colors">Privacy</a>
+                <a href="/refund" class="hover:text-gray-900 transition-colors">Refunds</a>
+            </div>
+        </div>
+        
+        <div class="text-center mt-8 text-xs text-gray-400 font-medium tracking-wide">
+            &copy; 2026 Lawly. All rights reserved.
+        </div>
+    </div>
+</footer>
+
 </body>
 </html>

@@ -1,5 +1,26 @@
 /* ─── Jago Grahak Jago — Frontend Application ───────────────────── */
 
+// ── Global Error Fallbacks ──────────────────────────────────────────
+window.addEventListener('error', (event) => {
+    console.error('Unhandled UI exception:', event.error || event.message);
+    showGlobalError('An unexpected error occurred. Please refresh the page and try again.');
+});
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled Promise rejection:', event.reason);
+    showGlobalError('A network or server error occurred. Please try your request again.');
+});
+
+function showGlobalError(msg) {
+    const banner = document.getElementById('global-error-banner');
+    if (banner) {
+        banner.textContent = msg;
+        banner.style.display = 'block';
+        setTimeout(() => { banner.style.display = 'none'; }, 8000);
+    } else {
+        alert(msg);
+    }
+}
+
 const App = (() => {
     let recognition = null;
     let recognitionField = null;
@@ -1043,7 +1064,17 @@ const App = (() => {
             address: address,
         };
 
-        document.getElementById('payment-amt').textContent = state.tier === 'lawyer' ? '₹599' : '₹199';
+        if (state.tier === 'lawyer') {
+            document.getElementById('payment-amt').innerHTML = '₹599';
+        } else {
+            document.getElementById('payment-amt').innerHTML = `
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 8px;">
+                    <span style="text-decoration: line-through; color: #9ca3af; font-size: 0.6em;">₹199</span>
+                    <span>Free</span>
+                </div>
+                <div style="color: #16a34a; font-size: 0.8rem; text-transform: uppercase;">For a limited time</div>
+            `;
+        }
         document.getElementById('payment-desc').textContent = `Generate a ${state.tier === 'lawyer' ? 'Lawyer-Assisted' : 'Self-Send'} notice.`;
         document.getElementById('payment-overlay').style.display = 'flex';
         document.getElementById('pay-btn').style.display = 'block';
@@ -1132,32 +1163,48 @@ const App = (() => {
             }
 
             // 2. Poll for completion
-            const maxWaitMs = 180000; // 3 minutes
-            const pollIntervalMs = 3000;
+            const maxWaitMs = 300000; // Expanded to 5 mins
+            let pollIntervalMs = 3000;
             const pollStart = Date.now();
+            let networkFailures = 0;
             
             while (Date.now() - pollStart < maxWaitMs) {
                 await new Promise(r => setTimeout(r, pollIntervalMs));
-                const pollRes = await apiFetch('/notice/job/' + encodeURIComponent(jobId));
-                if (!pollRes.ok) {
-                    if (pollRes.status === 404) throw new Error('Job expired. Please try again.');
-                    continue; // transient error, keep polling
+                try {
+                    const pollRes = await apiFetch('/notice/job/' + encodeURIComponent(jobId));
+                    networkFailures = 0; // reset on success
+
+                    if (!pollRes.ok) {
+                        if (pollRes.status === 404) throw new Error('Job expired or lost. Please try again.');
+                        // Sub-backoff on 500 network blips
+                        pollIntervalMs = Math.min(pollIntervalMs * 1.5, 10000);
+                        continue; 
+                    }
+                    const pollData = await pollRes.json();
+                    if (pollData.status === 'completed' && pollData.result) {
+                        state.noticeResult = pollData.result;
+                        state.noticeId = pollData.result.notice_id != null
+                            ? String(pollData.result.notice_id) : null;
+                        completeProgress();
+                        renderNotice();
+                        goTo(8);
+                        _generateInFlight = false;
+                        return;
+                    }
+                    if (pollData.status === 'failed') {
+                        throw new Error(pollData.error || 'Notice generation failed on the server.');
+                    }
+                    // status === 'processing' → keep polling
+                } catch (err) {
+                    if (err.message.includes('expired or lost') || err.message.includes('failed on the server')) {
+                        throw err; 
+                    }
+                    networkFailures++;
+                    if (networkFailures > 5) {
+                        throw new Error("Lost connection to processing server. Please refresh your browser or try again.");
+                    }
+                    pollIntervalMs = Math.min(pollIntervalMs * 1.5, 10000);
                 }
-                const pollData = await pollRes.json();
-                if (pollData.status === 'completed' && pollData.result) {
-                    state.noticeResult = pollData.result;
-                    state.noticeId = pollData.result.notice_id != null
-                        ? String(pollData.result.notice_id) : null;
-                    completeProgress();
-                    renderNotice();
-                    goTo(8);
-                    _generateInFlight = false;
-                    return;
-                }
-                if (pollData.status === 'failed') {
-                    throw new Error(pollData.error || 'Notice generation failed on the server.');
-                }
-                // status === 'processing' → keep polling
             }
             throw new Error('Generation timed out. Please try again.');
         } catch (err) {

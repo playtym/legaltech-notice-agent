@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F63GR76DSR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-F63GR76DSR');
+    </script>
+    <title>Flight Delay Compensation Calculator India | Lawly</title>
+    <meta name="description" content="Calculate your flight delay or cancellation compensation under DGCA rules instantly.">
+    <link rel="canonical" href="https://lawly.store/flight-delay-compensation-calculator">
+    <meta property="og:title" content="Flight Delay Compensation Calculator India | Lawly">
+    <meta property="og:description" content="Calculate your flight delay or cancellation compensation under DGCA rules instantly.">
+    
+    <meta property="og:image" content="https://lawly.store/img/lawly-og.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://lawly.store/img/lawly-og.png">
+    <meta property="og:url" content="https://lawly.store/flight-delay-compensation-calculator">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #fafafa; color: #18181b; }
+        .prose-legal h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.03em; }
+        .prose-legal h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
+        .prose-legal p { margin-bottom: 1rem; line-height: 1.7; color: #4b5563; }
+        .prose-legal ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; color: #4b5563; }
+        .prose-legal li { margin-left: 1.5rem; margin-bottom: 0.5rem; }
+        .prose-legal a { color: #2563eb; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer" onclick="window.location.href='/'">
+            <div class="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-xl leading-none font-serif">L</span>
+            </div>
+            <span class="font-bold text-xl tracking-tight text-gray-900">Lawly</span>
+        </div>
+        <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-6">
+                <a href="/#how-it-works" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">How it Works</a>
+                <a href="/#use-cases" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Use Cases</a>
+                <a href="/#pricing" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
+                <a href="/#faq" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">FAQs</a>
+                <a href="/directory" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Legal Guides</a>
+                <a href="/blog" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Blog</a>
+                <a href="/case-studies" class="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Case Studies</a>
+                <button onclick="App.goTo(2)" class="bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors">Draft Notice</button>
+            </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 prose-legal" style="min-height: 70vh;"><div class="max-w-4xl mx-auto px-4 py-8">
+<h1 class="text-3xl md:text-4xl font-bold mb-6">Flight Delay Compensation Calculator (India)</h1>
+<p class="mb-6 text-gray-700">Under DGCA rules, you are entitled to compensation for delayed or canceled flights. Use this tool to estimate your required compensation amount before sending a legal notice.</p>
+<div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+    <div class="mb-4">
+        <label class="block text-gray-700 font-bold mb-2">Flight Block Time (Original Scheduled Duration)</label>
+        <select id="flight_time" class="w-full border rounded p-2">
+            <option value="1">Less than 1 Hour</option>
+            <option value="2">1 to 2 Hours</option>
+            <option value="3">More than 2 Hours</option>
+        </select>
+    </div>
+    <div class="mb-4">
+        <label class="block text-gray-700 font-bold mb-2">Delay Duration</label>
+        <select id="delay_time" class="w-full border rounded p-2">
+            <option value="2">2 - 3 Hours</option>
+            <option value="3">3 - 4 Hours</option>
+            <option value="4">More than 4 Hours</option>
+        </select>
+    </div>
+    <button onclick="calculateFlight()" class="bg-indigo-600 text-white px-6 py-2 rounded font-bold hover:bg-indigo-700">Calculate Compensation</button>
+    <div id="flight_result" class="mt-6 p-4 bg-gray-50 rounded hidden">
+        <h3 class="text-xl font-bold text-gray-900">Estimated Compensation: <span id="comp_amt" class="text-indigo-600"></span></h3>
+        <p class="mt-2 text-sm text-gray-600">Airlines frequently deny these claims initially. To force compliance under DGCA CAR regulations, you must send a formal legal notice.</p>
+        <a href="/" class="mt-4 inline-block bg-black text-white px-4 py-2 rounded font-bold hover:bg-gray-800">Draft Legal Notice Now</a>
+    </div>
+</div>
+<script>
+function calculateFlight() {
+    var ft = document.getElementById("flight_time").value;
+    var dt = document.getElementById("delay_time").value;
+    var result = "₹0 (Check specific airline terms)";
+    if (ft == "1" && dt >= 2) result = "Up to ₹5,000 + Meals";
+    if (ft == "2" && dt >= 3) result = "Up to ₹7,500 + Meals";
+    if (ft == "3" && dt >= 4) result = "Up to ₹10,000 + Meals";
+    document.getElementById("comp_amt").innerText = result;
+    document.getElementById("flight_result").classList.remove("hidden");
+}
+</script>
+</div></main>
+
+    <footer class="bg-white border-t border-gray-100 py-12 mt-20" style="text-align:center;">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" style="max-width:640px; margin:0 auto;">
+            <a href="/" class="text-xl font-bold text-gray-900 tracking-tight" style="font-size:18px; font-weight:800; color:#18181b; text-decoration:none; letter-spacing:-0.03em;">Lawly</a>
+            <div class="flex flex-wrap justify-center gap-6 mt-4" style="display:flex; flex-wrap:wrap; justify-content:center; gap:16px; margin:16px 0;">
+                <a href="/about" class="text-sm text-gray-500 hover:text-gray-900 transition-colors" style="font-size:14px; font-weight:500; color:#6b7280; text-decoration:none;">About Us</a>
+                <a href="/contact" class="text-sm text-gray-500 hover:text-gray-900 transition-colors" style="font-size:14px; font-weight:500; color:#6b7280; text-decoration:none;">Contact</a>
+                <a href="/privacy" class="text-sm text-gray-500 hover:text-gray-900 transition-colors" style="font-size:14px; font-weight:500; color:#6b7280; text-decoration:none;">Privacy Policy</a>
+                <a href="/terms" class="text-sm text-gray-500 hover:text-gray-900 transition-colors" style="font-size:14px; font-weight:500; color:#6b7280; text-decoration:none;">Terms of Service</a>
+                <a href="/refund" class="text-sm text-gray-500 hover:text-gray-900 transition-colors" style="font-size:14px; font-weight:500; color:#6b7280; text-decoration:none;">Refunds</a>
+            </div>
+            <p class="mt-8 text-sm text-gray-400" style="font-size:12px; color:#9ca3af; margin-top:24px;">&copy; 2026 Lawly. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
