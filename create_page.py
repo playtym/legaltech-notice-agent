@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 
 TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -28,6 +29,7 @@ TEMPLATE = """<!DOCTYPE html>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css">
+    {schema_markup}
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans antialiased">
     <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
@@ -54,6 +56,8 @@ TEMPLATE = """<!DOCTYPE html>
                 {content}
             </div>
             
+            {faq_html}
+            
             <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-8 mt-12 text-center">
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Ready to take legal action?</h2>
                 <p class="text-gray-600 mb-6">Send a legally sound pre-litigation notice in minutes without a lawyer.</p>
@@ -73,14 +77,42 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-def generate_page(slug, title, description, h1, content):
+def generate_page(slug, title, description, h1, content, faqs=None):
+    schema_markup = ""
+    faq_html = ""
+    
+    if faqs and len(faqs) > 0:
+        schema_obj = {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": []
+        }
+        
+        faq_html = '<div class="mt-12"> <h2 class="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2> <div class="space-y-6"> '
+        
+        for q, a in faqs:
+            schema_obj["mainEntity"].append({
+                "@type": "Question",
+                "name": q,
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": a
+                }
+            })
+            faq_html += f'<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100"> <h3 class="text-lg font-semibold text-gray-900 mb-2">{q}</h3> <p class="text-gray-600">{a}</p> </div>'
+        
+        faq_html += '</div></div>'
+        schema_markup = f'<script type="application/ld+json">\n{json.dumps(schema_obj, indent=2)}\n</script>'
+        
     filename = f"static/{slug}.html"
     html_content = TEMPLATE.format(
         slug=slug,
         title=title,
         description=description,
         h1=h1,
-        content=content
+        content=content,
+        schema_markup=schema_markup,
+        faq_html=faq_html
     )
     
     with open(filename, 'w') as f:
@@ -90,11 +122,11 @@ def generate_page(slug, title, description, h1, content):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate a new landing page for Lawly")
-    parser.add_argument("--slug", required=True, help="URL slug (e.g., telecom-complaints)")
+    parser.add_argument("--slug", required=True, help="URL slug")
     parser.add_argument("--title", required=True, help="SEO Title tag")
     parser.add_argument("--desc", required=True, help="SEO Description")
     parser.add_argument("--h1", required=True, help="Main H1 heading")
-    parser.add_argument("--content", required=True, help="Main body content (HTML allowed)")
+    parser.add_argument("--content", required=True, help="Main body content")
     
     args = parser.parse_args()
     generate_page(args.slug, args.title, args.desc, args.h1, args.content)

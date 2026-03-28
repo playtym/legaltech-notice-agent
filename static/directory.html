@@ -3,224 +3,998 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legal Guides Directory | Lawly</title>
-    <meta property="og:image" content="https://lawly.store/img/lawly-og.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://lawly.store/img/lawly-og.png">
-
-    <!-- Tailwind Script to Ensure Styles Work without build step locally -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .bg-grid-pattern { background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 24px 24px; }
-    </style>
+    <title>Complaint Directory & Resources | Lawly</title>
+    <meta name="description" content="Browse our complete directory of consumer complaints and legal notice templates.">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="bg-gray-50/50 font-sans min-h-screen flex flex-col pt-20">
-
-  <!-- Modern Minimal Nav -->
-  <nav class="absolute top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-    <div class="max-w-6xl mx-auto px-6 lg:px-8">
-      <div class="flex items-center justify-between h-20">
-        <div class="flex-shrink-0 flex items-center gap-3 cursor-pointer" onclick="window.location.href='/'">
-            <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-md">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+    <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/" class="text-2xl font-bold text-indigo-600 tracking-tight">Lawly</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/app" class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors duration-200">
+                        Draft Legal Notice
+                    </a>
+                </div>
             </div>
-            <span class="font-semibold text-xl tracking-tight text-gray-900">Lawly</span>
         </div>
-        <div class="hidden md:flex items-center space-x-8">
-            <a href="/#how-it-works" class="text-gray-500 hover:text-black text-sm font-medium transition-colors">How it Works</a>
-            <a href="/#use-cases" class="text-gray-500 hover:text-black text-sm font-medium transition-colors">Use Cases</a>
-            <a href="/#pricing" class="text-gray-500 hover:text-black text-sm font-medium transition-colors">Pricing</a>
-            <a href="/directory" class="text-black text-sm font-medium transition-colors">Legal Guides</a>
-            <a href="/blog" class="text-gray-500 hover:text-black text-sm font-medium transition-colors">Blog</a>
-        </div>
-      </div>
-    </div>
-  </nav>
+    </nav>
 
-    <!-- Hero Section -->
-    <section class="relative pt-24 pb-16 bg-white overflow-hidden border-b border-gray-100">
-        <div class="absolute inset-0 bg-grid-pattern opacity-50 z-0"></div>
-        <div class="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-96 h-96 bg-blue-50/40 rounded-full blur-3xl z-0"></div>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="mb-12 text-center">
+            <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 mb-4">Consumer Complaint Directory</h1>
+            <p class="text-lg text-gray-600">Find the specific consumer complaint guide or legal notice template you need.</p>
+        </div>
         
-        <div class="max-w-6xl mx-auto px-6 relative z-10">
-            <div class="max-w-3xl">
-                <a href="/" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-black mb-6 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Back to Home
-                </a>
-                <h1 class="text-4xl md:text-5xl font-semibold tracking-tight text-gray-900 mb-6 leading-tight">
-                    Legal Guides <span class="text-gray-400">Directory</span>
-                </h1>
-                <p class="text-lg text-gray-500 font-light leading-relaxed">
-                    Comprehensive legal guides and notice formats for common consumer grievances in India. Understand your rights, statutory time limits, and exact legal pathways.
-                </p>
-            </div>
-        </div>
-    </section>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-    <!-- Directory Content -->
-    <main class="flex-grow py-16">
-        <div class="max-w-6xl mx-auto px-6">
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                
-                <!-- Category 1 -->
-                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
-                        <span class="text-xl">💳</span>
-                    </div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Financial & Banking</h2>
-                    <ul class="space-y-3">
-                        <li><a href="/upi-payment-failures" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Failed UPI Transfers</a></li>
-                        <li><a href="/wrong-cibil-score" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> CIBIL Score Disputes</a></li>
-                        <li><a href="/unauthorized-credit-card-charge" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Unauthorized Credit Card Charges</a></li>
-                        <li><a href="/hidden-bank-charges" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Hidden Bank Charges</a></li>
-                    </ul>
-                </div>
-
-                <!-- Category 2 -->
-                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
-                        <span class="text-xl">🛍️</span>
-                    </div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">E-Commerce & Retail</h2>
-                    <ul class="space-y-3">
-                        <li><a href="/d2c-brand-fraud" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Missing Refunds & Returns</a></li>
-                        <li><a href="/dark-patterns" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Subscription Traps (Dark Patterns)</a></li>
-                        <li><a href="/fake-products-amazon-flipkart" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Fake & Counterfeit Products</a></li>
-                        <li><a href="/defective-electronics" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Defective Electronics Missing Warranty</a></li>
-                    </ul>
-                </div>
-
-                <!-- Category 3 -->
-                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
-                        <span class="text-xl">✈️</span>
-                    </div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Travel & Hospitality</h2>
-                    <ul class="space-y-3">
-                        <li><a href="/flight-cancellation" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Flight Delays & Cancellations</a></li>
-                        <li><a href="/lost-baggage-airline" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Lost or Damaged Baggage</a></li>
-                        <li><a href="/hotel-booking-fraud" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Misleading Hotel Bookings</a></li>
-                        <li><a href="/train-ticket-refund-irctc" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> IRCTC/Train Ticket Refunds</a></li>
-                    </ul>
-                </div>
-
-                <!-- Category 4 -->
-                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
-                        <span class="text-xl">🏗️</span>
-                    </div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Real Estate & Housing</h2>
-                    <ul class="space-y-3">
-                        <li><a href="/rera-builder-delay" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Builder Possession Delays (RERA)</a></li>
-                        <li><a href="/hidden-maintenance-charges" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Hidden Registration & Maintenance Fees</a></li>
-                        <li><a href="/poor-construction-quality" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Poor Construction Quality</a></li>
-                        <li><a href="/broker-fraud" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Broker / Agent Commission Fraud</a></li>
-                    </ul>
-                </div>
-
-                <!-- Category 5 -->
-                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
-                        <span class="text-xl">🏥</span>
-                    </div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Health & Insurance</h2>
-                    <ul class="space-y-3">
-                        <li><a href="/insurance-claim-rejected" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Wrongful Insurance Rejections</a></li>
-                        <li><a href="/medical-negligence" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Overcharging by Hospitals</a></li>
-                        <li><a href="/term-insurance-dispute" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Term Life Insurance Disputes</a></li>
-                        <li><a href="/expired-food-quick-commerce" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Expired / Stale Food Delivery (FSSAI)</a></li>
-                    </ul>
-                </div>
-
-                <!-- Category 6 -->
-                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100">
-                        <span class="text-xl">📚</span>
-                    </div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Education & Ed-Tech</h2>
-                    <ul class="space-y-3">
-                        <li><a href="/ed-tech-refunds" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Ed-Tech Course Cancellation Refunds</a></li>
-                        <li><a href="/false-placement-promises" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Misleading Placement Guarantees</a></li>
-                        <li><a href="/coaching-center-fee-refund" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> Offline Coaching Fee Retention</a></li>
-                        <li><a href="/university-degree-delay" class="text-gray-500 hover:text-black font-light text-sm flex items-center gap-2 group"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-black transition-colors"></span> University Certificate Delays</a></li>
-                    </ul>
-                </div>
-
-            </div>
-            
-            <!-- Quick Suggestion Action -->
-            <div class="mt-16 bg-gray-900 rounded-3xl p-8 md:p-12 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
-                <div>
-                    <h3 class="text-2xl font-semibold text-white mb-2">Can't find your specific issue?</h3>
-                    <p class="text-gray-400 font-light max-w-xl">Our AI engine custom-drafts notices for any arbitrary consumer dispute under Indian Law.</p>
-                </div>
-                <a href="/" class="shrink-0 bg-white text-gray-900 px-8 py-4 rounded-xl font-medium hover:bg-gray-100 transition shadow-lg inline-flex items-center gap-2">
-                    Start AI Questionnaire <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                </a>
-            </div>
-
+            <a href="/reports/consumer-complaints-2026" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">2026 Indian Consumer Grievance Index Report</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/coaching-center-fee-refund" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Coaching Center Fee Refund Refusal? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/directory" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Complaint Directory & Resources</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/d2c-brand-fraud" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">D2C Brand Fraud & Fake Products? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/dark-patterns" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Dark Patterns on Apps? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/defective-electronics" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Defective Electronics & Warranty Issues? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/ed-tech-refunds" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Ed-Tech Refund? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/expired-food-quick-commerce" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Expired Food from Quick Commerce? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/scam-check/fake-instagram-electronics-store" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Fake Instagram Electronics Store Scam</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/fake-products-amazon-flipkart" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Fake Products on Amazon & Flipkart? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/false-placement-promises" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">False Placement Promises by Institutes? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/air-india-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Air India</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/airtel-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Airtel</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/amazon-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Amazon India</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/blinkit-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Blinkit</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/cleartrip-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Cleartrip</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/flipkart-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Flipkart</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/indigo-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against IndiGo</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/jio-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Jio</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/makemytrip-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against MakeMyTrip</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/meesho-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Meesho</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/ola-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Ola Cabs</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/paytm-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Paytm</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/phonepe-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against PhonePe</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/zomato-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint & Legal Notice Against Zomato</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/act-fibernet-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against ACT Fibernet</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/agoda-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Agoda</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/airbnb-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Airbnb</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/ajio-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Ajio</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/akasa-air-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Akasa Air</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/apple-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Apple</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/axis-bank-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Axis Bank</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/bsnl-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against BSNL</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/bookmyshow-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against BookMyShow</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/byjus-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Byjus</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/cred-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Cred</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/croma-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Croma</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/cultfit-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Cult.fit</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/delhivery-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Delhivery</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/dunzo-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Dunzo</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/golds-gym-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Golds Gym</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/google-pay-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Google Pay</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/hdfc-bank-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against HDFC Bank</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/hathway-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Hathway</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/housingcom-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Housing.com</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/icici-bank-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against ICICI Bank</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/irctc-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against IRCTC</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/india-post-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against India Post</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/lg-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against LG</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/lenskart-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Lenskart</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/magicbricks-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Magicbricks</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/myntra-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Myntra</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/nobroker-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against NoBroker</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/nykaa-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Nykaa</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/oyo-rooms-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against OYO Rooms</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/rapido-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Rapido</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/redbus-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against RedBus</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/reliance-digital-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Reliance Digital</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/sbi-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against SBI</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/samsung-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Samsung</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/sony-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Sony</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/spicejet-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against SpiceJet</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/swiggy-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Swiggy</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/tata-cliq-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Tata CLiQ</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/uber-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Uber</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/unacademy-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Unacademy</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/upgrad-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against UpGrad</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/urban-company-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Urban Company</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/vedantu-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Vedantu</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/vistara-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Vistara</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/vodafone-idea-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Vodafone Idea</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/whirlpool-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Whirlpool</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/yatra-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Yatra</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/zepto-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Zepto</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/zudio-complaints" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Complaint Against Zudio</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-agra" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Agra Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-ahmedabad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Ahmedabad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-allahabad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Allahabad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-amritsar" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Amritsar Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-aurangabad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Aurangabad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-bangalore" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Bangalore Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-bhopal" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Bhopal Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-chandigarh" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Chandigarh Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-chennai" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Chennai Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-coimbatore" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Coimbatore Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-delhi" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Delhi Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-dhanbad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Dhanbad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-faridabad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Faridabad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-ghaziabad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Ghaziabad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-guwahati" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Guwahati Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-gwalior" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Gwalior Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-howrah" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Howrah Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-hubli-dharwad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Hubli-Dharwad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-hyderabad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Hyderabad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-indore" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Indore Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-jabalpur" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Jabalpur Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-jaipur" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Jaipur Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-jodhpur" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Jodhpur Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-kalyan-dombivli" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Kalyan-Dombivli Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-kanpur" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Kanpur Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-kolkata" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Kolkata Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-kota" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Kota Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-lucknow" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Lucknow Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-ludhiana" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Ludhiana Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-madurai" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Madurai Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-meerut" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Meerut Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-mumbai" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Mumbai Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-nagpur" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Nagpur Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-nashik" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Nashik Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-navi-mumbai" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Navi Mumbai Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-patna" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Patna Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-pimpri-chinchwad" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Pimpri-Chinchwad Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-pune" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Pune Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-raipur" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Raipur Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-rajkot" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Rajkot Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-ranchi" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Ranchi Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-solapur" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Solapur Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-srinagar" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Srinagar Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-surat" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Surat Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-thane" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Thane Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-vadodara" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Vadodara Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-varanasi" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Varanasi Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-vasai-virar" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Vasai-Virar Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-vijayawada" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Vijayawada Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/consumer-court-visakhapatnam" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">File a Consumer Court Complaint in Visakhapatnam Online</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/flight-cancellation" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Flight Cancelled or Delayed? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/flight-delay-compensation-calculator" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Flight Delay Compensation Calculator India</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/index" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Free Legal Notice Templates Formats PDF/Word</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/hidden-bank-charges" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Hidden Bank Charges? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/hidden-maintenance-charges" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Hidden Maintenance Charges? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/hotel-booking-fraud" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Hotel Booking Fraud & Denied Check-in? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/insurance-claim-rejected" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Insurance Claim Rejected? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/react-app/index" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Lawly AI Intake</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/dist/index" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Lawly Frontend</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/cheque-bounce-legal-notice-format" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice Format for Cheque Bounce PDF & Word Download</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/consumer-complaint-legal-notice-format" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice Format for Consumer Protection PDF & Word Download</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/defective-product-legal-notice-format" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice Format for Defective Product PDF & Word Download</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/tenant-eviction-legal-notice-format" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice Format for Eviction of Tenant PDF & Word Download</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/money-recovery-legal-notice-format" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice Format for Recovery of Dues PDF & Word Download</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/legal-notice-format-for-refund" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice Format for Refund of Money | Free Template</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/unpaid-salary-legal-notice-format" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice Format for Unpaid Salary PDF & Word Download</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/legal-notice-defective-product" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice for Defective Product Format</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/builder-delay-legal-notice-format" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Legal Notice to Builder for Delay in Possession PDF & Word Download</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/lost-baggage-airline" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Lost Baggage by Airlines? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/medical-negligence" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Medical Negligence & Deficient Healthcare? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/poor-construction-quality" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Poor Construction Quality by Builder? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/rera-delay-interest-calculator" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">RERA Builder Delay Interest Calculator</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/rera-builder-delay" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">RERA Builder Delay? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/broker-fraud" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Real Estate Broker Fraud? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/scam-check/index" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Scam Check Database - Fake Websites & Cyber Frauds India</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/templates/legal-notice-cheque-bounce" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Section 138 Cheque Bounce Notice Format</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/scam-check/part-time-job-telegram-scam" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Telegram Part Time Job Like/Subscribe Scam</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/term-insurance-dispute" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Term Insurance Claim Dispute? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/terms" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Terms of Service</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/test-cli-page" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Test CLI Page</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/train-ticket-refund-irctc" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Train Ticket IRCTC Refund Failure? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/upi-payment-failures" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">UPI Payment Failed? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/unauthorized-credit-card-charge" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Unauthorized Credit Card Charge? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/university-degree-delay" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">University Degree or Marksheet Delay? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
+            <a href="/wrong-cibil-score" class="block p-6 bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition duration-200 flex flex-col justify-between h-full">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">Wrong CIBIL Score? Send a Legal Notice — Lawly</h3>
+                <span class="text-indigo-600 text-sm font-medium flex items-center mt-auto">
+                    Read more
+                </span>
+            </a>
         </div>
     </main>
-
-<!-- ── Footer ─────────────────────────────────────────────── -->
-<footer class="bg-gray-50 border-t border-gray-200 pt-16 pb-8 font-sans mt-auto">
-    <div class="max-w-6xl mx-auto px-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-            <div class="col-span-1 md:col-span-2">
-                <a href="/" class="flex items-center gap-2 mb-4 group w-max">
-                    <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center transition-transform group-hover:scale-105 shadow-md">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                    </div>
-                    <span class="font-semibold text-xl tracking-tight text-gray-900 block relative">Lawly</span>
-                </a>
-                <p class="text-gray-500 font-light text-sm leading-relaxed max-w-sm mb-6">AI-powered legal notice generator for Indian consumer disputes. Court-ready formats compiling 25+ Indian statutes perfectly.</p>
-                <div class="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white w-max shadow-sm">
-                    <img src="img/jago-grahak-jago.png" alt="Jago Grahak Jago" class="h-6 w-auto mix-blend-multiply opacity-70 grayscale" />
-                    <div class="text-left">
-                        <p class="text-[11px] font-semibold text-gray-900 leading-none">Empowering Consumers</p>
-                        <p class="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-semibold">CPA 2019 COMPLIANT</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div>
-                <h4 class="font-semibold text-gray-900 mb-4 tracking-tight">Legal Resources</h4>
-                <ul class="space-y-3 text-sm text-gray-500 font-light">
-                    <li><a href="/directory" class="hover:text-black transition-colors">Legal Guides Directory</a></li>
-                    <li><a href="/blog" class="hover:text-black transition-colors">Lawly Blog</a></li>
-                </ul>
-            </div>
-            
-            <div>
-                <h4 class="font-semibold text-gray-900 mb-4 tracking-tight">Company</h4>
-                <ul class="space-y-3 text-sm text-gray-500 font-light">
-                    <li><a href="/#use-cases" class="hover:text-black transition-colors">Use Cases</a></li>
-                    <li><a href="/#pricing" class="hover:text-black transition-colors">Pricing</a></li>
-                    <li><a href="/#faq" class="hover:text-black transition-colors">FAQ</a></li>
-                    <li><a href="/contact" class="hover:text-black transition-colors">Contact Support</a></li>
-                    <li><a href="/admin" class="hover:text-black transition-colors flex items-center gap-1 group">Admin Login <svg class="w-3 h-3 text-gray-400 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></a></li>
-                </ul>
-            </div>
-        </div>
-        
-        <div class="pt-8 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-6">
-            <p class="text-[11px] text-gray-400 font-light leading-relaxed max-w-2xl text-center md:text-left">
-                <strong class="font-medium text-gray-500">Disclaimer:</strong> Lawly is a software platform, not a law firm. The notices generated are informational and compile statutory clauses. For complex matters, consult a qualified advocate. Under Indian law, any individual has the right to send a legal notice and represent themselves in consumer forums.
-            </p>
-            <div class="flex gap-4 text-xs font-medium text-gray-400 shrink-0">
-                <a href="/terms" class="hover:text-gray-900 transition-colors">Terms</a>
-                <a href="/privacy" class="hover:text-gray-900 transition-colors">Privacy</a>
-                <a href="/refund" class="hover:text-gray-900 transition-colors">Refunds</a>
-            </div>
-        </div>
-        
-        <div class="text-center mt-8 text-xs text-gray-400 font-medium tracking-wide">
-            &copy; 2026 Lawly. All rights reserved.
-        </div>
-    </div>
-</footer>
-
 </body>
 </html>
