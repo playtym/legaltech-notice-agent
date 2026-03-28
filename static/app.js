@@ -258,7 +258,7 @@ const App = (() => {
         el.focus();
     }
 
-    const API_BACKEND = 'https://api.lawly.store';
+    const API_BACKEND = window.location.origin;
 
     function isLocalHost() {
         return ['localhost', '127.0.0.1'].includes(window.location.hostname);
