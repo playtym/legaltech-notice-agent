@@ -786,7 +786,10 @@ const App = (() => {
         const resolution = val('desired-resolution');
         const objection = val('company-objection');
         if (!summary || summary.length < 20) return showError('Please describe your issue in at least 20 characters.');
-        if (!resolution) return showError('Please describe what resolution you want.');
+        if (!resolution || resolution.length < 5) return showError('Please describe what resolution you want in at least 5 characters (e.g., "Full refund").');
+        if (summary.length > 10000) return showError('Issue summary is too long (max 10,000 characters).');
+        if (resolution.length > 2000) return showError('Desired resolution is too long (max 2,000 characters).');
+        if (objection && objection.length > 5000) return showError('Company objection is too long (max 5,000 characters).');
 
         _analyzeInFlight = true;
         state.issueSummary = summary;
