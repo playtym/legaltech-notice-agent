@@ -599,7 +599,35 @@
 
 </style>
 
+
+    <style>
+        @media (min-width: 900px) {
+            .tier-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 16px !important; }
+        }
+        @media (max-width: 899px) {
+            .tier-grid { grid-template-columns: 1fr !important; }
+        }
+    </style>
+
+    <style>
+        @media (min-width: 900px) {
+            .tier-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 16px !important; }
+        }
+        @media (max-width: 899px) {
+            .tier-grid { grid-template-columns: 1fr !important; }
+        }
+    </style>
+<style>
+@media (min-width: 900px) {
+  .tier-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 16px !important; }
+}
+@media (max-width: 899px) {
+  .tier-grid { grid-template-columns: 1fr !important; }
+}
+</style>
 </head>
+
+
 <body>
 
 <!-- ── Global Error Banner ────────────────────────────────── -->
@@ -1291,7 +1319,22 @@
                 <button class="btn btn-primary btn-block">Select Lawyer-Assisted</button>
                 <p class="tier-nudge">Only ₹400 more for professional delivery</p>
             </div>
+            <div class="tier-card" id="tier-print_post" onclick="App.selectTier('print_post')">
+                <div class="tier-price">₹999</div>
+                <div class="tier-name">Print & Tracked Post</div>
+                <p class="tier-desc">We dispatch it via Registered Post</p>
+                <ul class="tier-features">
+                    <li>Everything in Self-Send, plus:</li>
+                    <li><strong>Physical Printing</strong></li>
+                    <li><strong>Enveloping & Dispatch</strong></li>
+                    <li><strong>Sent via India Post (RPAD)</strong></li>
+                    <li><strong>Live Tracking Link</strong></li>
+                    <li><strong>Legal Proof of Delivery</strong></li>
+                </ul>
+                <button class="btn btn-outline btn-block">Select Print & Post</button>
+            </div>
         </div>
+
 
         <div class="tier-urgency" id="tier-urgency"></div>
 
@@ -1448,6 +1491,10 @@
             <button class="btn btn-primary" id="btn-download-pdf" onclick="App.downloadPDF()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                 Download PDF
+            </button>
+            <button class="btn btn-primary" id="btn-download-edaakhil" onclick="App.downloadEDaakhilZip()" style="margin-left: 10px; background-color: #2563eb;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Download E-Daakhil ZIP
             </button>
             <button class="btn btn-ghost" onclick="App.reset()">Start new notice</button>
         </div>

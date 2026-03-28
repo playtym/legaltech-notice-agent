@@ -8,8 +8,11 @@ generation (no wkhtmltopdf or WeasyPrint headless browser needed).
 from __future__ import annotations
 
 import io
+import logging
 import re
 from datetime import date
+
+logger = logging.getLogger(__name__)
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -225,6 +228,10 @@ def generate_pdf(
     Returns:
         PDF file content as bytes.
     """
+    if not notice_text or not notice_text.strip():
+        logger.warning("Empty notice_text provided to generate_pdf. Generating placeholder PDF.")
+        notice_text = "Notice text was empty or not provided."
+
     buf = io.BytesIO()
     styles = _build_styles()
 
@@ -394,7 +401,13 @@ def generate_pdf(
     if annexures:
         _append_annexures(story, styles, annexures)
 
-    doc.build(story)
+    try:
+        doc.build(story)
+    except Exception as e:
+        logger.error(f"Error generating PDF document: {e}", exc_info=True)
+        # Ensure we don't crash the server hard, maybe raise a ValueError that can be caught
+        raise ValueError(f"Failed to build PDF: {str(e)}") from e
+
     return buf.getvalue()
 
 
@@ -433,7 +446,8 @@ def _append_annexures(
                     img.drawWidth = iw * scale
                     img.drawHeight = ih * scale
                 story.append(img)
-            except Exception:
+            except Exception as e:
+                logger.error(f"Failed to embed image annexure '{filename}': {e}")
                 story.append(Paragraph(
                     f"<i>[Image could not be embedded: {_esc(filename)}]</i>",
                     styles["small"],

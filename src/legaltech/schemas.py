@@ -11,6 +11,7 @@ class IntakeMode(str, Enum):
 class ServiceTier(str, Enum):
     self_send = "self_send"       # ₹199 — user gets PDF to send themselves
     lawyer_assisted = "lawyer"    # ₹599 — reviewed by advocate, sent on their behalf
+    print_post = "print_post"     # ₹999 — auto-printed, sent via registered post with tracking
 
 
 class Complainant(BaseModel):
@@ -153,6 +154,8 @@ class DeliveryInfo(BaseModel):
     email_recipients: list[str] = Field(default_factory=list)
     email_message_id: str | None = None
     delivery_status: str = "pending"
+    tracking_id: str | None = None
+    dispatch_partner: str | None = None
 
 
 class TCCounterInfo(BaseModel):

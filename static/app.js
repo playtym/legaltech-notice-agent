@@ -1330,6 +1330,40 @@ const App = (() => {
     }
 
     // ── PDF download ────────────────────────────────────────────────
+    async function downloadEDaakhilZip() {
+        const payload = {
+            company_name: state.company?.name || "Target Company",
+            complainant: state.complainant || {},
+            evidence_details: state.evidence.length > 0 ? state.evidence.map(e => ({ name: e.doc_type, desc: "" })) : []
+        };
+        try {
+            const btn = document.getElementById("btn-download-edaakhil");
+            if (btn) btn.innerHTML = "Packaging ZIP...";
+
+            const res = await fetch(`${API_BASE}/notice/export-edaakhil`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error("Failed to generate ZIP");
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "EDaakhil_Filing_Pack.zip";
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            if (btn) btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Download E-Daakhil ZIP';
+        } catch (err) {
+            console.error(err);
+            showError("Could not generate ZIP: " + err.message);
+        }
+    }
+
     async function downloadPDF() {
         const noticeText = state.noticeResult?.legal_notice;
         if (!noticeText) {
@@ -1553,7 +1587,7 @@ const App = (() => {
         setIssue,
         start, goTo, nextFromCompany, lookupCompany, analyzeCase,
         selectTier, confirmAndGenerate,
-        processPayment, generateNotice, downloadPDF, renderNotice, upgradeTier,
+        processPayment, generateNotice, downloadEDaakhilZip, downloadPDF, renderNotice, upgradeTier,
         resetTierSelection,
         addTimeline, addEvidence, removeItem, saveAnswer,
         showError, dismissError, reset, saveApiBase,

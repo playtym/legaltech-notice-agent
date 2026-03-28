@@ -1,10 +1,16 @@
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile, Depends, Header, Query, Request, Response
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 import asyncio
 import hashlib
@@ -40,11 +46,40 @@ async def lifespan(application: FastAPI):
 
 
 app = FastAPI(title="Indian Legal Notice Agent", version="0.4.0", lifespan=lifespan)
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 pipeline = LegalNoticePipeline()
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled server error for {request.method} {request.url}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred.", "error_type": type(exc).__name__}
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation error for {request.method} {request.url}: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Input validation failed", "errors": exc.errors()}
+    )
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    logger.info(f"HTTP error {exc.status_code} for {request.method} {request.url}: {exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
 
 # ── Async job store (in-memory) ─────────────────────────────────────
 _jobs: dict[str, dict] = {}  # job_id → {status, result, error, created_at}
-_JOB_TTL = 600  # 10 minutes
+_JOB_TTL = 3600  # Increased to 60mins for poor mobile network reconnects
 
 
 def _cleanup_old_jobs():
@@ -127,25 +162,27 @@ _ALLOWED_TYPES = {
 }
 
 
+from pydantic import BaseModel, Field, HttpUrl, field_validator
+
 class NoticeRequest(BaseModel):
     complainant: Complainant
-    issue_summary: str
-    desired_resolution: str
-    company_objection: str | None = None
-    company_name_hint: str | None = None
+    issue_summary: str = Field(..., min_length=20, max_length=15000)
+    desired_resolution: str = Field(..., min_length=5, max_length=5000)
+    company_objection: str | None = Field(default=None, max_length=5000)
+    company_name_hint: str | None = Field(default=None, max_length=255)
     website: HttpUrl | None = None
-    timeline: list[str] = []
-    evidence: list[str] = []
-    jurisdiction: str = "India"
+    timeline: list[str] = Field(default_factory=list, max_items=50)
+    evidence: list[str] = Field(default_factory=list, max_items=50)
+    jurisdiction: str = Field(default="India", max_length=150)
     tier: ServiceTier = ServiceTier.self_send
     follow_up_answers: dict[str, str] | None = None
-    upload_ids: list[str] = []  # IDs from /documents/upload
+    upload_ids: list[str] = Field(default_factory=list, max_items=25)  # IDs from /documents/upload
     # Customer controls
-    notice_tone: str | None = None        # "firm" | "aggressive" | "diplomatic"
-    cure_period_days: int | None = None    # override auto-detected cure period
-    compensation_amount: int | None = None # specific ₹ amount for compensation demand
-    interest_rate_percent: float | None = None  # annual interest rate on refund
-    language: str = "English"              # output language
+    notice_tone: str | None = Field(default=None, max_length=50)        # "firm" | "aggressive" | "diplomatic"
+    cure_period_days: int | None = Field(default=None, ge=1, le=180)    # override auto-detected cure period
+    compensation_amount: int | None = Field(default=None, ge=0) # specific ₹ amount for compensation demand
+    interest_rate_percent: float | None = Field(default=None, ge=0.0, le=100.0)  # annual interest rate on refund
+    language: str = Field(default="English", max_length=50)              # output language
 
 
 class AnalyzeRequest(BaseModel):
@@ -375,7 +412,7 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
             result["db_notice_id"] = db_notice_id
             result["db_user_id"] = user_id
             is_lawyer = tier_val == "lawyer"
-            pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
+            pdf_bytes = await asyncio.to_thread(generate_pdf, packet.legal_notice, is_lawyer_tier=is_lawyer)
             pdf_fn = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
             await db.store_pdf(db_notice_id, pdf_bytes, pdf_fn)
         except Exception:
@@ -400,7 +437,8 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
 
 
 @app.post("/notice/typed")
-async def create_notice_typed(payload: NoticeRequest):
+@limiter.limit("5/minute;20/hour")
+async def create_notice_typed(request: Request, payload: NoticeRequest):
     _cleanup_old_jobs()
     try:
         complaint = ComplaintInput(
@@ -446,7 +484,8 @@ async def get_job_status(job_id: str):
 
 
 @app.post("/notice/analyze")
-async def analyze_case(payload: AnalyzeRequest):
+@limiter.limit("10/minute;50/hour")
+async def analyze_case(request: Request, payload: AnalyzeRequest):
     """Phase 1: Analyze the complaint and return follow-up questions.
 
     Call this BEFORE /notice/typed. If ready_to_generate is False,
@@ -574,7 +613,7 @@ async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: Co
             result["db_notice_id"] = db_nid
             result["db_user_id"] = user_id
             is_lawyer = tier_val == "lawyer"
-            pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer)
+            pdf_bytes = await asyncio.to_thread(generate_pdf, packet.legal_notice, is_lawyer_tier=is_lawyer)
             pdf_fn = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
             await db.store_pdf(db_nid, pdf_bytes, pdf_fn)
         except Exception:
@@ -589,7 +628,8 @@ async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: Co
 
 
 @app.post("/notice/voice")
-async def create_notice_voice(payload: VoiceNoticeRequest):
+@limiter.limit("5/minute;20/hour")
+async def create_notice_voice(request: Request, payload: VoiceNoticeRequest):
     _cleanup_old_jobs()
     try:
         complaint = ComplaintInput(
@@ -775,7 +815,8 @@ async def refine_speech_transcript(payload: SpeechRefineRequest):
 
 
 @app.post("/notice/typed/pdf")
-async def create_notice_typed_pdf(payload: NoticeRequest):
+@limiter.limit("5/minute;20/hour")
+async def create_notice_typed_pdf(request: Request, payload: NoticeRequest):
     """Generate and return the PDF file directly (for download)."""
     try:
         complaint = ComplaintInput(
@@ -815,7 +856,12 @@ async def create_notice_typed_pdf(payload: NoticeRequest):
             (sf.filename, sf.content_type, sf.data)
             for sf in upload_store.get_many(payload.upload_ids)
         ] if payload.upload_ids else []
-        pdf_bytes = generate_pdf(packet.legal_notice, is_lawyer_tier=is_lawyer, annexures=annexures)
+        try:
+            pdf_bytes = await asyncio.to_thread(generate_pdf, packet.legal_notice, is_lawyer_tier=is_lawyer, annexures=annexures)
+        except Exception as e:
+            logger.error(f"Failed to generate PDF: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Failed to generate the PDF document.")
+        
         company_label = packet.company.legal_name or packet.company.brand_name or "Company"
         filename = f"Legal_Notice_{company_label.replace(' ', '_')}.pdf"
 
@@ -865,8 +911,42 @@ class RenderPDFRequest(BaseModel):
     notice_text: str
     company_name: str = "Company"
     is_lawyer_tier: bool = False
+    service_tier: str = "self_send"
 
 
+
+
+@app.post("/notice/export-edaakhil")
+async def export_edaakhil(payload: RenderPDFRequest, complainant_name: str = Query(...)):
+    if not payload.notice_text or not payload.notice_text.strip():
+        raise HTTPException(status_code=400, detail="notice_text is required")
+        
+    try:
+        from .services.pdf_generator import generate_pdf
+        from .services.edaakhil_packager import EDaakhilPackager
+        
+        pdf_bytes = await asyncio.to_thread(
+            generate_pdf,
+            payload.notice_text,
+            is_lawyer_tier=payload.is_lawyer_tier,
+        )
+        
+        zip_bytes = await asyncio.to_thread(
+            EDaakhilPackager.create_export_zip,
+            payload.notice_text,
+            pdf_bytes,
+            complainant_name
+        )
+        
+        filename = f"EDaakhil_Export_{complainant_name.replace(' ', '_')}.zip"
+        return Response(
+            content=zip_bytes,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate E-Daakhil Export: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to package E-Daakhil export.")
 
 @app.post("/notice/deliver")
 async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), to_name: str = Query(...)):
@@ -878,7 +958,8 @@ async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), 
         from .services.pdf_generator import generate_pdf
         from .services.email_service import send_notice_email, build_self_send_body, build_lawyer_send_body
         
-        pdf_bytes = generate_pdf(
+        pdf_bytes = await asyncio.to_thread(
+            generate_pdf,
             payload.notice_text,
             is_lawyer_tier=payload.is_lawyer_tier,
         )
@@ -891,7 +972,8 @@ async def deliver_notice(payload: RenderPDFRequest, to_email: str = Query(...), 
             body = build_self_send_body(to_name, payload.company_name)
             subject = f"Your Legal Notice against {payload.company_name}"
             
-        result = send_notice_email(
+        result = await asyncio.to_thread(
+            send_notice_email,
             to_email=to_email,
             to_name=to_name,
             subject=subject,
@@ -911,7 +993,8 @@ async def render_pdf(payload: RenderPDFRequest):
     if not payload.notice_text or not payload.notice_text.strip():
         raise HTTPException(status_code=400, detail="notice_text is required")
     try:
-        pdf_bytes = generate_pdf(
+        pdf_bytes = await asyncio.to_thread(
+            generate_pdf,
             payload.notice_text,
             is_lawyer_tier=payload.is_lawyer_tier,
         )
@@ -1175,7 +1258,7 @@ async def get_notice_pdf(notice_id: str, _=Depends(require_admin)):
     if not notice:
         raise HTTPException(status_code=404, detail="Notice not found")
     is_lawyer = notice.get("tier") == "lawyer"
-    pdf_bytes = generate_pdf(notice["legal_notice"], is_lawyer_tier=is_lawyer)
+    pdf_bytes = await asyncio.to_thread(generate_pdf, notice["legal_notice"], is_lawyer_tier=is_lawyer)
     filename = f"Legal_Notice_{notice_id}.pdf"
     return Response(
         content=pdf_bytes,
@@ -2031,7 +2114,8 @@ async def send_test_email(body: SendTestEmailRequest, _=Depends(require_admin)):
         subject = template.get("subject", f"Test Email — {body.template}").replace("{{name}}", "Test User").replace("{{company}}", "Test Co")
         body_text = template.get("body", "This is a test email from Lawly admin.").replace("{{name}}", "Test User").replace("{{company}}", "Test Co").replace("{{notice_id}}", "TEST123").replace("{{amount}}", "₹199").replace("{{tier}}", "self_send").replace("{{days}}", "15").replace("{{time}}", "now").replace("{{email}}", body.to_email).replace("{{notice_link}}", "https://lawly.store")
 
-        result = send_notice_email(
+        result = await asyncio.to_thread(
+            send_notice_email,
             to_email=body.to_email,
             to_name="Test User",
             subject=subject,
@@ -2181,7 +2265,8 @@ async def create_support_ticket(body: CreateTicketRequest):
             os.environ["SMTP_PASSWORD"] = email_settings.get("smtp_password", "")
             os.environ["NOTICE_FROM_NAME"] = email_settings.get("from_name", "Lawly")
             os.environ["NOTICE_FROM_EMAIL"] = email_settings.get("from_email", "")
-            send_notice_email(
+            await asyncio.to_thread(
+                send_notice_email,
                 to_email=email_settings["admin_alert_email"],
                 to_name="Admin",
                 subject=f"[Lawly Support] {body.subject}",

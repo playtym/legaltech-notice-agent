@@ -1,0 +1,225 @@
+"""SQLite database for persisting users, notices, analysis outputs, and activity.
+
+Uses aiosqlite for async access.  When DATA_BUCKET is set the DB file is
+downloaded from S3 on first connect and flushed back after every mutating
+commit so data survives App Runner re-deploys.
+
+Locally the DB lives at <project_root>/data/lawly.db.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+import aiosqlite
+
+_logger = logging.getLogger(__name__)
+
+_DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
+_DB_PATH = _DATA_DIR / "lawly.db"
+
+_db: aiosqlite.Connection | None = None
+
+# ── S3 persistence ───────────────────────────────────────────────────
+
+_DATA_BUCKET: str | None = os.getenv("DATA_BUCKET")
+_S3_DB_KEY = "data/lawly.db"
+_s3 = None
+
+
+def _get_s3():
+    global _s3
+    if _s3 is None:
+        import boto3
+        _s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-south-1"))
+    return _s3
+
+
+def _download_db_from_s3() -> None:
+    """Download the SQLite DB from S3 into the local data dir (cold start)."""
+    if not _DATA_BUCKET:
+        return
+    _DATA_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        _get_s3().download_file(_DATA_BUCKET, _S3_DB_KEY, str(_DB_PATH))
+        _logger.info("Downloaded DB from s3://%s/%s", _DATA_BUCKET, _S3_DB_KEY)
+    except _get_s3().exceptions.ClientError as exc:
+        if exc.response["Error"]["Code"] == "404":
+            _logger.info("No existing DB in S3 — will create fresh")
+        else:
+            _logger.exception("S3 download failed")
+    except Exception:
+        _logger.exception("S3 download failed")
+
+
+def _upload_db_to_s3() -> None:
+    """Checkpoint WAL into the main DB file, then upload to S3."""
+    if not _DATA_BUCKET:
+        return
+    try:
+        # Checkpoint merges WAL data into the main .db so we only upload one file
+        import sqlite3
+        conn = sqlite3.connect(str(_DB_PATH))
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        conn.close()
+        _get_s3().upload_file(str(_DB_PATH), _DATA_BUCKET, _S3_DB_KEY)
+    except Exception:
+        _logger.exception("S3 upload failed for DB")
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+async def get_db() -> aiosqlite.Connection:
+    """Return the singleton DB connection, creating tables on first call."""
+    global _db
+    if _db is None:
+        _DATA_DIR.mkdir(parents=True, exist_ok=True)
+        _download_db_from_s3()          # pull latest from S3 on cold start
+        _db = await aiosqlite.connect(str(_DB_PATH))
+        _db.row_factory = aiosqlite.Row
+        await _db.execute("PRAGMA journal_mode=WAL")
+        await _db.execute("PRAGMA foreign_keys=ON")
+        await _init_tables(_db)
+    return _db
+
+
+async def _commit_and_sync(db: aiosqlite.Connection) -> None:
+    """Commit the current transaction and upload the DB to S3."""
+    await db.commit()
+    _upload_db_to_s3()
+
+
+async def close_db() -> None:
+    global _db
+    if _db is not None:
+        _upload_db_to_s3()              # final flush
+        await _db.close()
+        _db = None
+
+
+# ── Schema ───────────────────────────────────────────────────────────
+
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    full_name     TEXT NOT NULL,
+    email         TEXT NOT NULL,
+    phone         TEXT,
+    address       TEXT,
+    created_at    TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+CREATE TABLE IF NOT EXISTS analyses (
+    id                  TEXT PRIMARY KEY,
+    user_id             TEXT REFERENCES users(id),
+    complaint_json      TEXT NOT NULL,
+    case_strength       TEXT,
+    case_strength_reasoning TEXT,
+    ready_to_generate   INTEGER,
+    questions_json      TEXT,
+    company_name_found  TEXT,
+    company_domain      TEXT,
+    contacts_found_json TEXT,
+    respondent_cin      TEXT,
+    respondent_name     TEXT,
+    respondent_office   TEXT,
+    grievance_email     TEXT,
+    policies_found_json TEXT,
+    created_at          TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS notices (
+    id                  TEXT PRIMARY KEY,
+    user_id             TEXT REFERENCES users(id),
+    analysis_id         TEXT REFERENCES analyses(id),
+    company_name        TEXT,
+    tier                TEXT NOT NULL,
+    status              TEXT NOT NULL DEFAULT 'pending_review',
+    legal_notice_text   TEXT,
+    pdf_stored          INTEGER DEFAULT 0,
+    created_at          TEXT NOT NULL,
+    reviewed_at         TEXT,
+    reviewer_notes      TEXT,
+
+    -- Complaint snapshot
+    complaint_json      TEXT,
+
+    -- Company & contacts
+    company_json        TEXT,
+    contacts_json       TEXT,
+
+    -- Interim model outputs (structured JSON)
+    bare_act_refs_json          TEXT,
+    claim_elements_json         TEXT,
+    respondent_identity_json    TEXT,
+    evidence_score_json         TEXT,
+    limitation_json             TEXT,
+    arbitration_json            TEXT,
+    jurisdiction_json           TEXT,
+    cure_period_json            TEXT,
+    tc_counters_json            TEXT,
+    policy_evidence_json        TEXT,
+    escalation_json             TEXT,
+
+    -- Delivery
+    delivery_json       TEXT,
+
+    -- Customer controls
+    customer_controls_json TEXT,
+
+    -- Follow-up answers snapshot
+    follow_up_answers_json TEXT,
+
+    -- Full packet (fallback blob for anything not captured above)
+    full_packet_json    TEXT,
+
+    generated_at        TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_notices_user ON notices(user_id);
+CREATE INDEX IF NOT EXISTS idx_notices_status ON notices(status);
+CREATE INDEX IF NOT EXISTS idx_notices_created ON notices(created_at);
+
+CREATE TABLE IF NOT EXISTS documents (
+    id              TEXT PRIMARY KEY,
+    notice_id       TEXT REFERENCES notices(id),
+    user_id         TEXT REFERENCES users(id),
+    filename        TEXT,
+    content_type    TEXT,
+    size_bytes      INTEGER,
+    uploaded_at     TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS generated_pdfs (
+    id              TEXT PRIMARY KEY,
+    notice_id       TEXT REFERENCES notices(id) UNIQUE,
+    filename        TEXT,
+    content_type    TEXT DEFAULT 'application/pdf',
+    size_bytes      INTEGER,
+    pdf_data        BLOB,
+    created_at      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_genpdf_notice ON generated_pdfs(notice_id);
+
+CREATE TABLE IF NOT EXISTS activity_log (
+    id          TEXT PRIMARY KEY,
+    action      TEXT NOT NULL,
+    details     TEXT,
+    entity_type TEXT,
+    entity_id   TEXT,
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log(created_at);
+"""
+
+
+async def _init_tables(db: aiosqlite.Connection) -> None:
+    await db.executescript(_SCHEMA)

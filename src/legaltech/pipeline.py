@@ -377,15 +377,10 @@ class LegalNoticePipeline:
                     logger.warning("Respondent ID lookup failed (non-fatal): %s", exc)
                     return None
 
-            try:
-                contacts, policies, respondent_identity = await asyncio.wait_for(
-                    asyncio.gather(
-                        _fetch_contacts(), _fetch_policies(), _fetch_respondent(),
-                    ),
-                    timeout=20.0,
-                )
-            except asyncio.TimeoutError:
-                logger.warning("Web scraping phase timed out after 20s — proceeding without full data")
+                except asyncio.TimeoutError:
+                    logger.warning(f"Background web processing for {website} timed out after 30s. Moving forwards without complete scrape data.")
+                except Exception as exc:
+                    logger.warning(f"Unexpected error in background web processing for {website}: {exc}")
 
         # ── Build corpus early (only needs intake + policies) ────────
         corpus = " ".join([
@@ -482,7 +477,7 @@ class LegalNoticePipeline:
             return_exceptions=True,
         )
 
-        # ── Validate parallel results — re-raise first fatal error ───
+        # ── Validate parallel results — Fallback for Non-Fatal AI Timeouts ───
         _agent_names = [
             "legal_analysis", "evidence_scoring", "limitation",
             "arbitration", "tc_counter", "jurisdiction",
@@ -493,10 +488,32 @@ class LegalNoticePipeline:
             arbitration_result, tc_counter_result, jurisdiction_result,
             cure_result, escalation_result,
         ]
-        for name, result in zip(_agent_names, _agent_results):
+        
+        # Unpack Results, Suppress secondary agent failures
+        for i, (name, result) in enumerate(zip(_agent_names, _agent_results)):
             if isinstance(result, Exception):
                 logger.error("Agent %s failed: %s", name, result)
-                raise result
+                if name == "legal_analysis":
+                    # Cannot proceed without legal analysis
+                    raise result
+                else:
+                    # Provide safe defaults for secondary agents so the main PDF can still render
+                    if name == "evidence_score":
+                        evidence_score = EvidenceScoreInfo(overall_score=50.0)
+                    elif name == "limitation":
+                        limitation_result = LimitationInfo(category="Unknown", period_years=2, start_event="Incident")
+                    elif name == "arbitration":
+                        arbitration_result = ArbitrationInfo()
+                    elif name == "tc_counter":
+                        tc_counter_result = []
+                    elif name == "jurisdiction":
+                        jurisdiction_result = JurisdictionInfo(forum="Appropriate Consumer Commission", pecuniary_basis="Claim Value", territorial_basis="Complainant Residence")
+                    elif name == "cure_period":
+                        cure_result = (15, "Standard default fallback")
+                    elif name == "escalation":
+                        escalation_result = {}
+
+        # ── We must have legal_analysis to continue ──────────────────
 
         # ── claim_elements depends on legal_analysis ─────────────────
         claim_results = await self.claim_elements.run(
