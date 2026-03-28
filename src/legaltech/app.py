@@ -436,6 +436,16 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
         _jobs[job_id]["error"] = str(exc) or "An internal error occurred."
 
 
+@app.post("/notice/typed/stream")
+async def create_notice_typed_stream_deprecated() -> Response:
+    """
+    Deprecated streaming endpoint.
+    Returns 404 to explicitly trigger the old frontend's fallback to polling.
+    Otherwise, FastAPI returns a 405 because of the catch-all GET route, BREAKING the frontend fallback.
+    """
+    raise HTTPException(status_code=404, detail="Streaming endpoint replaced by polling. Please use /notice/typed instead.")
+
+
 @app.post("/notice/typed")
 @limiter.limit("5/minute;20/hour")
 async def create_notice_typed(request: Request, payload: NoticeRequest):
