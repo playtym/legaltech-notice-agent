@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ValidationError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -469,6 +469,9 @@ async def create_notice_typed(request: Request, payload: NoticeRequest):
 
     except HTTPException:
         raise
+    except ValidationError as exc:
+        msg = exc.errors()[0].get("msg", "Invalid input") if exc.errors() else "Invalid input"
+        raise HTTPException(status_code=422, detail=f"Validation error: {msg}")
     except Exception as exc:
         logger.exception("Pipeline failed")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
@@ -560,6 +563,9 @@ async def analyze_case(request: Request, payload: AnalyzeRequest):
             logging.getLogger(__name__).warning("DB analysis save failed (non-fatal)", exc_info=True)
 
         return result_dict
+    except ValidationError as exc:
+        msg = exc.errors()[0].get("msg", "Invalid input") if exc.errors() else "Invalid input"
+        raise HTTPException(status_code=422, detail=f"Validation error: {msg}")
     except Exception as exc:
         logger.exception("Analysis failed")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
@@ -652,6 +658,9 @@ async def create_notice_voice(request: Request, payload: VoiceNoticeRequest):
 
     except HTTPException:
         raise
+    except ValidationError as exc:
+        msg = exc.errors()[0].get("msg", "Invalid input") if exc.errors() else "Invalid input"
+        raise HTTPException(status_code=422, detail=f"Validation error: {msg}")
     except Exception as exc:
         logger.exception("Pipeline failed")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
@@ -899,6 +908,9 @@ async def create_notice_typed_pdf(request: Request, payload: NoticeRequest):
             media_type="application/pdf",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
+    except ValidationError as exc:
+        msg = exc.errors()[0].get("msg", "Invalid input") if exc.errors() else "Invalid input"
+        raise HTTPException(status_code=422, detail=f"Validation error: {msg}")
     except Exception as exc:
         logger.exception("Pipeline failed")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
