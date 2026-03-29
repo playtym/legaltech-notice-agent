@@ -1418,7 +1418,7 @@ const Admin = (() => {
     let doughnutChart = null;
     let noticesCache = [];    // for CSV export + filtering
 
-    const API_BACKEND = window.location.origin; // Changed to fix login connection issues
+    const API_BACKEND = 'https://api.lawly.store'; // Restored correct backend domain
 
     /* ── Helpers ────────────────────────────────────────── */
     function isLocal() { return ['localhost','127.0.0.1'].includes(location.hostname); }

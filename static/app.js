@@ -258,7 +258,7 @@ const App = (() => {
         el.focus();
     }
 
-    const API_BACKEND = window.location.origin;
+    const API_BACKEND = 'https://api.lawly.store';
 
     function isLocalHost() {
         return ['localhost', '127.0.0.1'].includes(window.location.hostname);
@@ -279,13 +279,21 @@ const App = (() => {
     }
 
     function apiBaseCandidates() {
-        const stored = (localStorage.getItem('legaltech_api_base') || '').trim();
+        let stored = (localStorage.getItem('legaltech_api_base') || '').trim();
+        // Force drop bad stored origins from recent buggy deployment
+        if (stored.includes('lawly.store') && !stored.includes('api.lawly.store')) {
+            localStorage.removeItem('legaltech_api_base');
+            stored = '';
+        }
+
         const candidates = [];
 
         if (stored) candidates.push(stored.replace(/\/$/, ''));
 
         if (isLocalHost()) {
             candidates.push(window.location.origin.replace(/\/$/, ''));
+            // Always try localhost backend too when developing
+            candidates.push('http://127.0.0.1:8000');
         } else {
             candidates.push(API_BACKEND.replace(/\/$/, ''));
         }
