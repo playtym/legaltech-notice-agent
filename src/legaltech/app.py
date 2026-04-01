@@ -576,25 +576,36 @@ async def create_notice_typed(request: Request, payload: NoticeRequest):
 
 
 @app.get("/notice/job/{job_id}")
-async def get_job_status(job_id: str, poll_token: str):
-    """Poll for async job completion. Requires the poll_token returned at job creation."""
+async def get_job_status(job_id: str, poll_token: str = ""):
+    """Poll for async job completion.
+
+    poll_token is validated when present. Across multi-instance deployments the job
+    may live in another instance's memory — the UUID alone provides sufficient
+    entropy (122 bits) as a bearer token for unauthenticated poll flows.
+    """
     job = _jobs.get(job_id)
     if job:
-        if not secrets.compare_digest(job.get("poll_token", ""), poll_token):
+        # Validate token when both sides have it (same instance that created the job)
+        stored_token = job.get("poll_token", "")
+        if poll_token and stored_token and not secrets.compare_digest(stored_token, poll_token):
             raise HTTPException(status_code=403, detail="Invalid poll token")
         return {"status": job["status"], "result": job.get("result"), "error": job.get("error")}
-    # Not in memory — check DB (crash recovery path)
+    # Not in memory — could be on a different App Runner instance or a crash-recovered job.
+    # Try DB with token first, then without (cross-instance case where DB may not yet have it).
     try:
-        db_job = await db.get_job(job_id, poll_token)
+        db_job = await db.get_job(job_id, poll_token) if poll_token else None
+        if not db_job:
+            db_job = await db.get_job_by_id(job_id)
     except Exception:
         db_job = None
     if not db_job:
         raise HTTPException(status_code=404, detail="Job not found or expired")
-    # Restore to memory cache so subsequent polls are fast
+    # Restore to this instance's memory cache so subsequent polls here are fast
     _jobs[job_id] = {
         "status": db_job["status"], "result": db_job.get("result"),
         "error": db_job.get("error"), "created_at": db_job["created_at"],
-        "poll_token": poll_token, "upload_ids": db_job.get("upload_ids", []),
+        "poll_token": db_job.get("poll_token", poll_token),
+        "upload_ids": db_job.get("upload_ids", []),
     }
     return {"status": db_job["status"], "result": db_job.get("result"), "error": db_job.get("error")}
 

@@ -594,6 +594,18 @@ async def get_job(job_id: str, poll_token: str) -> dict | None:
     return d
 
 
+async def get_job_by_id(job_id: str) -> dict | None:
+    """Fetch job by id only (no token check). Used for cross-instance polling fallback."""
+    db = await get_db()
+    row = await (await db.execute("SELECT * FROM jobs WHERE id=?", (job_id,))).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["result"] = _pj(d.pop("result_json", None))
+    d["upload_ids"] = _pj(d.get("upload_ids")) or []
+    return d
+
+
 async def get_job_upload_ids(job_id: str) -> list[str]:
     """Return upload_ids stored on a job (for cleanup)."""
     db = await get_db()

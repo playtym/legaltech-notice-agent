@@ -17,8 +17,10 @@ run:
       value: "ap-south-1"
     - name: BEDROCK_MODEL_ID
       value: "apac.anthropic.claude-sonnet-4-20250514-v1:0"
+    - name: BEDROCK_FAST_MODEL_ID
+      value: "apac.anthropic.claude-3-5-haiku-20241022-v1:0"
     - name: REQUEST_TIMEOUT_SECONDS
-      value: "12"
+      value: "60"
     - name: LEGALTECH_USER_AGENT
       value: "Lawly/0.2 (+https://lawly.store)"
     - name: DATA_BUCKET
