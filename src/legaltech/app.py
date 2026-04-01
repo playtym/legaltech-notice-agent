@@ -503,12 +503,12 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
             logger.warning("DB job update (failed) failed (non-fatal)", exc_info=True)
 
 
-@app.post("/notice/typed/stream")
+@app.api_route("/notice/typed/stream", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def create_notice_typed_stream_deprecated() -> Response:
     """
-    Deprecated streaming endpoint.
-    Returns 404 to explicitly trigger the old frontend's fallback to polling.
-    Otherwise, FastAPI returns a 405 because of the catch-all GET route, BREAKING the frontend fallback.
+    Deprecated streaming endpoint — accepts any HTTP method so FastAPI never
+    returns 405 (which the old frontend could not recover from). Always 404
+    so clients fall back to polling /notice/typed.
     """
     raise HTTPException(status_code=404, detail="Streaming endpoint replaced by polling. Please use /notice/typed instead.")
 
