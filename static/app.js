@@ -1351,7 +1351,7 @@ const App = (() => {
             const btn = document.getElementById("btn-download-edaakhil");
             if (btn) btn.innerHTML = "Packaging ZIP...";
 
-            const res = await fetch(`${API_BASE}/notice/export-edaakhil`, {
+            const res = await apiFetch('/notice/export-edaakhil', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
