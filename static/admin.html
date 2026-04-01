@@ -1470,7 +1470,7 @@ const Admin = (() => {
         try {
             const res = await apiFetch('/api/admin/ai/generate', {
                 method: 'POST',
-                body: JSON.stringify({ tool, context }),
+                body: { tool, context },
             });
             const data = await res.json();
             if (!res.ok) { showToast(data.detail || 'AI generation failed', 'error'); return null; }
@@ -2835,8 +2835,7 @@ const Admin = (() => {
         try {
             const res = await apiFetch('/api/admin/versions/revert', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({key, version_id: versionId, bucket}),
+                body: {key, version_id: versionId, bucket},
             });
             if (!res.ok) throw new Error('Revert failed');
             showToast('File reverted successfully', 'success');
@@ -2933,7 +2932,7 @@ const Admin = (() => {
             templates,
         };
         try {
-            const res = await apiFetch('/api/admin/email/settings', { method: 'PUT', body: JSON.stringify(payload) });
+            const res = await apiFetch('/api/admin/email/settings', { method: 'PUT', body: payload });
             if (res.ok) { showToast('Email settings saved', 'success'); }
             else { showToast('Failed to save', 'error'); }
         } catch (err) { showToast('Error saving email settings', 'error'); }
@@ -2944,7 +2943,7 @@ const Admin = (() => {
         const template = qs('#em-test-template').value;
         if (!to) { showToast('Enter a recipient email', 'error'); return; }
         try {
-            const res = await apiFetch('/api/admin/email/test', { method: 'POST', body: JSON.stringify({ to_email: to, template }) });
+            const res = await apiFetch('/api/admin/email/test', { method: 'POST', body: { to_email: to, template } });
             const data = await res.json();
             if (res.ok) { showToast(data.message || 'Test email sent!', 'success'); loadEmail(); }
             else { showToast(data.detail || 'Failed to send test email', 'error'); }
@@ -3299,7 +3298,7 @@ const Admin = (() => {
             admin_notes: qs('#ticket-admin-notes').value,
         };
         try {
-            const res = await apiFetch(`/api/admin/tickets/${currentTicketId}`, { method: 'PUT', body: JSON.stringify(payload) });
+            const res = await apiFetch(`/api/admin/tickets/${currentTicketId}`, { method: 'PUT', body: payload });
             if (res.ok) { showToast('Ticket updated', 'success'); loadSupport(); }
             else { showToast('Failed to update', 'error'); }
         } catch (err) { showToast('Error updating ticket', 'error'); }
@@ -3311,7 +3310,7 @@ const Admin = (() => {
         if (!msg) { showToast('Type a reply first', 'error'); return; }
         try {
             const res = await apiFetch(`/api/admin/tickets/${currentTicketId}/reply`, {
-                method: 'POST', body: JSON.stringify({ message: msg, from_who: 'admin' }),
+                method: 'POST', body: { message: msg, from_who: 'admin' },
             });
             if (res.ok) {
                 const t = await res.json();
