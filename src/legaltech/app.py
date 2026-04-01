@@ -58,7 +58,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled server error for {request.method} {request.url}: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "An internal server error occurred.", "error_type": type(exc).__name__}
+        content={"detail": "An internal server error occurred."}
     )
 
 @app.exception_handler(RequestValidationError)
@@ -88,6 +88,19 @@ def _cleanup_old_jobs():
     for jid in expired:
         _jobs.pop(jid, None)
 
+
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -264,7 +277,8 @@ async def company_lookup(req: CompanyLookupRequest):
 
 
 @app.post("/documents/upload")
-async def upload_documents(files: list[UploadFile]):
+@limiter.limit("10/minute;30/hour")
+async def upload_documents(request: Request, files: list[UploadFile]):
     """Upload evidence documents (images, PDFs). Returns file metadata with IDs."""
     if len(files) > _MAX_UPLOAD_FILES:
         raise HTTPException(status_code=400, detail=f"Maximum {_MAX_UPLOAD_FILES} files allowed")
@@ -280,7 +294,8 @@ async def upload_documents(files: list[UploadFile]):
         data = await f.read()
         if len(data) > _MAX_UPLOAD_SIZE:
             raise HTTPException(status_code=400, detail=f"File '{f.filename}' exceeds 10 MB limit")
-        stored = upload_store.store(filename=f.filename or "untitled", content_type=ct, data=data)
+        safe_filename = Path(f.filename or "untitled").name or "untitled"
+        stored = upload_store.store(filename=safe_filename, content_type=ct, data=data)
 
         # Persist document metadata to DB
         try:
@@ -474,7 +489,16 @@ async def create_notice_typed(request: Request, payload: NoticeRequest):
         # ── Start background job ─────────────────────────────────
         job_id = str(uuid.uuid4())
         _jobs[job_id] = {"status": "processing", "result": None, "error": None, "created_at": time.time()}
-        asyncio.create_task(_run_typed_job(job_id, payload, complaint, doc_analysis))
+        task = asyncio.create_task(_run_typed_job(job_id, payload, complaint, doc_analysis))
+
+        def _on_task_done(t: asyncio.Task, jid: str = job_id) -> None:
+            if t.cancelled():
+                _jobs.get(jid, {}).update({"status": "failed", "error": "Job was cancelled."})
+            elif t.exception():
+                logger.error("Background job %s raised unhandled exception", jid, exc_info=t.exception())
+                _jobs.get(jid, {}).update({"status": "failed", "error": "An internal error occurred."})
+
+        task.add_done_callback(_on_task_done)
         return {"job_id": job_id, "status": "processing"}
 
     except HTTPException:
@@ -2641,5 +2665,14 @@ async def catch_all_redirect(full_path: str):
         static_html_path = _STATIC_DIR / f"{full_path}.html"
         if static_html_path.is_file():
             return FileResponse(str(static_html_path))
-            
+
+    # API routes that don't exist should 404, not fall through to the SPA
+    if full_path.startswith("api/") or full_path.startswith("notice/") or full_path.startswith("documents/"):
+        raise HTTPException(status_code=404, detail="Not found")
+
+    # SPA fallback: unknown frontend routes (e.g. bookmarked pages) → serve index.html
+    index_path = _STATIC_DIR / "index.html"
+    if index_path.is_file():
+        return FileResponse(str(index_path))
+
     raise HTTPException(status_code=404, detail="Not found")

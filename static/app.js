@@ -130,6 +130,12 @@ const App = (() => {
         if (_tipInterval4) { clearInterval(_tipInterval4); _tipInterval4 = null; }
         if (_tipInterval7) { clearInterval(_tipInterval7); _tipInterval7 = null; }
 
+        // If user navigates away from generation (step 7) back to an early step,
+        // clear the in-flight guard so they can retry.
+        if (step < 7 && _generateInFlight) {
+            _generateInFlight = false;
+        }
+
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
         const el = document.getElementById(`step-${step}`);
         if (el) el.classList.add('active');
