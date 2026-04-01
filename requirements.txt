@@ -21,7 +21,7 @@ httpx==0.28.1
 idna==3.11
 jiter==0.13.0
 jmespath==1.1.0
--e git+https://github.com/playtym/legaltech-notice-agent.git@206c91ccb1abdb7f00c2526bb056f8eae19be64a#egg=legaltech_agentic_notice
+-e .
 limits==5.8.0
 packaging==26.0
 pillow==12.1.1
