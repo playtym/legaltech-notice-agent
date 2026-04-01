@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -218,6 +219,18 @@ CREATE TABLE IF NOT EXISTS activity_log (
     created_at  TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log(created_at);
+
+CREATE TABLE IF NOT EXISTS jobs (
+    id          TEXT PRIMARY KEY,
+    poll_token  TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'processing',
+    result_json TEXT,
+    error       TEXT,
+    upload_ids  TEXT,
+    created_at  REAL NOT NULL,
+    updated_at  REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_created ON jobs(created_at);
 """
 
 
@@ -541,6 +554,67 @@ async def get_dashboard_stats_db() -> dict:
         "total_pdfs": total_pdfs,
         "notices_by_date": notices_by_date,
     }
+
+
+# ── Jobs (persistent job queue) ─────────────────────────────────────
+
+async def create_job(job_id: str, poll_token: str, upload_ids: list[str] | None = None) -> None:
+    """Persist a new job record. Call immediately after creating the in-memory entry."""
+    db = await get_db()
+    now = time.time()
+    await db.execute(
+        "INSERT INTO jobs (id, poll_token, status, result_json, error, upload_ids, created_at, updated_at)"
+        " VALUES (?,?,?,?,?,?,?,?)",
+        (job_id, poll_token, "processing", None, None, json.dumps(upload_ids or []), now, now),
+    )
+    await _commit_and_sync(db)
+
+
+async def update_job(job_id: str, status: str, result: dict | None = None, error: str | None = None) -> None:
+    """Update status/result of a persisted job."""
+    db = await get_db()
+    await db.execute(
+        "UPDATE jobs SET status=?, result_json=?, error=?, updated_at=? WHERE id=?",
+        (status, json.dumps(result) if result is not None else None, error, time.time(), job_id),
+    )
+    await _commit_and_sync(db)
+
+
+async def get_job(job_id: str, poll_token: str) -> dict | None:
+    """Fetch job by id+token. Returns None if not found or token mismatch."""
+    db = await get_db()
+    row = await (await db.execute(
+        "SELECT * FROM jobs WHERE id=? AND poll_token=?", (job_id, poll_token)
+    )).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["result"] = _pj(d.pop("result_json", None))
+    d["upload_ids"] = _pj(d.get("upload_ids")) or []
+    return d
+
+
+async def get_job_upload_ids(job_id: str) -> list[str]:
+    """Return upload_ids stored on a job (for cleanup)."""
+    db = await get_db()
+    row = await (await db.execute("SELECT upload_ids FROM jobs WHERE id=?", (job_id,))).fetchone()
+    if not row:
+        return []
+    return _pj(row["upload_ids"]) or []
+
+
+async def cleanup_expired_jobs(ttl_seconds: float) -> list[str]:
+    """Delete jobs older than ttl_seconds; return list of deleted job IDs."""
+    db = await get_db()
+    cutoff = time.time() - ttl_seconds
+    rows = await (await db.execute(
+        "SELECT id FROM jobs WHERE created_at < ?", (cutoff,)
+    )).fetchall()
+    ids = [r["id"] for r in rows]
+    if ids:
+        await db.execute(f"DELETE FROM jobs WHERE id IN ({','.join('?'*len(ids))})", ids)
+        await _commit_and_sync(db)
+    return ids
 
 
 # ── Helpers ──────────────────────────────────────────────────────────

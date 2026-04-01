@@ -77,22 +77,62 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         content={"detail": exc.detail}
     )
 
-# ── Async job store (in-memory) ─────────────────────────────────────
-_jobs: dict[str, dict] = {}  # job_id → {status, result, error, created_at}
-_JOB_TTL = 3600  # Increased to 60mins for poor mobile network reconnects
+# ── Async job store (in-memory + DB-backed) ──────────────────────────
+# In-memory dict is the hot path; SQLite is the crash-recovery layer.
+# poll_token is a per-job secret returned to the creator — polling requires it,
+# so a third party who guesses a job_id cannot read sensitive notice content.
+_jobs: dict[str, dict] = {}  # job_id → {status, result, error, created_at, poll_token, upload_ids}
+_JOB_TTL = 3600  # 60 min
 
 
-def _cleanup_old_jobs():
+async def _cleanup_old_jobs():
     cutoff = time.time() - _JOB_TTL
-    expired = [jid for jid, j in _jobs.items() if j.get("created_at", 0) < cutoff]
-    for jid in expired:
+    # Remove from memory
+    expired_mem = [jid for jid, j in _jobs.items() if j.get("created_at", 0) < cutoff]
+    for jid in expired_mem:
+        # Clean up any uploaded files tied to this job
+        upload_ids = _jobs[jid].get("upload_ids") or []
+        for fid in upload_ids:
+            upload_store.delete(fid)
         _jobs.pop(jid, None)
+    # Remove from DB and clean up uploads for DB-only jobs (crash survivors)
+    try:
+        db_expired = await db.cleanup_expired_jobs(_JOB_TTL)
+        for jid in db_expired:
+            if jid not in _jobs:
+                upload_ids = await db.get_job_upload_ids(jid)
+                for fid in upload_ids:
+                    upload_store.delete(fid)
+    except Exception:
+        logger.warning("DB job cleanup failed (non-fatal)", exc_info=True)
 
 
 from starlette.middleware.base import BaseHTTPMiddleware
 
+_ALLOWED_ADMIN_ORIGINS = {
+    "https://lawly.store",
+    "https://www.lawly.store",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+}
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
+        # CSRF: state-changing admin routes must come from a known origin.
+        # GET requests and the login endpoint are exempt.
+        if (
+            request.url.path.startswith("/api/admin/")
+            and request.method not in ("GET", "HEAD", "OPTIONS")
+            and request.url.path != "/api/admin/login"
+        ):
+            origin = request.headers.get("origin") or request.headers.get("referer", "")
+            # Strip path from referer to get origin
+            from urllib.parse import urlparse
+            parsed = urlparse(origin)
+            origin_base = f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else origin
+            if origin_base not in _ALLOWED_ADMIN_ORIGINS:
+                return JSONResponse(status_code=403, content={"detail": "CSRF check failed: unexpected origin."})
+
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -126,6 +166,7 @@ if _STATIC_DIR.exists():
 # Simple token-based auth: login with password → get token → pass as Bearer header
 
 _admin_tokens: dict[str, float] = {}  # token → expiry timestamp
+_admin_tokens_lock = asyncio.Lock()
 _TOKEN_TTL = 24 * 60 * 60  # 24 hours
 
 
@@ -145,12 +186,13 @@ async def admin_login(body: AdminLoginRequest):
     if not valid:
         raise HTTPException(status_code=401, detail="Invalid password")
     token = secrets.token_urlsafe(32)
-    _admin_tokens[token] = time.time() + _TOKEN_TTL
-    # Cleanup expired tokens
-    now = time.time()
-    expired = [t for t, exp in _admin_tokens.items() if exp < now]
-    for t in expired:
-        _admin_tokens.pop(t, None)
+    async with _admin_tokens_lock:
+        _admin_tokens[token] = time.time() + _TOKEN_TTL
+        # Cleanup expired tokens under the lock
+        now = time.time()
+        expired = [t for t, exp in _admin_tokens.items() if exp < now]
+        for t in expired:
+            _admin_tokens.pop(t, None)
     notice_store.log_activity("Admin login", "", "auth")
     return {"token": token, "expires_in": _TOKEN_TTL}
 
@@ -160,10 +202,11 @@ async def require_admin(authorization: str | None = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
     token = authorization[7:]
-    expiry = _admin_tokens.get(token)
-    if not expiry or expiry < time.time():
-        _admin_tokens.pop(token, None)
-        raise HTTPException(status_code=401, detail="Token expired or invalid")
+    async with _admin_tokens_lock:
+        expiry = _admin_tokens.get(token)
+        if not expiry or expiry < time.time():
+            _admin_tokens.pop(token, None)
+            raise HTTPException(status_code=401, detail="Token expired or invalid")
     return True
 
 
@@ -445,10 +488,19 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
 
         _jobs[job_id]["status"] = "completed"
         _jobs[job_id]["result"] = result
+        try:
+            await db.update_job(job_id, "completed", result=result)
+        except Exception:
+            logger.warning("DB job update (completed) failed (non-fatal)", exc_info=True)
     except Exception as exc:
         logger.exception("Pipeline failed (job %s)", job_id)
+        err_msg = str(exc) or "An internal error occurred."
         _jobs[job_id]["status"] = "failed"
-        _jobs[job_id]["error"] = str(exc) or "An internal error occurred."
+        _jobs[job_id]["error"] = err_msg
+        try:
+            await db.update_job(job_id, "failed", error=err_msg)
+        except Exception:
+            logger.warning("DB job update (failed) failed (non-fatal)", exc_info=True)
 
 
 @app.post("/notice/typed/stream")
@@ -464,7 +516,7 @@ async def create_notice_typed_stream_deprecated() -> Response:
 @app.post("/notice/typed")
 @limiter.limit("5/minute;20/hour")
 async def create_notice_typed(request: Request, payload: NoticeRequest):
-    _cleanup_old_jobs()
+    await _cleanup_old_jobs()
     try:
         complaint = ComplaintInput(
             mode=IntakeMode.typed,
@@ -488,7 +540,19 @@ async def create_notice_typed(request: Request, payload: NoticeRequest):
 
         # ── Start background job ─────────────────────────────────
         job_id = str(uuid.uuid4())
-        _jobs[job_id] = {"status": "processing", "result": None, "error": None, "created_at": time.time()}
+        poll_token = secrets.token_urlsafe(24)
+        upload_ids_list = list(payload.upload_ids) if payload.upload_ids else []
+        _jobs[job_id] = {
+            "status": "processing", "result": None, "error": None,
+            "created_at": time.time(), "poll_token": poll_token,
+            "upload_ids": upload_ids_list,
+        }
+        # Persist to DB immediately so the job survives a server restart
+        try:
+            await db.create_job(job_id, poll_token, upload_ids_list)
+        except Exception:
+            logger.warning("DB job create failed (non-fatal)", exc_info=True)
+
         task = asyncio.create_task(_run_typed_job(job_id, payload, complaint, doc_analysis))
 
         def _on_task_done(t: asyncio.Task, jid: str = job_id) -> None:
@@ -499,7 +563,7 @@ async def create_notice_typed(request: Request, payload: NoticeRequest):
                 _jobs.get(jid, {}).update({"status": "failed", "error": "An internal error occurred."})
 
         task.add_done_callback(_on_task_done)
-        return {"job_id": job_id, "status": "processing"}
+        return {"job_id": job_id, "poll_token": poll_token, "status": "processing"}
 
     except HTTPException:
         raise
@@ -512,12 +576,27 @@ async def create_notice_typed(request: Request, payload: NoticeRequest):
 
 
 @app.get("/notice/job/{job_id}")
-async def get_job_status(job_id: str):
-    """Poll for async job completion."""
+async def get_job_status(job_id: str, poll_token: str):
+    """Poll for async job completion. Requires the poll_token returned at job creation."""
     job = _jobs.get(job_id)
-    if not job:
+    if job:
+        if not secrets.compare_digest(job.get("poll_token", ""), poll_token):
+            raise HTTPException(status_code=403, detail="Invalid poll token")
+        return {"status": job["status"], "result": job.get("result"), "error": job.get("error")}
+    # Not in memory — check DB (crash recovery path)
+    try:
+        db_job = await db.get_job(job_id, poll_token)
+    except Exception:
+        db_job = None
+    if not db_job:
         raise HTTPException(status_code=404, detail="Job not found or expired")
-    return {"status": job["status"], "result": job.get("result"), "error": job.get("error")}
+    # Restore to memory cache so subsequent polls are fast
+    _jobs[job_id] = {
+        "status": db_job["status"], "result": db_job.get("result"),
+        "error": db_job.get("error"), "created_at": db_job["created_at"],
+        "poll_token": poll_token, "upload_ids": db_job.get("upload_ids", []),
+    }
+    return {"status": db_job["status"], "result": db_job.get("result"), "error": db_job.get("error")}
 
 
 @app.post("/notice/analyze")

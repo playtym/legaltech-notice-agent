@@ -1186,7 +1186,8 @@ const App = (() => {
             }
             const submitData = await submitRes.json();
             const jobId = submitData.job_id;
-            
+            const pollToken = submitData.poll_token || '';
+
             // If the server didn't return a job_id, it might be the old synchronous response (e.g. dev environment).
             if (!jobId) {
                 state.noticeResult = submitData;
@@ -1203,11 +1204,13 @@ const App = (() => {
             let pollIntervalMs = 3000;
             const pollStart = Date.now();
             let networkFailures = 0;
-            
+
             while (Date.now() - pollStart < maxWaitMs) {
                 await new Promise(r => setTimeout(r, pollIntervalMs));
                 try {
-                    const pollRes = await apiFetch('/notice/job/' + encodeURIComponent(jobId));
+                    const pollPath = '/notice/job/' + encodeURIComponent(jobId)
+                        + '?poll_token=' + encodeURIComponent(pollToken);
+                    const pollRes = await apiFetch(pollPath);
                     networkFailures = 0; // reset on success
 
                     if (!pollRes.ok) {
