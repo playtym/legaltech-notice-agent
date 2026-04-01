@@ -10,7 +10,7 @@ load_dotenv()
 
 class Settings(BaseModel):
     model_name: str = Field(default=os.getenv("MODEL_NAME", "claude-sonnet-4-20250514"))
-    fast_model_name: str = Field(default=os.getenv("FAST_MODEL_NAME", "claude-3-haiku-20240307"))
+    fast_model_name: str | None = Field(default=os.getenv("FAST_MODEL_NAME") or None)
     anthropic_api_key: str | None = Field(default=os.getenv("ANTHROPIC_API_KEY"))
     use_bedrock: bool = Field(default=os.getenv("USE_BEDROCK", "").lower() in ("1", "true", "yes"))
     request_timeout_seconds: int = Field(default=int(os.getenv("REQUEST_TIMEOUT_SECONDS", "30")))

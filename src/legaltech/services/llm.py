@@ -79,7 +79,9 @@ class LLMService:
         clone = object.__new__(LLMService)
         clone.client = self.client  # reuse connection pool
         if use_bedrock:
-            clone.model_name = fast_model or os.getenv("BEDROCK_FAST_MODEL_ID", _BEDROCK_FAST_MODEL)
+            # Ignore any fast_model that looks like a direct-API ID (no dots/colons = wrong format)
+            bedrock_override = fast_model if fast_model and ("." in fast_model or ":" in fast_model) else None
+            clone.model_name = bedrock_override or os.getenv("BEDROCK_FAST_MODEL_ID", _BEDROCK_FAST_MODEL)
         else:
             clone.model_name = fast_model or _FAST_MODEL
         clone._max_output_tokens = _FAST_MODEL_MAX_TOKENS
