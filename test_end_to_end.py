@@ -6,7 +6,7 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
     import requests
 
-BASE_URL = 'https://api.lawly.store'
+BASE_URL = 'https://v5pah3m82k.ap-south-1.awsapprunner.com'
 
 def run_test():
     print('Testing /notice/analyze...')
@@ -41,7 +41,7 @@ def run_test():
         'complainant_state': 'CA',
         'followup_answers': {q['id']: 'Test answer' for q in questions},
         'complainant': {
-            'full_name': 'John Doe',
+            'full_name': 'Amit Sharma',
             'email': 'john@example.com',
             'phone': '1234567890',
             'state': 'CA'

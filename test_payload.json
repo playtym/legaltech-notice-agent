@@ -1,0 +1,12 @@
+{
+    "complainant": {
+        "full_name": "Rahul Sharma",
+        "email": "john@example.com",
+        "address": "123 Main St"
+    },
+    "issue_summary": "This is a twenty character long test case summary",
+    "desired_resolution": "I want my money back completely.",
+    "timeline": [],
+    "evidence": [],
+    "tier": "self_send"
+}
