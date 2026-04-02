@@ -54,10 +54,11 @@ def run_test():
         response_json = r2.json()
         print("Typed notice keys:", response_json.keys())
         job_id = response_json.get('job_id')
+        poll_token = response_json.get('poll_token', '')
         if job_id:
             import time
             while True:
-                r_job = requests.get(f'{BASE_URL}/notice/job/{job_id}')
+                r_job = requests.get(f'{BASE_URL}/notice/job/{job_id}', params={'poll_token': poll_token})
                 job_data = r_job.json()
                 print(f"Job status: {job_data.get('status')}")
                 if job_data.get('status') in ['completed', 'failed']:

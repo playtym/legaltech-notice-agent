@@ -317,8 +317,8 @@
                             <input type="text" id="sender-address" class="form-input" placeholder="House/flat no., street, city, PIN code">
                         </div>
                         <div>
-                            <label class="form-label">Email</label>
-                            <input type="email" id="sender-email" class="form-input" placeholder="email@example.com">
+                            <label class="form-label">Email <span class="text-red-500">*</span></label>
+                            <input type="email" id="sender-email" class="form-input" placeholder="email@example.com" required>
                         </div>
                     </div>
                 </div>
@@ -806,7 +806,7 @@
     const DUTY_RATES = {
         rent: {
             delhi:       { label: 'Delhi', calc: v => Math.max(v * 0.02, 100), note: '2% of annual rent' },
-            maharashtra: { label: 'Maharashtra', calc: (v, d) => Math.max((v + (d||0)) * 0.0025, 100), note: '0.25% of (total rent value + deposit)' },
+            maharashtra: { label: 'Maharashtra', calc: v => Math.max(v * 0.0025, 100), note: '0.25% of annual rent value' },
             karnataka:   { label: 'Karnataka', calc: v => Math.max(v * 0.01, 500), note: '1% of annual rent (min ₹500)' },
             tamilnadu:   { label: 'Tamil Nadu', calc: v => Math.max(v * 0.01, 20), note: '1% of annual rent (min ₹20)' },
             telangana:   { label: 'Telangana', calc: v => Math.max(v * 0.005, 50), note: '0.5% of annual rent (min ₹50)' },
@@ -947,16 +947,37 @@
     function showStatus(msg, isError) {
         const el = document.getElementById('status-area');
         el.style.display = 'block';
-        el.innerHTML = `<div class="status-bar${isError ? ' error' : ''}">
-            ${isError ? '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' : '<span class="spin w-4 h-4 flex-shrink-0 border-2 border-blue-300 border-t-blue-700 rounded-full" style="display:inline-block;width:16px;height:16px;"></span>'}
-            <span>${msg}</span>
-        </div>`;
+        el.textContent = '';
+
+        const bar = document.createElement('div');
+        bar.className = `status-bar${isError ? ' error' : ''}`;
+
+        const lead = document.createElement('span');
+        if (isError) {
+            lead.textContent = '!';
+            lead.style.fontWeight = '700';
+            lead.style.width = '16px';
+            lead.style.textAlign = 'center';
+        } else {
+            lead.className = 'spin w-4 h-4 flex-shrink-0 border-2 border-blue-300 border-t-blue-700 rounded-full';
+            lead.style.display = 'inline-block';
+            lead.style.width = '16px';
+            lead.style.height = '16px';
+        }
+
+        const text = document.createElement('span');
+        text.textContent = String(msg || '');
+
+        bar.appendChild(lead);
+        bar.appendChild(text);
+        el.appendChild(bar);
     }
 
     function hideStatus() { document.getElementById('status-area').style.display = 'none'; }
 
     async function generateDocument() {
         const senderName    = document.getElementById('sender-name').value.trim();
+        const senderEmail   = document.getElementById('sender-email').value.trim();
         const senderAddress = document.getElementById('sender-address').value.trim();
         const facts         = document.getElementById('facts').value.trim();
         const docType       = document.getElementById('doc-type').value;
@@ -964,6 +985,7 @@
         const needsRecipient = !!docCfg.p2;
 
         if (!senderName)    { alert('Please enter the name of Party 1 / Sender.'); return; }
+        if (!senderEmail)   { alert('Please enter the email of Party 1.'); return; }
         if (!senderAddress) { alert('Please enter the address of Party 1.'); return; }
         if (!facts)         { alert('Please describe the key facts / context.'); return; }
 
@@ -973,6 +995,10 @@
         if (needsRecipient && !recipientAddress) { alert('Please enter the address of Party 2.'); return; }
 
         const btn = document.getElementById('generate-btn');
+        if (_pollTimer) {
+            clearTimeout(_pollTimer);
+            _pollTimer = null;
+        }
         btn.disabled = true;
         btn.innerHTML = '<span class="spin" style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;"></span> Generating…';
         document.getElementById('result-area').style.display = 'none';
@@ -981,7 +1007,7 @@
         const payload = {
             document_type:     docType,
             sender_name:       senderName,
-            sender_email:      document.getElementById('sender-email').value.trim() || undefined,
+            sender_email:      senderEmail,
             sender_phone:      document.getElementById('sender-phone').value.trim() || undefined,
             sender_address:    senderAddress,
             recipient_name:    recipientName || undefined,

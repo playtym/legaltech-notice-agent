@@ -12,6 +12,7 @@ import os
 import hashlib
 import hmac
 import secrets
+import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +43,7 @@ _PW_ITERATIONS = 200_000
 _DATA_BUCKET: str | None = os.getenv("DATA_BUCKET")
 _S3_PREFIX = "data/"
 _s3 = None
+_WRITE_LOCK = threading.RLock()
 
 
 def _get_s3():
@@ -72,11 +74,16 @@ def _read_json(path: Path) -> Any:
 
 
 def _write_json(path: Path, data: Any) -> None:
+    payload = json.dumps(data, indent=2, default=str).encode("utf-8")
     if _DATA_BUCKET:
-        _write_json_s3(path, data)
+        _write_json_s3(path, payload)
         return
+
     _ensure_dir()
-    path.write_text(json.dumps(data, indent=2, default=str))
+    with _WRITE_LOCK:
+        tmp_path = path.with_suffix(f"{path.suffix}.{uuid.uuid4().hex}.tmp")
+        tmp_path.write_bytes(payload)
+        tmp_path.replace(path)
 
 
 def _read_json_s3(path: Path) -> Any:
@@ -90,16 +97,17 @@ def _read_json_s3(path: Path) -> Any:
         return {}
 
 
-def _write_json_s3(path: Path, data: Any) -> None:
+def _write_json_s3(path: Path, payload: bytes) -> None:
     try:
         _get_s3().put_object(
             Bucket=_DATA_BUCKET,
             Key=_s3_key(path),
-            Body=json.dumps(data, indent=2, default=str).encode(),
+            Body=payload,
             ContentType="application/json",
         )
-    except Exception:
+    except Exception as exc:
         _logger.exception("S3 write failed for %s", _s3_key(path))
+        raise RuntimeError(f"Failed to persist {_s3_key(path)}") from exc
 
 
 # ── Lawyer settings ──────────────────────────────────────────────────
@@ -356,23 +364,25 @@ def get_all_redirects() -> list[dict]:
 
 def save_redirect(entry: dict) -> dict:
     _ensure_dir()
-    redirects = get_all_redirects()
-    entry["id"] = entry.get("id") or uuid.uuid4().hex[:8]
-    entry["created_at"] = entry.get("created_at") or datetime.utcnow().isoformat()
-    # Replace if same source exists
-    redirects = [r for r in redirects if r.get("from_path") != entry["from_path"]]
-    redirects.append(entry)
-    _write_json(_REDIRECTS_FILE, redirects)
-    return entry
+    with _WRITE_LOCK:
+        redirects = get_all_redirects()
+        entry["id"] = entry.get("id") or uuid.uuid4().hex[:8]
+        entry["created_at"] = entry.get("created_at") or datetime.utcnow().isoformat()
+        # Replace if same source exists
+        redirects = [r for r in redirects if r.get("from_path") != entry["from_path"]]
+        redirects.append(entry)
+        _write_json(_REDIRECTS_FILE, redirects)
+        return entry
 
 
 def delete_redirect(redirect_id: str) -> bool:
-    redirects = get_all_redirects()
-    filtered = [r for r in redirects if r.get("id") != redirect_id]
-    if len(filtered) == len(redirects):
-        return False
-    _write_json(_REDIRECTS_FILE, filtered)
-    return True
+    with _WRITE_LOCK:
+        redirects = get_all_redirects()
+        filtered = [r for r in redirects if r.get("id") != redirect_id]
+        if len(filtered) == len(redirects):
+            return False
+        _write_json(_REDIRECTS_FILE, filtered)
+        return True
 
 
 def find_redirect(path: str) -> dict | None:
@@ -444,21 +454,22 @@ def _slugify(text: str) -> str:
 def log_activity(action: str, details: str = "", entity_type: str = "", entity_id: str = "") -> dict:
     """Append an admin action to the activity log."""
     _ensure_dir()
-    activities = _read_json(_ACTIVITY_FILE)
-    if not isinstance(activities, list):
-        activities = []
-    entry = {
-        "id": uuid.uuid4().hex[:8],
-        "action": action,
-        "details": details,
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-        "timestamp": datetime.utcnow().isoformat(),
-    }
-    activities.insert(0, entry)
-    activities = activities[:500]  # keep last 500
-    _write_json(_ACTIVITY_FILE, activities)
-    return entry
+    with _WRITE_LOCK:
+        activities = _read_json(_ACTIVITY_FILE)
+        if not isinstance(activities, list):
+            activities = []
+        entry = {
+            "id": uuid.uuid4().hex[:8],
+            "action": action,
+            "details": details,
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        activities.insert(0, entry)
+        activities = activities[:500]  # keep last 500
+        _write_json(_ACTIVITY_FILE, activities)
+        return entry
 
 
 def get_activity_log(limit: int = 50) -> list[dict]:
@@ -611,19 +622,20 @@ def get_email_log(limit: int = 50) -> list[dict]:
 def track_event(event_type: str, data: dict | None = None) -> dict:
     """Track a funnel event (page_view, notice_started, notice_generated, pdf_downloaded, payment)."""
     _ensure_dir()
-    events = _read_json(_ANALYTICS_FILE)
-    if not isinstance(events, list):
-        events = []
-    entry = {
-        "id": uuid.uuid4().hex[:8],
-        "event": event_type,
-        "data": data or {},
-        "timestamp": datetime.utcnow().isoformat(),
-    }
-    events.insert(0, entry)
-    events = events[:10000]  # keep last 10k
-    _write_json(_ANALYTICS_FILE, events)
-    return entry
+    with _WRITE_LOCK:
+        events = _read_json(_ANALYTICS_FILE)
+        if not isinstance(events, list):
+            events = []
+        entry = {
+            "id": uuid.uuid4().hex[:8],
+            "event": event_type,
+            "data": data or {},
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        events.insert(0, entry)
+        events = events[:10000]  # keep last 10k
+        _write_json(_ANALYTICS_FILE, events)
+        return entry
 
 
 def get_analytics_events(limit: int = 5000) -> list[dict]:
@@ -743,29 +755,30 @@ def get_analytics_summary() -> dict:
 
 def create_ticket(data: dict) -> dict:
     _ensure_dir()
-    tickets = _read_json(_TICKETS_FILE)
-    if not isinstance(tickets, dict):
-        tickets = {}
-    ticket_id = uuid.uuid4().hex[:8]
-    now = datetime.utcnow().isoformat()
-    ticket = {
-        "id": ticket_id,
-        "name": data.get("name", ""),
-        "email": data.get("email", ""),
-        "subject": data.get("subject", ""),
-        "message": data.get("message", ""),
-        "category": data.get("category", "general"),
-        "notice_id": data.get("notice_id", ""),
-        "status": "open",
-        "priority": data.get("priority", "normal"),
-        "admin_notes": "",
-        "replies": [],
-        "created_at": now,
-        "updated_at": now,
-    }
-    tickets[ticket_id] = ticket
-    _write_json(_TICKETS_FILE, tickets)
-    return ticket
+    with _WRITE_LOCK:
+        tickets = _read_json(_TICKETS_FILE)
+        if not isinstance(tickets, dict):
+            tickets = {}
+        ticket_id = uuid.uuid4().hex[:8]
+        now = datetime.utcnow().isoformat()
+        ticket = {
+            "id": ticket_id,
+            "name": data.get("name", ""),
+            "email": data.get("email", ""),
+            "subject": data.get("subject", ""),
+            "message": data.get("message", ""),
+            "category": data.get("category", "general"),
+            "notice_id": data.get("notice_id", ""),
+            "status": "open",
+            "priority": data.get("priority", "normal"),
+            "admin_notes": "",
+            "replies": [],
+            "created_at": now,
+            "updated_at": now,
+        }
+        tickets[ticket_id] = ticket
+        _write_json(_TICKETS_FILE, tickets)
+        return ticket
 
 
 def get_all_tickets() -> list[dict]:
@@ -783,34 +796,36 @@ def get_ticket(ticket_id: str) -> dict | None:
 
 
 def update_ticket(ticket_id: str, updates: dict) -> dict | None:
-    tickets = _read_json(_TICKETS_FILE)
-    if not isinstance(tickets, dict) or ticket_id not in tickets:
-        return None
-    ticket = tickets[ticket_id]
-    for k in ("status", "priority", "admin_notes"):
-        if k in updates:
-            ticket[k] = updates[k]
-    ticket["updated_at"] = datetime.utcnow().isoformat()
-    tickets[ticket_id] = ticket
-    _write_json(_TICKETS_FILE, tickets)
-    return ticket
+    with _WRITE_LOCK:
+        tickets = _read_json(_TICKETS_FILE)
+        if not isinstance(tickets, dict) or ticket_id not in tickets:
+            return None
+        ticket = tickets[ticket_id]
+        for k in ("status", "priority", "admin_notes"):
+            if k in updates:
+                ticket[k] = updates[k]
+        ticket["updated_at"] = datetime.utcnow().isoformat()
+        tickets[ticket_id] = ticket
+        _write_json(_TICKETS_FILE, tickets)
+        return ticket
 
 
 def add_ticket_reply(ticket_id: str, reply: dict) -> dict | None:
-    tickets = _read_json(_TICKETS_FILE)
-    if not isinstance(tickets, dict) or ticket_id not in tickets:
-        return None
-    ticket = tickets[ticket_id]
-    ticket["replies"].append({
-        "id": uuid.uuid4().hex[:6],
-        "from": reply.get("from", "admin"),
-        "message": reply.get("message", ""),
-        "timestamp": datetime.utcnow().isoformat(),
-    })
-    ticket["updated_at"] = datetime.utcnow().isoformat()
-    tickets[ticket_id] = ticket
-    _write_json(_TICKETS_FILE, tickets)
-    return ticket
+    with _WRITE_LOCK:
+        tickets = _read_json(_TICKETS_FILE)
+        if not isinstance(tickets, dict) or ticket_id not in tickets:
+            return None
+        ticket = tickets[ticket_id]
+        ticket["replies"].append({
+            "id": uuid.uuid4().hex[:6],
+            "from": reply.get("from", "admin"),
+            "message": reply.get("message", ""),
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+        ticket["updated_at"] = datetime.utcnow().isoformat()
+        tickets[ticket_id] = ticket
+        _write_json(_TICKETS_FILE, tickets)
+        return ticket
 
 
 def get_ticket_stats() -> dict:

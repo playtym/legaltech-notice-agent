@@ -45,16 +45,19 @@ def send_notice_email(
     pdf_bytes: bytes,
     pdf_filename: str = "Legal_Notice.pdf",
     request_read_receipt: bool = False,
+    from_email: str | None = None,
+    from_name: str | None = None,
+    aws_region: str | None = None,
 ) -> DeliveryResult:
     """Send a legal notice PDF as an email attachment via AWS SES."""
-    from_email = os.getenv("NOTICE_FROM_EMAIL", "support@lawly.store")
-    from_name = _sanitize_header_text(os.getenv("NOTICE_FROM_NAME", "Lawly"))
-    aws_region = os.getenv("AWS_REGION", "ap-south-1")
+    resolved_from_email = from_email or os.getenv("NOTICE_FROM_EMAIL", "support@lawly.store")
+    resolved_from_name = _sanitize_header_text(from_name or os.getenv("NOTICE_FROM_NAME", "Lawly"))
+    resolved_region = aws_region or os.getenv("AWS_REGION", "ap-south-1")
 
     to_name = _sanitize_header_text(to_name)
     subject = _sanitize_header_text(subject)
 
-    if not from_email:
+    if not resolved_from_email:
         return DeliveryResult(
             success=False,
             message="Email not configured. Set NOTICE_FROM_EMAIL in .env",
@@ -62,18 +65,19 @@ def send_notice_email(
         )
 
     msg = EmailMessage()
-    msg["From"] = formataddr((from_name, from_email))
+    msg["From"] = formataddr((resolved_from_name, resolved_from_email))
     msg["To"] = formataddr((to_name, to_email))
     msg["Subject"] = subject
 
+    safe_cc: list[str] = []
     if cc_emails:
         safe_cc = [e for e in cc_emails if _EMAIL_RE.match(e) and "\n" not in e and "\r" not in e]
         if safe_cc:
             msg["Cc"] = ", ".join(safe_cc)
 
     if request_read_receipt:
-        msg["Disposition-Notification-To"] = from_email
-        msg["X-Confirm-Reading-To"] = from_email
+        msg["Disposition-Notification-To"] = resolved_from_email
+        msg["X-Confirm-Reading-To"] = resolved_from_email
 
     msg.set_content(body_text)
     if pdf_bytes and pdf_filename:
@@ -84,12 +88,12 @@ def send_notice_email(
             filename=pdf_filename,
         )
 
-    all_recipients = [to_email] + (safe_cc if cc_emails else [])
+    all_recipients = [to_email] + safe_cc
 
     try:
-        ses_client = boto3.client("ses", region_name=aws_region)
+        ses_client = boto3.client("ses", region_name=resolved_region)
         response = ses_client.send_raw_email(
-            Source=from_email,
+            Source=resolved_from_email,
             Destinations=all_recipients,
             RawMessage={"Data": msg.as_bytes()},
         )

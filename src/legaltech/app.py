@@ -52,7 +52,6 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 pipeline = LegalNoticePipeline()
-
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled server error for {request.method} {request.url}: {exc}", exc_info=True)
@@ -579,27 +578,27 @@ async def create_notice_typed(request: Request, payload: NoticeRequest):
 async def get_job_status(job_id: str, poll_token: str = ""):
     """Poll for async job completion.
 
-    poll_token is validated when present. Across multi-instance deployments the job
-    may live in another instance's memory — the UUID alone provides sufficient
-    entropy (122 bits) as a bearer token for unauthenticated poll flows.
+    poll_token is mandatory and validated on every poll, including DB fallback
+    across multi-instance deployments.
     """
+    if not poll_token:
+        raise HTTPException(status_code=400, detail="poll_token is required")
+
     job = _jobs.get(job_id)
     if job:
-        # Validate token when both sides have it (same instance that created the job)
         stored_token = job.get("poll_token", "")
-        if poll_token and stored_token and not secrets.compare_digest(stored_token, poll_token):
+        if not stored_token or not secrets.compare_digest(stored_token, poll_token):
             raise HTTPException(status_code=403, detail="Invalid poll token")
         return {"status": job["status"], "result": job.get("result"), "error": job.get("error")}
-    # Not in memory — could be on a different App Runner instance or a crash-recovered job.
-    # Try DB with token first, then without (cross-instance case where DB may not yet have it).
+
+    # Not in memory — fetch from persistent store using id+token only.
     try:
-        db_job = await db.get_job(job_id, poll_token) if poll_token else None
-        if not db_job:
-            db_job = await db.get_job_by_id(job_id)
+        db_job = await db.get_job(job_id, poll_token)
     except Exception:
         db_job = None
     if not db_job:
         raise HTTPException(status_code=404, detail="Job not found or expired")
+
     # Restore to this instance's memory cache so subsequent polls here are fast
     _jobs[job_id] = {
         "status": db_job["status"], "result": db_job.get("result"),
@@ -2249,19 +2248,10 @@ async def get_email_log(limit: int = 100, _=Depends(require_admin)):
 async def send_test_email(body: SendTestEmailRequest, _=Depends(require_admin)):
     """Send a test email using current SMTP settings."""
     settings = notice_store.get_email_settings()
-    if not settings.get("smtp_user") or not settings.get("from_email"):
-        raise HTTPException(status_code=400, detail="SMTP not configured. Set host, user, password, from_email first.")
+    if not settings.get("from_email"):
+        raise HTTPException(status_code=400, detail="Email sender not configured. Set from_email first.")
     try:
         from legaltech.services.email_service import send_notice_email
-        # Use stored SMTP settings by setting env vars temporarily
-        import os
-        os.environ["SMTP_HOST"] = settings.get("smtp_host", "")
-        os.environ["SMTP_PORT"] = str(settings.get("smtp_port", 587))
-        os.environ["SMTP_USER"] = settings.get("smtp_user", "")
-        os.environ["SMTP_PASSWORD"] = settings.get("smtp_password", "")
-        os.environ["NOTICE_FROM_NAME"] = settings.get("from_name", "Lawly")
-        os.environ["NOTICE_FROM_EMAIL"] = settings.get("from_email", "")
-        os.environ["SMTP_USE_TLS"] = "true" if settings.get("use_tls", True) else "false"
 
         template = settings.get("templates", {}).get(body.template, {})
         subject = template.get("subject", f"Test Email — {body.template}").replace("{{name}}", "Test User").replace("{{company}}", "Test Co")
@@ -2275,6 +2265,9 @@ async def send_test_email(body: SendTestEmailRequest, _=Depends(require_admin)):
             body_text=body_text,
             pdf_bytes=b"",
             pdf_filename="",
+            from_email=settings.get("from_email") or None,
+            from_name=settings.get("from_name") or None,
+            aws_region=os.getenv("AWS_REGION", "ap-south-1"),
         )
         status = "sent" if result.success else "failed"
         notice_store.log_email({
@@ -2308,6 +2301,7 @@ class TrackEventRequest(BaseModel):
 
 
 @app.post("/api/track")
+@limiter.limit("60/minute;5000/day")
 async def track_event(body: TrackEventRequest):
     """Public endpoint to track funnel events from the frontend."""
     allowed = {"page_view", "notice_started", "notice_generated", "pdf_downloaded", "payment"}
@@ -2382,12 +2376,12 @@ async def insights_submit_batch(body: SubmitUrlBatchRequest, _=Depends(require_a
 # ── Support / Contact Tickets ────────────────────────────────────────
 
 class CreateTicketRequest(BaseModel):
-    name: str
-    email: str
-    subject: str
-    message: str
-    category: str = "general"
-    notice_id: str = ""
+    name: str = Field(..., min_length=2, max_length=120)
+    email: str = Field(..., max_length=255, pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+    subject: str = Field(..., min_length=3, max_length=200)
+    message: str = Field(..., min_length=10, max_length=5000)
+    category: str = Field(default="general", max_length=80)
+    notice_id: str = Field(default="", max_length=80)
 
 
 class UpdateTicketRequest(BaseModel):
@@ -2402,22 +2396,16 @@ class TicketReplyRequest(BaseModel):
 
 
 @app.post("/api/contact")
+@limiter.limit("10/minute;200/day")
 async def create_support_ticket(body: CreateTicketRequest):
     """Public endpoint — anyone can submit a support ticket."""
     ticket = notice_store.create_ticket(body.model_dump())
     notice_store.log_activity("New support ticket", f"{body.subject} from {body.email}", "ticket", ticket["id"])
     # Send admin alert email if configured
     email_settings = notice_store.get_email_settings()
-    if email_settings.get("admin_alert_email") and email_settings.get("smtp_user"):
+    if email_settings.get("admin_alert_email"):
         try:
             from legaltech.services.email_service import send_notice_email
-            import os
-            os.environ["SMTP_HOST"] = email_settings.get("smtp_host", "")
-            os.environ["SMTP_PORT"] = str(email_settings.get("smtp_port", 587))
-            os.environ["SMTP_USER"] = email_settings.get("smtp_user", "")
-            os.environ["SMTP_PASSWORD"] = email_settings.get("smtp_password", "")
-            os.environ["NOTICE_FROM_NAME"] = email_settings.get("from_name", "Lawly")
-            os.environ["NOTICE_FROM_EMAIL"] = email_settings.get("from_email", "")
             await asyncio.to_thread(
                 send_notice_email,
                 to_email=email_settings["admin_alert_email"],
@@ -2426,6 +2414,9 @@ async def create_support_ticket(body: CreateTicketRequest):
                 body_text=f"New support ticket from {body.name} ({body.email}):\n\nCategory: {body.category}\n\n{body.message}",
                 pdf_bytes=b"",
                 pdf_filename="",
+                from_email=email_settings.get("from_email") or None,
+                from_name=email_settings.get("from_name") or None,
+                aws_region=os.getenv("AWS_REGION", "ap-south-1"),
             )
         except Exception:
             logger.warning("Admin alert email failed", exc_info=True)
@@ -2522,7 +2513,7 @@ async def revert_version(body: RevertRequest, _=Depends(require_admin)):
 
 class AIGenerateRequest(BaseModel):
     tool: str          # e.g. "blog_post", "seo_meta", "email_template", "ticket_reply", etc.
-    context: dict = {} # tool-specific input data
+    context: dict = Field(default_factory=dict) # tool-specific input data
 
 
 @app.post("/api/admin/ai/generate")
@@ -2684,7 +2675,7 @@ async def ai_generate(body: AIGenerateRequest, _=Depends(require_admin)):
                            f"Customer message: {ticket.get('message','')}\n"
                            f"Category: {ticket.get('category','')}\n"
                            f"Current status: {ticket.get('status','open')}\n"
-                           f"Previous replies: {ticket.get('replies',[][-3:])}\n"
+                           f"Previous replies: {(ticket.get('replies', []) or [])[-3:]}\n"
                            f"Instruction: {instruction}",
                 max_tokens=1024,
             )
