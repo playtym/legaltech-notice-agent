@@ -45,6 +45,27 @@ const App = (() => {
         uploadedFiles: [],  // [{file_id, filename, content_type, size, thumbUrl?}]
     };
 
+    // ── Analytics tracking ───────────────────────────────────────────
+    function _getTrackingContext() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            referrer: document.referrer || '',
+            source: params.get('utm_source') || params.get('ref') || '',
+            medium: params.get('utm_medium') || '',
+            campaign: params.get('utm_campaign') || '',
+            page: window.location.pathname,
+        };
+    }
+
+    function trackEvent(event, extra) {
+        const data = { ..._getTrackingContext(), ...(extra || {}) };
+        apiFetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event, data }),
+        }).catch(() => {}); // fire-and-forget
+    }
+
     // ── Loading tips (rotate during wait) ─────────────────────────
     
     // ── Safe Local Storage Recovery ───────────────────────────────────
@@ -65,7 +86,7 @@ const App = (() => {
         }
     }
 
-    // Attach listeners to save draft on input
+    // Attach listeners to save draft on input; fire page_view on load
     document.addEventListener('DOMContentLoaded', () => {
         recoverDraft();
         const inputs = ['company-name', 'company-website', 'issue-summary', 'fd-name', 'fd-email', 'fd-phone', 'fd-address'];
@@ -73,6 +94,11 @@ const App = (() => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', saveDraft);
         });
+        // Fire page_view once per page load (delayed so apiFetch candidates are resolved)
+        if (!window._lawlyPageViewFired) {
+            window._lawlyPageViewFired = true;
+            setTimeout(() => trackEvent('page_view'), 300);
+        }
     });
 
     function saveDraft() {
@@ -798,6 +824,7 @@ const App = (() => {
         state.desiredResolution = resolution;
         state.companyObjection = objection || '';
 
+        trackEvent('notice_started', { company: state.companyName });
         goTo(4); // show loading
         animateStages(['stage-company', 'stage-contacts', 'stage-policies', 'stage-legal', 'stage-strength'], 6000);
 
@@ -1121,7 +1148,6 @@ const App = (() => {
         status.textContent = 'Payment Successful! Redirecting...';
         
         try { trackEvent('payment', { tier: state.tier, amount: state.tier === 'lawyer' ? 599 : 199 }); } catch(_) {}
-        
         await new Promise(r => setTimeout(r, 800));
         document.getElementById('payment-overlay').style.display = 'none';
         generateNotice();
@@ -1372,6 +1398,7 @@ const App = (() => {
             if (!res.ok) throw new Error('PDF generation failed');
             const blob = await res.blob();
             downloadBlob(blob, `Legal_Notice_${companyName.replace(/ /g, '_')}.pdf`);
+            trackEvent('pdf_downloaded', { company: companyName, tier: state.tier });
         } catch (err) {
             showError(err.message);
         }
