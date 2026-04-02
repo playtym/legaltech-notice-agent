@@ -377,11 +377,6 @@ class LegalNoticePipeline:
                     logger.warning("Respondent ID lookup failed (non-fatal): %s", exc)
                     return None
 
-                except asyncio.TimeoutError:
-                    logger.warning(f"Background web processing for {website} timed out after 30s. Moving forwards without complete scrape data.")
-                except Exception as exc:
-                    logger.warning(f"Unexpected error in background web processing for {website}: {exc}")
-
         # ── Build corpus early (only needs intake + policies) ────────
         corpus = " ".join([
             complaint.issue_summary,

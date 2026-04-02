@@ -751,16 +751,25 @@ async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: Co
 
         _jobs[job_id]["status"] = "completed"
         _jobs[job_id]["result"] = result
+        try:
+            await db.update_job(job_id, "completed", result=result)
+        except Exception:
+            logger.warning("DB job update (completed) failed (non-fatal)", exc_info=True)
     except Exception as exc:
         logger.exception("Pipeline failed (voice job %s)", job_id)
+        err_msg = str(exc) or "An internal error occurred."
         _jobs[job_id]["status"] = "failed"
-        _jobs[job_id]["error"] = str(exc) or "An internal error occurred."
+        _jobs[job_id]["error"] = err_msg
+        try:
+            await db.update_job(job_id, "failed", error=err_msg)
+        except Exception:
+            logger.warning("DB job update (failed) failed (non-fatal)", exc_info=True)
 
 
 @app.post("/notice/voice")
 @limiter.limit("5/minute;20/hour")
 async def create_notice_voice(request: Request, payload: VoiceNoticeRequest):
-    _cleanup_old_jobs()
+    await _cleanup_old_jobs()
     try:
         complaint = ComplaintInput(
             mode=IntakeMode.voice,
@@ -776,9 +785,17 @@ async def create_notice_voice(request: Request, payload: VoiceNoticeRequest):
         )
 
         job_id = str(uuid.uuid4())
-        _jobs[job_id] = {"status": "processing", "result": None, "error": None, "created_at": time.time()}
+        poll_token = secrets.token_urlsafe(24)
+        _jobs[job_id] = {
+            "status": "processing", "result": None, "error": None,
+            "created_at": time.time(), "poll_token": poll_token,
+        }
+        try:
+            await db.create_job(job_id, poll_token, [])
+        except Exception:
+            logger.warning("DB job create failed (non-fatal)", exc_info=True)
         asyncio.create_task(_run_voice_job(job_id, payload, complaint))
-        return {"job_id": job_id, "status": "processing"}
+        return {"job_id": job_id, "poll_token": poll_token, "status": "processing"}
 
     except HTTPException:
         raise
@@ -1011,7 +1028,7 @@ async def create_notice_typed_pdf(request: Request, payload: NoticeRequest):
                 user_id=user_id,
                 company_name=company_label,
                 tier=tier_val,
-                packet=packet.model_dump(),
+                packet=packet.model_dump(mode='json'),
                 customer_controls={
                     "notice_tone": payload.notice_tone,
                     "cure_period_days": payload.cure_period_days,
