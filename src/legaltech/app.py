@@ -2302,7 +2302,7 @@ class TrackEventRequest(BaseModel):
 
 @app.post("/api/track")
 @limiter.limit("60/minute;5000/day")
-async def track_event(body: TrackEventRequest):
+async def track_event(request: Request, body: TrackEventRequest):
     """Public endpoint to track funnel events from the frontend."""
     allowed = {"page_view", "notice_started", "notice_generated", "pdf_downloaded", "payment"}
     if body.event not in allowed:
@@ -2397,7 +2397,7 @@ class TicketReplyRequest(BaseModel):
 
 @app.post("/api/contact")
 @limiter.limit("10/minute;200/day")
-async def create_support_ticket(body: CreateTicketRequest):
+async def create_support_ticket(request: Request, body: CreateTicketRequest):
     """Public endpoint — anyone can submit a support ticket."""
     ticket = notice_store.create_ticket(body.model_dump())
     notice_store.log_activity("New support ticket", f"{body.subject} from {body.email}", "ticket", ticket["id"])
