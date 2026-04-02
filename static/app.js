@@ -176,18 +176,14 @@ const App = (() => {
     
     function setCategory(cat, element) {
         state.category = cat;
-        // reset chips
+        // reset chips and mark selected one with .active class
         document.querySelectorAll('.cat-chip').forEach(el => {
-            el.style.background = '#f3f4f6';
-            el.style.borderColor = '#e5e7eb';
-            el.style.color = '#000';
-            el.style.fontWeight = 'normal';
+            el.classList.remove('active');
+            el.setAttribute('aria-selected', 'false');
         });
         if (element) {
-            element.style.background = '#e0e7ff';
-            element.style.borderColor = '#818cf8';
-            element.style.color = '#3730a3';
-            element.style.fontWeight = 'bold';
+            element.classList.add('active');
+            element.setAttribute('aria-selected', 'true');
         }
         updateIssueChips();
     }
@@ -674,10 +670,6 @@ const App = (() => {
         const comp = document.getElementById('ctrl-compensation')?.value || '';
         const interest = document.getElementById('ctrl-interest')?.value || '';
         return {
-        finalizeNotice,
-        setCategory,
-        setCompany,
-        setIssue,
             notice_tone: tone || null,
             cure_period_days: cure ? parseInt(cure) : null,
             compensation_amount: comp ? parseInt(comp) : null,
@@ -781,10 +773,6 @@ const App = (() => {
     function getAnalyzeComplainant() {
         const c = state.complainant || {};
         return {
-        finalizeNotice,
-        setCategory,
-        setCompany,
-        setIssue,
             full_name: c.full_name || 'Pending Customer',
             email: c.email || 'pending@lawly.store',
             phone: c.phone || null,
@@ -1307,44 +1295,21 @@ const App = (() => {
         const r = state.noticeResult;
         const id = state.noticeId;
 
-        
-        // Attempt to auto-email user
-        const companyName = state.companyName || 'Company';
-        const isLawyer = state.tier === 'lawyer';
-        if (state.complainant && state.complainant.email) {
-            apiFetch(`/notice/deliver?to_email=${encodeURIComponent(state.complainant.email)}&to_name=${encodeURIComponent(state.complainant.full_name)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    notice_text: state.noticeResult.legal_notice,
-                    company_name: companyName,
-                    is_lawyer_tier: isLawyer,
-                }),
-            }).catch(e => console.warn('Delivery trigger failed:', e));
-        }
-
         document.getElementById('notice-id-display').textContent =
             id ? `Reference: #${id.toUpperCase()}` : '';
 
+        // Populate the editable textarea (step 8) — this is what the customer sees
+        const editor = document.getElementById('notice-text-editor');
+        if (editor) editor.value = r.legal_notice || '';
+
+        // Also populate the read-only display (step 9 final view)
         document.getElementById('notice-text').textContent = r.legal_notice || '';
 
         const isSelf = state.tier === 'self_send';
         document.getElementById('self-send-info').classList.toggle('hidden', !isSelf);
         document.getElementById('lawyer-send-info').classList.toggle('hidden', isSelf);
 
-
-        const emailMsg = document.createElement('div');
-        emailMsg.className = 'alert alert-success';
-        emailMsg.style.marginTop = '1rem';
-        emailMsg.innerHTML = `<strong>Delivery Initiated:</strong> A PDF copy has been emailed to <strong>${state.complainant.email}</strong>.`;
-        
-        // Append it before the notice-text container
-        const textContainer = document.getElementById('notice-text').parentElement;
-        if(textContainer) {
-            textContainer.parentElement.insertBefore(emailMsg, textContainer);
-        }
-
-        if (!isSelf) {
+        if (!isSelf && state.complainant?.email) {
             document.getElementById('notify-email').textContent = state.complainant.email;
         }
     }

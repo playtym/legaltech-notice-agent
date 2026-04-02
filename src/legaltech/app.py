@@ -427,7 +427,7 @@ async def _run_typed_job(job_id: str, payload: NoticeRequest, complaint: Complai
             },
             document_analysis=doc_analysis,
         )
-        result = packet.model_dump()
+        result = packet.model_dump(mode='json')
         company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
         tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
         notice_id = notice_store.save_notice(
@@ -716,7 +716,7 @@ async def _run_voice_job(job_id: str, payload: VoiceNoticeRequest, complaint: Co
                 "language": payload.language,
             },
         )
-        result = packet.model_dump()
+        result = packet.model_dump(mode='json')
         tier_val = payload.tier.value if hasattr(payload.tier, "value") else str(payload.tier)
         company_label = packet.company.legal_name or packet.company.brand_name or payload.company_name_hint or "Unknown"
 
