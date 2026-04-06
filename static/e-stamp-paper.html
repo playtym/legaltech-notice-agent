@@ -10,9 +10,9 @@
       gtag('js', new Date());
       gtag('config', 'G-F63GR76DSR');
     </script>
-    <title>E-Stamp Paper Generator India 2026 — Create Legal Documents Online | Lawly</title>
-    <meta name="description" content="Generate e-stamp paper legal documents free online — rent agreements, affidavits, power of attorney, NDAs. State-wise stamp duty calculator + guide to SHCIL, Leegality, LegalDesk, Signzy portals.">
-    <meta name="keywords" content="e stamp paper online India, e stamp paper generator, stamp duty calculator India, rent agreement stamp paper, affidavit stamp paper, SHCIL e stamp, Leegality stamp paper, e stamping India, stamp paper online purchase, legal document generator India">
+    <title>E-Stamp &amp; Legal Document Generator India 2026 — Contracts, Petitions, Notices | Lawly</title>
+    <meta name="description" content="Generate contracts, petitions, and legal notices online across civil, criminal, and commercial matters. Includes rent agreements, affidavits, POA, insurance appeals, RTI drafts, and state-wise stamp duty guidance.">
+    <meta name="keywords" content="legal document generator India, contract draft online India, petition draft India, legal notice generator, e stamp paper online India, stamp duty calculator India, rent agreement stamp paper, affidavit stamp paper, insurance appeal letter India, RTI application draft, labor dispute notice India, tax law notice India">
     <link rel="canonical" href="https://lawly.store/e-stamp-paper">
     <meta property="og:type" content="article">
     <meta property="og:title" content="E-Stamp Paper Generator India 2026 — Create Legal Documents Online">
@@ -181,9 +181,12 @@
             <!-- LEFT: Main content -->
             <div class="prose-legal">
                 <div class="section-label">Legal Documents</div>
-                <h1>E-Stamp Paper Generator India</h1>
+                <h1>Legal Document Generator India</h1>
                 <p class="text-lg text-gray-600 mb-2" style="margin-top: 0.25rem;">
-                    Draft legally accurate rent agreements, affidavits, power of attorney, and NDAs — free. Calculate stamp duty by state, download your PDF, and find the right e-stamp portal.
+                    Draft contracts, petitions, and legal notices across civil, criminal, and commercial matters. Works on web and mobile, with state-wise stamp duty guidance and downloadable PDF output.
+                </p>
+                <p class="text-xs text-gray-500 mb-5" style="margin-top: 0.2rem;">
+                    Lawly (lawly.store) is an independent legal-tech product and is not affiliated with Ramboll's former EHSQ tool that used a similar name.
                 </p>
 
                 <!-- Feature chips -->
@@ -199,6 +202,10 @@
                     <span class="inline-flex items-center gap-1.5 text-xs font-600 text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-full">
                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                         PDF download ready
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 text-xs font-600 text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-7-3a1 1 0 10-2 0v3a1 1 0 00.293.707l2 2a1 1 0 101.414-1.414L11 9.586V7z" clip-rule="evenodd"/></svg>
+                        Web + mobile friendly
                     </span>
                 </div>
 
@@ -258,12 +265,23 @@
                         <div>
                             <label class="form-label">Document Type <span class="text-red-500">*</span></label>
                             <select id="doc-type" class="form-input" onchange="onDocTypeChange()">
+                                <option value="general_legal">General Legal Petition / Application</option>
                                 <option value="rent_agreement">Rent / Leave-and-Licence Agreement</option>
                                 <option value="affidavit">Affidavit</option>
                                 <option value="power_of_attorney">Power of Attorney</option>
                                 <option value="non_disclosure_agreement">Non-Disclosure Agreement (NDA)</option>
                                 <option value="demand_notice">Demand / Recovery Notice</option>
                                 <option value="landlord_tenant_notice">Landlord / Tenant Notice</option>
+                                <option value="cheque_bounce_notice">Cheque Bounce Notice (S.138 NI Act)</option>
+                                <option value="defamation_notice">Defamation Notice</option>
+                                <option value="cease_and_desist">Cease and Desist Notice</option>
+                                <option value="trademark_notice">Trademark / IP Infringement Notice</option>
+                                <option value="insurance_appeal">Insurance Appeal Letter</option>
+                                <option value="rti_application">RTI Application</option>
+                                <option value="police_complaint">Police Complaint Draft</option>
+                                <option value="employment_dispute_notice">Employment Dispute Notice</option>
+                                <option value="employment_termination_letter">Termination / Show-Cause Letter</option>
+                                <option value="property_dispute_notice">Property Dispute Notice</option>
                             </select>
                         </div>
                         <div>
@@ -875,12 +893,23 @@
     // ── Document type UI changes ────────────────────────────────────────────
 
     const DOC_LABELS = {
+        general_legal:   { p1: 'Applicant / Petitioner', p2: 'Recipient / Authority', facts: 'Case Background and Filing Purpose', factsPlaceholder: 'E.g. I am filing this petition seeking urgent interim relief against illegal disconnection and requesting restoration of essential services.' },
         rent_agreement: { p1: 'Party 1 / Landlord', p2: 'Party 2 / Tenant', facts: 'Lease Terms & Special Clauses', factsPlaceholder: 'E.g. Tenant shall not sub-let. Electricity paid by tenant. Lock-in period 6 months. Landlord maintains structure.' },
         affidavit:      { p1: 'Deponent (Person Making Affidavit)', p2: null, facts: 'Facts to be Sworn', factsPlaceholder: 'E.g. I, Rajesh Kumar Sharma, aged 35 years, state that I have lost my PAN card bearing number ABCDE1234F and have filed a police complaint (NCR No. 123/2024).' },
         power_of_attorney: { p1: 'Principal (Grantor of POA)', p2: 'Attorney / Agent', facts: 'Scope and Purpose of Authority', factsPlaceholder: 'E.g. The attorney is authorised to manage, sell, and execute documents related to my property at Plot No. 5, Sector 10, Dwarka, New Delhi.' },
         non_disclosure_agreement: { p1: 'Party 1 — Disclosing Party', p2: 'Party 2 — Receiving Party', facts: 'Context and Confidential Information', factsPlaceholder: 'E.g. Parties are exploring a potential business partnership in fintech. Party 1 will share business plans, financial projections, and proprietary algorithms.' },
         demand_notice:  { p1: 'Sender / Claimant', p2: 'Recipient / Debtor', facts: 'Nature of Debt and Supporting Facts', factsPlaceholder: 'E.g. I lent ₹2,00,000 to the recipient on 15 Jan 2024 via NEFT (UTR: XXXXX). Despite multiple reminders, the amount remains unpaid.' },
         landlord_tenant_notice: { p1: 'Landlord / Sender', p2: 'Tenant / Recipient', facts: 'Reason for Notice and Key Facts', factsPlaceholder: 'E.g. Tenant has not paid rent for 3 months (March–May 2025). Rent amount: ₹18,000/month. Demanding vacating premises within 30 days.' },
+        cheque_bounce_notice: { p1: 'Payee / Holder', p2: 'Drawer of Cheque', facts: 'Cheque Dishonour Facts', factsPlaceholder: 'E.g. Cheque no. 452231 dated 10 Jan 2026 for ₹3,50,000 drawn on XYZ Bank was returned on 15 Jan 2026 with remark "Funds Insufficient".' },
+        defamation_notice: { p1: 'Aggrieved Person', p2: 'Defaming Party', facts: 'Defamatory Statements and Damage', factsPlaceholder: 'E.g. On 12 Feb 2026, the recipient posted false allegations on social media causing reputational harm to my business and personal standing.' },
+        cease_and_desist: { p1: 'Rights Holder / Aggrieved Party', p2: 'Opposite Party', facts: 'Unlawful Activity to Stop', factsPlaceholder: 'E.g. The recipient is repeatedly using my copyrighted material and brand visuals in ads without authorization despite prior warning.' },
+        trademark_notice: { p1: 'Rights Holder', p2: 'Infringing Party', facts: 'IP Rights and Infringement Facts', factsPlaceholder: 'E.g. I hold trademark registration no. XXXXX and the recipient is selling confusingly similar goods under a deceptively similar mark.' },
+        insurance_appeal: { p1: 'Policyholder / Claimant', p2: 'Insurer / Grievance Officer', facts: 'Claim Rejection or Delay Details', factsPlaceholder: 'E.g. My health insurance claim no. CL-8891 was rejected on 8 Mar 2026 citing pre-existing disease despite no supporting medical evidence.' },
+        rti_application: { p1: 'Applicant', p2: 'PIO / Public Authority', facts: 'Information Requested', factsPlaceholder: 'E.g. Please provide certified copies of file noting and action taken report for complaint reference no. 204/2025.' },
+        police_complaint: { p1: 'Complainant', p2: 'SHO / Magistrate', facts: 'Incident Chronology and Offence Details', factsPlaceholder: 'E.g. On 3 Apr 2026 at 8:30 PM, unknown persons trespassed and threatened me; CCTV footage and witness details are enclosed.' },
+        employment_dispute_notice: { p1: 'Employee / Claimant', p2: 'Employer / Company', facts: 'Employment Dispute Facts', factsPlaceholder: 'E.g. Salary for Feb-Apr 2026 remains unpaid and gratuity/PF settlement has not been released despite repeated requests.' },
+        employment_termination_letter: { p1: 'Employer', p2: 'Employee', facts: 'Grounds and Process Details', factsPlaceholder: 'E.g. Persistent misconduct and repeated policy violations recorded in warnings dated 3 Jan and 24 Jan 2026.' },
+        property_dispute_notice: { p1: 'Owner / Claimant', p2: 'Opposite Party', facts: 'Property Dispute Facts', factsPlaceholder: 'E.g. The recipient has encroached on 120 sq.ft. of my plot and blocked access road despite prior oral assurances to remove obstruction.' },
     };
 
     const EXTRA_SECTIONS = ['extra-rent', 'extra-affidavit', 'extra-poa', 'extra-nda'];

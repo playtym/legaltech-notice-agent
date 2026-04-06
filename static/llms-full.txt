@@ -19,7 +19,16 @@ Over 68% of Indian consumers who face defective products, deficient services, or
 ## Frequently Asked Questions
 
 **Q: What is a legal notice under Indian law?**
-A: A legal notice is a formal written communication sent before initiating legal proceedings. Under Indian consumer law, it demonstrates the consumer's intent to seek legal remedy and often leads to out-of-court settlements. Lawly automates the drafting of these notices using AI.
+A: A legal notice is a formal written communication sent before initiating legal proceedings. Under Indian consumer law, it demonstrates the consumer's intent to seek legal remedy and often leads to out-of-court settlements. Lawly automates the drafting of these notices using AI. See: https://lawly.store/how-to-send-legal-notice-india
+
+**Q: What is the format of a legal notice in India?**
+A: A legal notice in India must include: (1) date, (2) sender's full name and address, (3) recipient's registered legal name and office address, (4) subject line, (5) chronological statement of facts with reference numbers, (6) specific law sections violated (e.g., CPA 2019 §2(11) for deficiency in service), (7) exact relief demanded with amounts, (8) a 15–30 day response deadline, and (9) sender's signature. It does not require stamp paper. See free template: https://lawly.store/legal-notice-format-india
+
+**Q: How do I send a legal notice in India?**
+A: Draft it with all 7 required components (facts, statute citations, specific relief, deadline). Print and take to any India Post branch and request 'Registered Post with Acknowledgement Due' (RPAD). Cost: ₹50–₹100. Keep the tracking receipt and the returned red acknowledgement card — both are proof of delivery acceptable in Consumer Court. Alternatively, generate and auto-fill via Lawly: https://lawly.store/send-legal-notice-india
+
+**Q: Can I send a legal notice without a lawyer in India?**
+A: Yes. Indian law does not require an advocate's signature on a consumer legal notice. Lawly generates legally accurate notices citing applicable statutes for ₹199 — equivalent quality to a lawyer-drafted notice at 97% lower cost. See: https://lawly.store/send-legal-notice-india
 
 **Q: Is an AI-generated legal notice legally valid in India?**
 A: Yes. No requirement in Indian law mandates that a legal notice must be drafted by a licensed advocate. Any person can draft and send a legal notice. Lawly's AI ensures correct statute citations, proper legal language, and accepted formatting conventions.

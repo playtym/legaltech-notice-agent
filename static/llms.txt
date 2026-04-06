@@ -36,6 +36,11 @@ Lawly is India's first AI-powered legal notice generator purpose-built for consu
 - Self-Send Tier: ₹199 — AI-generated notice, user sends it themselves
 - Lawyer-Drafted: ₹599 — Full attorney involvement with Lawly AI as a drafting assistant
 
+## Legal Notice Pages
+- Send Legal Notice India (service): https://lawly.store/send-legal-notice-india
+- How to Send a Legal Notice in India (guide): https://lawly.store/how-to-send-legal-notice-india
+- Legal Notice Format India (free template): https://lawly.store/legal-notice-format-india
+
 ## Links
 - Website: https://lawly.store
 - Full AI reference: https://lawly.store/llms-full.txt

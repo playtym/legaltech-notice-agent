@@ -20,13 +20,23 @@ import os
 import secrets
 import time
 import uuid
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 from contextlib import asynccontextmanager
 
+from legaltech.general_pipeline import GeneralDocumentPipeline
 from legaltech.pipeline import LegalNoticePipeline
-from legaltech.schemas import Complainant, ComplaintInput, IntakeMode, ServiceTier
+from legaltech.schemas import (
+    Complainant,
+    ComplaintInput,
+    DocumentType,
+    IntakeMode,
+    LegalDocumentRequest,
+    ServiceTier,
+    get_document_type_config,
+)
 from legaltech.services.pdf_generator import generate_pdf
 from legaltech.services import store as notice_store
 from legaltech.services.upload_store import upload_store
@@ -52,6 +62,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 pipeline = LegalNoticePipeline()
+general_pipeline = GeneralDocumentPipeline()
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled server error for {request.method} {request.url}: {exc}", exc_info=True)
@@ -276,6 +287,124 @@ class TranscriptIntakeRequest(BaseModel):
 
 class SpeechRefineRequest(BaseModel):
     transcript_text: str
+
+
+_LEGAL_DOCUMENT_FAMILIES = ["contract", "petition", "notice"]
+_LEGAL_PRACTICE_AREAS = [
+    "IT law",
+    "Health law",
+    "Criminal law",
+    "Commercial law",
+    "Labor and employment",
+    "Rental and tenancy",
+    "Enforcement and recovery",
+    "Insurance law",
+    "Family law",
+    "Inheritance and succession",
+    "Real estate law",
+    "Tax law",
+]
+
+
+def _clean_optional_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    cleaned = str(value).strip()
+    return cleaned or None
+
+
+def _extra_has_value(extra: dict[str, Any], key: str) -> bool:
+    if key not in extra:
+        return False
+    value = extra.get(key)
+    if value is None:
+        return False
+    if isinstance(value, str) and not value.strip():
+        return False
+    return True
+
+
+def _normalize_legal_request(raw_payload: dict[str, Any]) -> LegalDocumentRequest:
+    payload: dict[str, Any] = dict(raw_payload or {})
+
+    # Backward compatibility for alternate field names from old clients.
+    if not payload.get("document_type") and payload.get("type"):
+        payload["document_type"] = payload.get("type")
+
+    complainant = payload.get("complainant")
+    if isinstance(complainant, dict):
+        payload.setdefault("sender_name", complainant.get("full_name"))
+        payload.setdefault("sender_email", complainant.get("email"))
+        payload.setdefault("sender_phone", complainant.get("phone"))
+        payload.setdefault("sender_address", complainant.get("address"))
+
+    issue_summary = _clean_optional_text(payload.get("issue_summary"))
+    desired_resolution = _clean_optional_text(payload.get("desired_resolution"))
+    if not payload.get("facts") and issue_summary:
+        payload["facts"] = issue_summary
+    if not payload.get("relief_sought") and desired_resolution:
+        payload["relief_sought"] = desired_resolution
+
+    extra_raw = payload.get("extra")
+    extra: dict[str, Any] = dict(extra_raw) if isinstance(extra_raw, dict) else {}
+
+    # Older UI field aliases.
+    alias_map = {
+        "nda_type": "agreement_type",
+        "confidentiality_duration": "confidentiality_term",
+    }
+    for source_key, target_key in alias_map.items():
+        if source_key in extra and target_key not in extra:
+            extra[target_key] = extra[source_key]
+
+    doc_type_value = _clean_optional_text(payload.get("document_type"))
+    config = get_document_type_config(doc_type_value or "") if doc_type_value else {}
+
+    facts = _clean_optional_text(payload.get("facts"))
+    purpose = _clean_optional_text(payload.get("purpose"))
+    relief = _clean_optional_text(payload.get("relief_sought"))
+
+    # If a client only sends facts for agreement/instrument workflows, treat it as purpose.
+    if not purpose and facts and config.get("requires_purpose") and not config.get("requires_facts"):
+        payload["purpose"] = facts
+
+    # If a client only sends facts for relief-heavy workflows, use facts as fallback relief.
+    if not relief and facts and config.get("requires_relief") and not config.get("requires_facts"):
+        payload["relief_sought"] = facts
+
+    jurisdiction_hint = _clean_optional_text(payload.get("jurisdiction")) or "India"
+    today = time.strftime("%Y-%m-%d")
+
+    # Fill minimally required structured fields for existing web/mobile forms.
+    if doc_type_value == "rent_agreement":
+        if not _extra_has_value(extra, "agreement_start_date"):
+            extra["agreement_start_date"] = today
+        if not _extra_has_value(extra, "agreement_end_date"):
+            duration = _clean_optional_text(extra.get("duration_months"))
+            extra["agreement_end_date"] = f"{duration} from execution date" if duration else "11 months from execution date"
+        if not _extra_has_value(extra, "notice_period"):
+            extra["notice_period"] = "30 days"
+
+    if doc_type_value == "non_disclosure_agreement":
+        if not _extra_has_value(extra, "agreement_type") and _extra_has_value(extra, "nda_type"):
+            extra["agreement_type"] = extra.get("nda_type")
+        if not _extra_has_value(extra, "effective_date"):
+            extra["effective_date"] = today
+        if not _extra_has_value(extra, "permitted_purpose"):
+            extra["permitted_purpose"] = purpose or facts or "Evaluation of a potential business relationship"
+        if not _extra_has_value(extra, "confidentiality_term"):
+            extra["confidentiality_term"] = _clean_optional_text(extra.get("confidentiality_duration")) or "3 years after termination"
+        if not _extra_has_value(extra, "governing_law_city"):
+            extra["governing_law_city"] = jurisdiction_hint
+
+    if doc_type_value == "power_of_attorney" and not _extra_has_value(extra, "execution_place"):
+        extra["execution_place"] = jurisdiction_hint
+
+    if doc_type_value == "affidavit" and not _extra_has_value(extra, "verification_place"):
+        extra["verification_place"] = jurisdiction_hint
+
+    payload["extra"] = extra
+    return LegalDocumentRequest.model_validate(payload)
 
 
 @app.get("/health")
@@ -806,6 +935,104 @@ async def create_notice_voice(request: Request, payload: VoiceNoticeRequest):
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
 
 
+# ── General legal document generation ───────────────────────────────
+
+async def _run_legal_job(job_id: str, payload: LegalDocumentRequest):
+    """Run generalized legal document generation in the background."""
+    try:
+        generated = await general_pipeline.generate(payload)
+        result = generated.model_dump(mode="json")
+
+        _jobs[job_id]["status"] = "completed"
+        _jobs[job_id]["result"] = result
+        try:
+            await db.update_job(job_id, "completed", result=result)
+        except Exception:
+            logger.warning("DB job update (completed) failed for legal job (non-fatal)", exc_info=True)
+
+        try:
+            notice_store.track_event("legal_document_generated", {
+                "document_type": payload.document_type.value,
+                "jurisdiction": payload.jurisdiction,
+            })
+        except Exception:
+            pass
+    except Exception as exc:
+        logger.exception("General legal document pipeline failed (job %s)", job_id)
+        err_msg = str(exc) or "An internal error occurred."
+        _jobs[job_id]["status"] = "failed"
+        _jobs[job_id]["error"] = err_msg
+        try:
+            await db.update_job(job_id, "failed", error=err_msg)
+        except Exception:
+            logger.warning("DB job update (failed) failed for legal job (non-fatal)", exc_info=True)
+
+
+@app.get("/legal/types")
+async def list_legal_document_types():
+    return {
+        "document_families": _LEGAL_DOCUMENT_FAMILIES,
+        "practice_areas": _LEGAL_PRACTICE_AREAS,
+        "document_types": general_pipeline.list_document_types(),
+    }
+
+
+@app.get("/legal/types/{document_type}")
+async def get_legal_document_type(document_type: DocumentType):
+    return general_pipeline.get_document_type_metadata(document_type)
+
+
+@app.post("/legal/generate")
+@limiter.limit("8/minute;40/hour")
+async def create_legal_document(request: Request, payload: dict[str, Any]):
+    await _cleanup_old_jobs()
+    try:
+        legal_req = _normalize_legal_request(payload)
+
+        job_id = str(uuid.uuid4())
+        poll_token = secrets.token_urlsafe(24)
+        _jobs[job_id] = {
+            "status": "processing",
+            "result": None,
+            "error": None,
+            "created_at": time.time(),
+            "poll_token": poll_token,
+            "upload_ids": [],
+        }
+        try:
+            await db.create_job(job_id, poll_token, [])
+        except Exception:
+            logger.warning("DB job create failed for legal job (non-fatal)", exc_info=True)
+
+        task = asyncio.create_task(_run_legal_job(job_id, legal_req))
+
+        def _on_legal_task_done(t: asyncio.Task, jid: str = job_id) -> None:
+            if t.cancelled():
+                _jobs.get(jid, {}).update({"status": "failed", "error": "Job was cancelled."})
+            elif t.exception():
+                logger.error("Background legal job %s raised unhandled exception", jid, exc_info=t.exception())
+                _jobs.get(jid, {}).update({"status": "failed", "error": "An internal error occurred."})
+
+        task.add_done_callback(_on_legal_task_done)
+        return {"job_id": job_id, "poll_token": poll_token, "status": "processing"}
+
+    except HTTPException:
+        raise
+    except ValidationError as exc:
+        msg = exc.errors()[0].get("msg", "Invalid input") if exc.errors() else "Invalid input"
+        raise HTTPException(status_code=422, detail=f"Validation error: {msg}")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Legal document generation setup failed")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
+
+
+@app.get("/legal/job/{job_id}")
+async def get_legal_job_status(job_id: str, poll_token: str = ""):
+    return await get_job_status(job_id, poll_token)
+
+
 @app.post("/translate/to-english")
 async def translate_to_english(payload: TranslateRequest):
     source = payload.text.strip()
@@ -1159,6 +1386,12 @@ async def render_pdf(payload: RenderPDFRequest):
     except Exception as exc:
         logger.exception("PDF rendering failed")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.") from exc
+
+
+@app.post("/legal/render-pdf")
+async def render_legal_pdf(payload: RenderPDFRequest):
+    """Alias for generic legal document PDF rendering."""
+    return await render_pdf(payload)
 
 
 @app.get("/")
@@ -2752,7 +2985,14 @@ async def catch_all_redirect(full_path: str):
         from fastapi import status
         code = redir.get("status_code", 301)
         return RedirectResponse(url=redir["to_path"], status_code=code)
-        
+
+    # Redirect .html URLs to clean canonical URLs (e.g. /foo.html → /foo)
+    # Keeps admin.html and index.html served by their own explicit routes
+    if full_path.endswith(".html") and full_path not in ("admin.html", "index.html"):
+        from fastapi.responses import RedirectResponse
+        clean = "/" + full_path[:-5]
+        return RedirectResponse(url=clean, status_code=301)
+
     # Try static file exactly
     static_path = _STATIC_DIR / full_path
     if static_path.is_file():
@@ -2765,7 +3005,12 @@ async def catch_all_redirect(full_path: str):
             return FileResponse(str(static_html_path))
 
     # API routes that don't exist should 404, not fall through to the SPA
-    if full_path.startswith("api/") or full_path.startswith("notice/") or full_path.startswith("documents/"):
+    if (
+        full_path.startswith("api/")
+        or full_path.startswith("notice/")
+        or full_path.startswith("documents/")
+        or full_path.startswith("legal/")
+    ):
         raise HTTPException(status_code=404, detail="Not found")
 
     # SPA fallback: unknown frontend routes (e.g. bookmarked pages) → serve index.html
