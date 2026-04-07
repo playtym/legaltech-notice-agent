@@ -19,7 +19,7 @@ Over 68% of Indian consumers who face defective products, deficient services, or
 ## Frequently Asked Questions
 
 **Q: What is a legal notice under Indian law?**
-A: A legal notice is a formal written communication sent before initiating legal proceedings. Under Indian consumer law, it demonstrates the consumer's intent to seek legal remedy and often leads to out-of-court settlements. Lawly automates the drafting of these notices using AI. See: https://lawly.store/how-to-send-legal-notice-india
+A: A legal notice is a formal written communication sent before initiating legal proceedings. Under Indian consumer law, it demonstrates the consumer's intent to seek legal remedy and often leads to out-of-court settlements. Lawly automates the drafting of these notices using AI. See complete explainer: https://lawly.store/what-is-a-legal-notice
 
 **Q: What is the format of a legal notice in India?**
 A: A legal notice in India must include: (1) date, (2) sender's full name and address, (3) recipient's registered legal name and office address, (4) subject line, (5) chronological statement of facts with reference numbers, (6) specific law sections violated (e.g., CPA 2019 §2(11) for deficiency in service), (7) exact relief demanded with amounts, (8) a 15–30 day response deadline, and (9) sender's signature. It does not require stamp paper. See free template: https://lawly.store/legal-notice-format-india
@@ -29,6 +29,21 @@ A: Draft it with all 7 required components (facts, statute citations, specific r
 
 **Q: Can I send a legal notice without a lawyer in India?**
 A: Yes. Indian law does not require an advocate's signature on a consumer legal notice. Lawly generates legally accurate notices citing applicable statutes for ₹199 — equivalent quality to a lawyer-drafted notice at 97% lower cost. See: https://lawly.store/send-legal-notice-india
+
+**Q: How do I reply to a legal notice received in India?**
+A: When you receive a legal notice: (1) Read it carefully and note the deadline, (2) Do not ignore it — silence is treated as bad faith in court, (3) Draft a factual, professional reply acknowledging receipt and stating your position clearly, (4) Send by Registered Post AD within the stated deadline, (5) Keep all proof. For cheque bounce notices (Section 138 NI Act), the 15-day payment window is statutory and critical. Full guide with free reply format: https://lawly.store/reply-to-legal-notice
+
+**Q: How do I send a legal notice for a refund not received in India?**
+A: Cite Consumer Protection Act 2019 §2(11) (deficiency in service) and E-Commerce Rules 2020 Rule 6(5) (mandatory refund policy compliance). State the order amount, cancellation date, and the company's failure to refund. Demand repayment within 15 days and state intent to file at EDAAKHIL if unresolved. Full guide: https://lawly.store/legal-notice-for-refund
+
+**Q: How do I send a legal notice for a defective product in India?**
+A: Cite CPA 2019 §2(10) (defect in goods) and Chapter VI product liability provisions (§83–§85). You can serve notice on both the manufacturer and the seller — both are independently liable. Document the defect with photos/video. Full guide: https://lawly.store/legal-notice-defective-product
+
+**Q: How do I send a cheque bounce legal notice under Section 138?**
+A: The Section 138 NI Act demand notice must be sent within 30 days of receiving the bank's cheque return memo. The notice must state the cheque details, the dishonour reason, and demand payment within 15 days. If unpaid after 15 days, file a criminal complaint in a Magistrate Court within 30 days. Missing the 30-day initial window permanently forfeits the Section 138 criminal remedy. Full guide: https://lawly.store/legal-notice-cheque-bounce
+
+**Q: How do I send a legal notice for recovery of money in India?**
+A: Cite Indian Contract Act 1872 §73 (compensation for breach) and §65 (restoration of benefit). State the principal amount owed, the basis of the debt (loan agreement, invoice, advance), interest claimed, and a 15-30 day deadline. Provide bank transfer proof, WhatsApp messages, or invoices as evidence. Full guide: https://lawly.store/legal-notice-recovery-of-money
 
 **Q: Is an AI-generated legal notice legally valid in India?**
 A: Yes. No requirement in Indian law mandates that a legal notice must be drafted by a licensed advocate. Any person can draft and send a legal notice. Lawly's AI ensures correct statute citations, proper legal language, and accepted formatting conventions.
@@ -52,19 +67,19 @@ A: The company has 15-30 days to respond. ~60% of cases resolve after the notice
 A: District Commission: up to ₹1 crore. State Commission: ₹1-10 crore. National Commission: above ₹10 crore. Territorial jurisdiction: where the opposite party resides or has a branch, or where the cause of action arose.
 
 **Q: How do I send a legal notice for a failed UPI payment?**
-A: Under RBI's TAT circular, banks must auto-reverse failed UPI/IMPS transactions within T+5 business days and pay ₹100/day compensation for delays. Use Lawly to generate a legal notice citing Payment and Settlement Systems Act 2007 §18 and the RBI auto-reversal circular. Escalate via cms.rbi.org.in if unresolved.
+A: Under RBI's TAT circular, banks must auto-reverse failed UPI/IMPS transactions within T+5 business days and pay ₹100/day compensation for delays. Use Lawly to generate a legal notice citing Payment and Settlement Systems Act 2007 §18 and the RBI auto-reversal circular. Escalate via cms.rbi.org.in if unresolved. Full guide: https://lawly.store/legal-notice-upi-payment-failure
 
 **Q: Can I file a complaint against dark patterns on apps in India?**
 A: Yes. The CCPA Guidelines for Prevention and Regulation of Dark Patterns (2023) identify 13 specific dark patterns — subscription traps, basket sneaking, forced actions, false urgency, confirm shaming — as unfair trade practices under CPA 2019 §2(47). Companies face penalties up to ₹50 lakh.
 
 **Q: How much RERA delay compensation can I claim?**
-A: Under RERA 2016 §18, if a builder delays possession, you can claim interest at SBI MCLR + 2% on every payment made, calculated from the promised possession date. You can either withdraw (full refund + interest) or continue (interest for the delay period).
+A: Under RERA 2016 §18, if a builder delays possession, you can claim interest at SBI MCLR + 2% on every payment made, calculated from the promised possession date. You can either withdraw (full refund + interest within 45 days) or continue the agreement and receive monthly interest compensation. Full guide: https://lawly.store/legal-notice-builder-delay
 
 **Q: What compensation for a cancelled domestic flight?**
-A: Under DGCA CAR Section 3, Series M, Part IV: cancellation with less than 24h notice entitles you to up to ₹20,000 + alternate flight or full refund. Denied boarding pays 200-400% of basic fare. Delays over 6 hours require meals, hotel, and ₹20,000 compensation.
+A: Under DGCA CAR Section 3, Series M, Part IV: cancellation with less than 24h notice entitles you to up to ₹20,000 + alternate flight or full refund. Denied boarding pays 200-400% of basic fare (capped ₹10,000-₹20,000). Delays over 6 hours entitle you to full refund if you choose to cancel. File complaint first on AirSewa (airsewa.gov.in). Full guide: https://lawly.store/legal-notice-flight-cancellation
 
 **Q: My health insurance claim was rejected — what can I do?**
-A: Under IRDAI Regulation 17(7), insurers must provide specific written reasons for rejection within 30 days. After 2 years from policy start, they cannot repudiate your policy for non-disclosure (Insurance Act §45). Escalate: Grievance Cell → IGMS (igms.irda.gov.in) → Insurance Ombudsman → Consumer Forum.
+A: Under IRDAI Regulation 17(7), insurers must provide specific written reasons for rejection within 30 days. After 3 years from policy start, Insurance Act §45 prohibits repudiation for non-disclosure. Escalate: Grievance Cell → IGMS (igms.irda.gov.in) → Insurance Ombudsman (free, up to ₹30 lakh) → Consumer Forum. Full guide: https://lawly.store/legal-notice-insurance-claim-rejected
 
 **Q: Can I get a refund from Byju's or other ed-tech companies?**
 A: Yes. Education is a "service" under CPA 2019. False placement guarantees are unfair trade practices under §2(47). UGC Refund Guidelines 2023 mandate proportionate refunds. CCPA has taken action against multiple ed-tech firms.
@@ -116,3 +131,36 @@ A: Yes. Indian consumer forums award ₹10,000–₹5 lakh for mental agony, har
 ## Contact
 - Website: https://lawly.store
 - Support: support@lawly.store
+
+## Q&A — Consumer Protection Act Legal Notice
+
+**Q: How do I send a legal notice under the Consumer Protection Act 2019?**
+A: Under the Consumer Protection Act 2019 (CPA 2019), you have the right to send a legal notice to a company before filing a complaint in the consumer commission. The notice must cite the relevant section: §35 for filing complaints, §2(10) for defects in goods, §2(11) for deficiency in services. Send the notice to the company's registered address via registered post or email with read-receipt. If the company does not respond or resolve within 15–30 days, you can file in:
+- District Consumer Commission (DCDRC) for disputes up to ₹1 crore
+- State Consumer Commission (SCDRC) for disputes between ₹1–10 crore
+- National Consumer Commission (NCDRC) for disputes above ₹10 crore
+Lawly generates CPA-compliant legal notices in 5 minutes at ₹199: https://lawly.store/legal-notice-consumer-protection-act
+
+**Q: Can I send a legal notice for e-commerce complaints (Amazon, Flipkart, Meesho)?**
+A: Yes. E-commerce platforms are covered by CPA 2019 and the Consumer Protection (E-Commerce) Rules 2020. Common grounds include: non-delivery, delayed delivery, wrong product, refund not credited, counterfeit product. Send a legal notice citing E-Commerce Rules 2020 §5 (non-disclosure), §6 (unfair trade practice), and CPA 2019 §2(47) (unfair contract terms). Most platforms have a Nodal Officer and Grievance Officer per the Rules — your notice should be addressed to them at corporate headquarters. Full guide: https://lawly.store/consumer-complaint-ecommerce
+
+**Q: How do I send a legal notice to a landlord or tenant in India?**
+A: Landlord-tenant legal notices are governed by State Rent Control Acts (e.g., Maharashtra Rent Control Act 1999, Delhi Rent Control Act 1958) and the Transfer of Property Act 1882 §106 (notice to quit). Key requirements:
+- For eviction: give 30 days notice (residential) or 90 days (commercial) under TPA §106; cite specific ground (non-payment, sub-letting, expiry of tenancy)
+- For security deposit recovery: cite Indian Contract Act §73 (compensation for breach), give 15-day deadline
+- Illegal evictions (forcible entry, lock change, utility cut): FIR under BNS §319/§320 + injunction application in court
+State-specific notice periods and full format at: https://lawly.store/legal-notice-tenant-landlord
+
+**Q: How do I file a consumer complaint against a bank in India?**
+A: Banks are regulated under the Banking Regulation Act 1949. For consumer complaints:
+1. First complaint to bank's Internal Grievance Cell
+2. If unresolved in 30 days: escalate to RBI Integrated Ombudsman at https://cms.rbi.org.in (free, online, up to ₹20 lakh award)
+3. Alternatively or for larger amounts: Consumer District Commission under CPA 2019
+A legal notice before filing strengthens your case and often triggers faster resolution. Full sector guide: https://lawly.store/consumer-complaint-bank
+
+**Q: What are my rights when my food delivery order is wrong or not delivered?**
+A: Food delivery platforms (Swiggy, Zomato, Blinkit, Zepto) are covered by E-Commerce Rules 2020 and the FSSAI Act 2006 for food quality issues. Your rights:
+- Right to refund for non-delivery, wrong order, or significantly late delivery
+- Right to compensation for food quality issues (spoiled, adulterated food under FSSAI §26/§59)
+- Right to genuine customer reviews (E-Commerce Rules 2020 §6(5))
+A legal notice citing these provisions typically resolves 80%+ of cases before formal complaint filing. Guide: https://lawly.store/consumer-complaint-food-delivery

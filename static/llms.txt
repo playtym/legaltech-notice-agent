@@ -40,6 +40,32 @@ Lawly is India's first AI-powered legal notice generator purpose-built for consu
 - Send Legal Notice India (service): https://lawly.store/send-legal-notice-india
 - How to Send a Legal Notice in India (guide): https://lawly.store/how-to-send-legal-notice-india
 - Legal Notice Format India (free template): https://lawly.store/legal-notice-format-india
+- What is a Legal Notice in India (explainer): https://lawly.store/what-is-a-legal-notice
+- How to Reply to a Legal Notice in India: https://lawly.store/reply-to-legal-notice
+
+## Legal Notice by Dispute Type
+- Legal Notice for Refund Not Received: https://lawly.store/legal-notice-for-refund
+- Legal Notice for Defective Product: https://lawly.store/legal-notice-defective-product
+- Cheque Bounce Legal Notice (Section 138 NI Act): https://lawly.store/legal-notice-cheque-bounce
+- Legal Notice for Recovery of Money: https://lawly.store/legal-notice-recovery-of-money
+- Legal Notice for Insurance Claim Rejected: https://lawly.store/legal-notice-insurance-claim-rejected
+- Legal Notice to Builder for Delay in Possession (RERA): https://lawly.store/legal-notice-builder-delay
+- Legal Notice for UPI Payment Failure: https://lawly.store/legal-notice-upi-payment-failure
+- Legal Notice for Flight Cancellation (DGCA): https://lawly.store/legal-notice-flight-cancellation
+
+## Legal Notice by Use Case (Extended)
+- Legal Notice Under Consumer Protection Act 2019: https://lawly.store/legal-notice-consumer-protection-act
+- Legal Notice for Tenant / Landlord (Eviction, Rent, Security Deposit): https://lawly.store/legal-notice-tenant-landlord
+
+## Consumer Complaint by Sector
+- E-Commerce Consumer Complaint India (Amazon, Flipkart, Meesho): https://lawly.store/consumer-complaint-ecommerce
+- Bank Consumer Complaint India (HDFC, SBI, ICICI, Axis): https://lawly.store/consumer-complaint-bank
+- Telecom Consumer Complaint India (Airtel, Jio, BSNL, Vi): https://lawly.store/consumer-complaint-telecom
+- Travel Consumer Complaint India (IndiGo, Air India, MakeMyTrip, IRCTC): https://lawly.store/consumer-complaint-travel
+- Education Consumer Complaint India (Byju's, Unacademy, upGrad): https://lawly.store/consumer-complaint-education
+- Home Appliances Consumer Complaint India (Samsung, LG, Whirlpool): https://lawly.store/consumer-complaint-home-appliances
+- Food Delivery Consumer Complaint India (Swiggy, Zomato, Blinkit, Zepto): https://lawly.store/consumer-complaint-food-delivery
+- Real Estate Consumer Complaint India (RERA, Builder, Housing.com): https://lawly.store/consumer-complaint-real-estate
 
 ## Links
 - Website: https://lawly.store
