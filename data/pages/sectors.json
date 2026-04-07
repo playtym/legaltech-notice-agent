@@ -1,0 +1,566 @@
+{
+  "bank": {
+    "slug": "bank",
+    "title": "Bank Consumer Complaint",
+    "h1": "Bank Consumer Complaint in {city}",
+    "meta_desc": "File a consumer complaint against banks in {city} for fraud, mis-selling, or poor service. Get ₹199 Lawly legal notice in minutes.",
+    "regulator": "Reserve Bank of India (RBI) + DCDRC",
+    "governing_law": "Consumer Protection Act 2019, Banking Regulation Act 1949",
+    "governing_law_short": "CPA 2019 + Banking Regulation Act",
+    "regulator_url": "https://sachet.rbi.org.in",
+    "regulator_name": "RBI Sachet / Banking Ombudsman",
+    "top_companies": ["SBI", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank", "Bank of Baroda", "Punjab National Bank", "Yes Bank"],
+    "key_rights": [
+      "Right to full disclosure of all loan charges and processing fees",
+      "Right to compensation for unauthorised transactions within 48 hours",
+      "Right to reverse mis-sold insurance products bundled with loans",
+      "Right to receive NPA notice 60 days before account classification"
+    ],
+    "common_complaints": [
+      "Unauthorised debit / ATM fraud",
+      "Mis-sold credit card insurance or ULIPs",
+      "Excessive EMI bounce charges",
+      "Wrong CIBIL/credit score reporting",
+      "Account frozen without notice"
+    ],
+    "steps": [
+      "Send a legal notice to the bank's Nodal Officer",
+      "File complaint on RBI Sachet portal (sachet.rbi.org.in)",
+      "Approach Banking Ombudsman if no resolution in 30 days",
+      "File at DCDRC in {city} for compensation"
+    ],
+    "time_limit": "2 years from date of deficiency of service",
+    "compensation": "Up to ₹1 crore + legal costs + mental harassment",
+    "faqs": [
+      {
+        "q": "Can I file a consumer complaint against a private bank in {city}?",
+        "a": "Yes. Both public and private banks are covered under the Consumer Protection Act 2019. You can file at the District Consumer Disputes Redressal Commission (DCDRC) in {city}."
+      },
+      {
+        "q": "How long does a bank consumer complaint take in {city}?",
+        "a": "DCDRC is mandated to resolve within 90 days. Banking Ombudsman takes 30–60 days. A legal notice often triggers settlement within 15 days."
+      },
+      {
+        "q": "Is a lawyer required to file a consumer complaint against a bank in {city}?",
+        "a": "No. You can self-represent at DCDRC. Lawly's AI-drafted legal notice (₹199) is the fastest first step."
+      }
+    ]
+  },
+  "insurance": {
+    "slug": "insurance",
+    "title": "Insurance Consumer Complaint",
+    "h1": "Insurance Consumer Complaint in {city}",
+    "meta_desc": "Send a legal notice to LIC, Star Health, or any insurer in {city} for claim rejection or delay. Lawly from ₹199.",
+    "regulator": "Insurance Regulatory and Development Authority of India (IRDAI)",
+    "governing_law": "Consumer Protection Act 2019, Insurance Act 1938",
+    "governing_law_short": "CPA 2019 + Insurance Act 1938",
+    "regulator_url": "https://bimabharosa.irdai.gov.in",
+    "regulator_name": "IRDAI Bima Bharosa / Insurance Ombudsman",
+    "top_companies": ["LIC", "Star Health", "HDFC Life", "ICICI Lombard", "New India Assurance", "Bajaj Allianz", "United India Insurance", "National Insurance"],
+    "key_rights": [
+      "Right to claim settlement within 30 days of receiving final survey report",
+      "Right to 2% interest per month on delayed claim settlement",
+      "Right to written reasons for any claim rejection",
+      "Right to free-look cancellation within 30 days of policy receipt"
+    ],
+    "common_complaints": [
+      "Health claim rejected for 'pre-existing condition' without disclosure",
+      "Life insurance claim indefinitely delayed",
+      "Motor insurance claim undervalued",
+      "Policy mis-sold by agent",
+      "Cashless hospitalisation denied last minute"
+    ],
+    "steps": [
+      "Send a legal notice to the insurer's Grievance Officer",
+      "File complaint on IRDAI Bima Bharosa portal",
+      "Approach Insurance Ombudsman (free, up to ₹50 lakh)",
+      "File at DCDRC in {city} for higher amounts or compensation"
+    ],
+    "time_limit": "2 years from date of claim rejection",
+    "compensation": "Claim amount + 2% monthly interest + ₹25,000–₹2 lakh mental agony",
+    "faqs": [
+      {
+        "q": "Can I file a consumer complaint against LIC in {city}?",
+        "a": "Yes. LIC is covered under the Consumer Protection Act 2019. You can file at the DCDRC in {city} or approach the Insurance Ombudsman free of charge for claims up to ₹50 lakh."
+      },
+      {
+        "q": "What can I get if my health insurance claim is wrongly rejected?",
+        "a": "You can claim the full claim amount + 2% monthly interest on delay + compensation for mental agony (typically ₹25,000–₹2 lakh) + litigation costs at DCDRC {city}."
+      },
+      {
+        "q": "How quickly does a legal notice resolve an insurance dispute?",
+        "a": "In most cases, sending a properly drafted legal notice to the insurer's Grievance Officer resolves the matter in 15–30 days before any forum is approached."
+      }
+    ]
+  },
+  "ecommerce": {
+    "slug": "ecommerce",
+    "title": "E-Commerce Consumer Complaint",
+    "h1": "E-Commerce Consumer Complaint in {city}",
+    "meta_desc": "File a consumer complaint against Amazon, Flipkart, Meesho in {city} for refund delays or fake products. Lawly from ₹199.",
+    "regulator": "National Consumer Helpline + DCDRC",
+    "governing_law": "Consumer Protection Act 2019, E-Commerce Rules 2020",
+    "governing_law_short": "CPA 2019 + E-Commerce Rules 2020",
+    "regulator_url": "https://consumerhelpline.gov.in",
+    "regulator_name": "National Consumer Helpline (1915)",
+    "top_companies": ["Amazon", "Flipkart", "Meesho", "Myntra", "Snapdeal", "Nykaa", "Ajio", "Tata Cliq"],
+    "key_rights": [
+      "Right to refund within the platform's stated refund policy (enforceable)",
+      "Right to compensation for counterfeit or defective goods",
+      "Right to full product disclosure before purchase",
+      "Right to safe delivery and compensation for damage in transit"
+    ],
+    "common_complaints": [
+      "Refund not processed after cancellation",
+      "Counterfeit or fake product delivered",
+      "Item not delivered but marked as delivered",
+      "Wrong item delivered and return rejected",
+      "Excessive delivery charges not disclosed"
+    ],
+    "steps": [
+      "Send a legal notice to the platform's Grievance Officer",
+      "File on National Consumer Helpline (1915 / consumerhelpline.gov.in)",
+      "File at DCDRC in {city} for unresolved complaints",
+      "Claim compensation for mental agony and loss"
+    ],
+    "time_limit": "2 years from date of purchase / non-delivery",
+    "compensation": "Full refund + replacement value + ₹10,000–₹1 lakh for harassment",
+    "faqs": [
+      {
+        "q": "Can I file a consumer complaint against Amazon India in {city}?",
+        "a": "Yes. Amazon India (Amazon Seller Services Pvt. Ltd.) is covered under the Consumer Protection Act 2019 and E-Commerce Rules 2020. You can file at DCDRC in {city}."
+      },
+      {
+        "q": "What if the e-commerce platform refuses my refund?",
+        "a": "Send a legal notice to Amazon/Flipkart's Grievance Officer (available on their website). If no response in 30 days, file at DCDRC {city}. Courts consistently award refunds + compensation."
+      },
+      {
+        "q": "Does DCDRC in {city} handle online shopping complaints?",
+        "a": "Yes. Under CPA 2019, you can file in the city where you live (your residential address), not where the company is registered."
+      }
+    ]
+  },
+  "telecom": {
+    "slug": "telecom",
+    "title": "Telecom Consumer Complaint",
+    "h1": "Telecom Consumer Complaint in {city}",
+    "meta_desc": "File a consumer complaint against Airtel, Jio, Vi in {city} for call drops, billing errors, or service issues. Lawly from ₹199.",
+    "regulator": "Telecom Regulatory Authority of India (TRAI)",
+    "governing_law": "Consumer Protection Act 2019, TRAI Act 1997, Telecom Consumer Protection Regulations 2012",
+    "governing_law_short": "CPA 2019 + TRAI Regulations 2012",
+    "regulator_url": "https://pgportal.gov.in",
+    "regulator_name": "TRAI / DoT Grievance Portal",
+    "top_companies": ["Airtel", "Jio", "Vi (Vodafone Idea)", "BSNL", "Tata Communications", "ACT Fibernet", "Hathway"],
+    "key_rights": [
+      "Right to 7-day free trial for new connections before commitment",
+      "Right to pro-rated refund on prepaid balance under TRAI rules",
+      "Right to free port-out (MNP) without any cancellation charges",
+      "Right to service credits for persistent call drops or outages"
+    ],
+    "common_complaints": [
+      "Excessive or incorrect billing",
+      "Call drops / poor network quality",
+      "Broadband speed far below committed speed",
+      "Unauthorised value-added service (VAS) charges",
+      "MNP transfer denial or delay"
+    ],
+    "steps": [
+      "Send a legal notice to the telecom operator's Nodal Officer",
+      "File complaint on TRAI / DoT grievance portal",
+      "Approach TDSAT if TRAI resolution unsatisfactory",
+      "File at DCDRC in {city} for compensation"
+    ],
+    "time_limit": "2 years from date of service deficiency",
+    "compensation": "Refund of overcharges + ₹10,000–₹50,000 for harassment",
+    "faqs": [
+      {
+        "q": "Can I file a consumer complaint against Airtel or Jio in {city}?",
+        "a": "Yes. Telecom companies are covered under the Consumer Protection Act 2019. DCDRC in {city} has jurisdiction because you receive the service at your {city} address."
+      },
+      {
+        "q": "What if my internet speed is much lower than promised?",
+        "a": "Use TRAI MySpeed app to record speed tests. Send a legal notice citing TRAI's Quality of Service (QoS) regulations. Courts in {city} have awarded refunds and compensation for persistent slow speeds."
+      },
+      {
+        "q": "Can I get compensation for call drops?",
+        "a": "Yes. TRAI QoS regulations mandate minimum standards. Persistent call drops constitute a deficiency of service. File at DCDRC {city} for monthly plan refund + mental agony compensation."
+      }
+    ]
+  },
+  "airline": {
+    "slug": "airline",
+    "title": "Airline Consumer Complaint",
+    "h1": "Airline Consumer Complaint in {city}",
+    "meta_desc": "Send a legal notice for flight cancellation, delay, or refund denial against IndiGo, Air India, SpiceJet in {city}. Lawly from ₹199.",
+    "regulator": "Directorate General of Civil Aviation (DGCA)",
+    "governing_law": "Consumer Protection Act 2019, DGCA Civil Aviation Requirements (CAR), Montreal Convention",
+    "governing_law_short": "CPA 2019 + DGCA CAR + Montreal Convention",
+    "regulator_url": "https://airlinecomplaints.dgca.gov.in",
+    "regulator_name": "DGCA Airline Complaints Portal",
+    "top_companies": ["IndiGo", "Air India", "SpiceJet", "Vistara", "GoFirst", "Akasa Air", "Air Asia India", "Star Air"],
+    "key_rights": [
+      "Right to full refund for airline-cancelled flights within 7 days",
+      "Right to meal vouchers for delays over 2 hours (DGCA CAR)",
+      "Right to compensation of ₹5,000–₹10,000 for denied boarding",
+      "Right to ₹3,500–₹7,500 for baggage loss/damage (domestic flights)"
+    ],
+    "common_complaints": [
+      "Flight cancelled without adequate notice or refund",
+      "Refund not processed after cancellation",
+      "Long delay without meals or hotel accommodation",
+      "Denied boarding despite confirmed ticket",
+      "Baggage lost or damaged"
+    ],
+    "steps": [
+      "Send a legal notice to the airline's Grievance Officer",
+      "File complaint on DGCA Airline Complaints portal",
+      "Approach National Consumer Helpline (1915)",
+      "File at DCDRC in {city} for full compensation"
+    ],
+    "time_limit": "2 years from date of flight / incident",
+    "compensation": "Ticket refund + DGCA mandated amounts + ₹25,000–₹1 lakh harassment",
+    "faqs": [
+      {
+        "q": "Can I file a consumer complaint against IndiGo or Air India in {city}?",
+        "a": "Yes. Airlines are covered under the Consumer Protection Act 2019. You can file at DCDRC in {city} since the service was to be received at your departure/arrival city."
+      },
+      {
+        "q": "My flight was cancelled and I got no refund. What can I claim?",
+        "a": "Full ticket refund + DGCA-mandated compensation (₹5,000–₹10,000) + compensation for hotel/rebooking costs + mental agony at DCDRC {city}."
+      },
+      {
+        "q": "How fast can I get money back from an airline in {city}?",
+        "a": "A Lawly legal notice (₹199) typically prompts airlines to process the refund within 15 days. If ignored, DCDRC {city} orders refund + interest + compensation."
+      }
+    ]
+  },
+  "realestate": {
+    "slug": "realestate",
+    "title": "Real Estate / Builder Consumer Complaint",
+    "h1": "Builder Consumer Complaint in {city}",
+    "meta_desc": "File a RERA complaint or consumer complaint against builders in {city} for delayed possession or wrong promises. Lawly from ₹199.",
+    "regulator": "Real Estate Regulatory Authority (RERA)",
+    "governing_law": "RERA Act 2016, Consumer Protection Act 2019",
+    "governing_law_short": "RERA Act 2016 + CPA 2019",
+    "regulator_url": "https://rera.india.gov.in",
+    "regulator_name": "State RERA Authority",
+    "top_companies": ["DLF", "Godrej Properties", "Sobha Developers", "Prestige Group", "Brigade Group", "Puravankara", "Oberoi Realty", "Mahindra Lifespaces"],
+    "key_rights": [
+      "Right to 5% interest per annum on deposited amount for delayed possession",
+      "Right to refund with interest if builder fails to deliver",
+      "Right to RERA-registered project details and approvals",
+      "Right to no unilateral changes to approved plans"
+    ],
+    "common_complaints": [
+      "Possession delayed beyond agreed date",
+      "Builder demanding extra charges not in agreement",
+      "Construction quality defects (structural defects for 5 years)",
+      "Agreement for sale not provided",
+      "Project not registered under RERA"
+    ],
+    "steps": [
+      "Send a legal notice to the builder's Managing Director",
+      "File complaint with State RERA Authority in {state}",
+      "Approach DCDRC in {city} if RERA not applicable or additional compensation needed",
+      "Claim interest + compensation + refund"
+    ],
+    "time_limit": "3 years under RERA; 2 years at DCDRC",
+    "compensation": "Full refund with 5% interest + ₹50,000–₹5 lakh mental agony",
+    "faqs": [
+      {
+        "q": "Should I approach RERA or consumer court in {city} for a builder complaint?",
+        "a": "RERA is faster for possession delays and financial penalties. DCDRC in {city} also has jurisdiction and can award larger mental agony compensation. Many homebuyers file in both."
+      },
+      {
+        "q": "Can I get my investment back if the builder defaults in {city}?",
+        "a": "Yes. Under RERA, you can get full refund + 5% interest per annum. DCDRC {city} can additionally award compensation for mental harassment and loss of rental income."
+      },
+      {
+        "q": "Is a legal notice effective against builders in {city}?",
+        "a": "Yes. Builders often settle after a properly drafted legal notice to avoid RERA scrutiny. Lawly's ₹199 notice is the fastest and cheapest first step before filing a formal complaint."
+      }
+    ]
+  },
+  "automobile": {
+    "slug": "automobile",
+    "title": "Automobile Consumer Complaint",
+    "h1": "Automobile / Car Consumer Complaint in {city}",
+    "meta_desc": "File a consumer complaint against Maruti, Hyundai, Tata Motors in {city} for manufacturing defects or service issues. Lawly from ₹199.",
+    "regulator": "National Consumer Disputes Redressal Commission + DCDRC",
+    "governing_law": "Consumer Protection Act 2019 (§83-87 product liability)",
+    "governing_law_short": "CPA 2019 §83–87 (Product Liability)",
+    "regulator_url": "https://consumerhelpline.gov.in",
+    "regulator_name": "National Consumer Helpline (1915)",
+    "top_companies": ["Maruti Suzuki", "Hyundai", "Tata Motors", "Mahindra", "Honda", "Toyota Kirloskar", "Kia", "MG Motor", "TVS", "Hero MotoCorp"],
+    "key_rights": [
+      "Right to replacement or full refund for a vehicle with manufacturing defect",
+      "Right to free repairs during warranty period",
+      "Right to proper disclosure of recall notices",
+      "Right to product liability compensation under CPA 2019 §83"
+    ],
+    "common_complaints": [
+      "Manufacturing defect not acknowledged by dealer",
+      "Warranty claim rejected for minor reasons",
+      "Excessive service costs beyond estimate",
+      "Vehicle not fixed after multiple service visits",
+      "Accident due to manufacturing fault"
+    ],
+    "steps": [
+      "Send a legal notice to the dealer + manufacturer's Customer Care Head",
+      "File complaint on National Consumer Helpline (1915)",
+      "Get expert report documenting the manufacturing defect",
+      "File at DCDRC in {city} for replacement / refund"
+    ],
+    "time_limit": "2 years from date of defect discovery",
+    "compensation": "Full vehicle cost refund OR replacement + ₹50,000–₹3 lakh harassment",
+    "faqs": [
+      {
+        "q": "Can I get my car replaced if it has a manufacturing defect in {city}?",
+        "a": "Yes. Under CPA 2019 §83 (product liability), you can claim a full replacement or refund. DCDRC {city} has repeatedly ordered car replacements against Maruti, Hyundai, and Tata Motors."
+      },
+      {
+        "q": "My warranty was rejected on a technicality. Can I fight this in {city}?",
+        "a": "Yes. Courts in {city} have consistently held that warranty terms cannot be used to defeat legitimate defect claims. A Lawly legal notice creates a formal record before you file."
+      },
+      {
+        "q": "Do I need an expert report to file an automobile complaint?",
+        "a": "Not for filing — but it strengthens your case significantly. DCDRC {city} can appoint a court commissioner to inspect the vehicle if you request it."
+      }
+    ]
+  },
+  "medical": {
+    "slug": "medical",
+    "title": "Medical Negligence Consumer Complaint",
+    "h1": "Medical Negligence Consumer Complaint in {city}",
+    "meta_desc": "File a consumer complaint for medical negligence against hospitals in {city}. Get Lawly legal notice from ₹199.",
+    "regulator": "National Medical Commission (NMC) + State Medical Council",
+    "governing_law": "Consumer Protection Act 2019; IMA v. VP Shantha (1995 SC); NMC Act 2020",
+    "governing_law_short": "CPA 2019 + IMA v. VP Shantha (1995 SC)",
+    "regulator_url": "https://www.nmc.org.in",
+    "regulator_name": "National Medical Commission / State Medical Council",
+    "top_companies": ["Apollo Hospitals", "Fortis Healthcare", "Max Healthcare", "Medanta", "Narayana Health", "Manipal Hospitals", "AIIMS", "KIMS Hospitals"],
+    "key_rights": [
+      "Right to receive full treatment details and medical records within 72 hours",
+      "Right to prior informed consent before any procedure",
+      "Right to compensation for negligence under both CPA and tort law",
+      "Right to second opinion without denial of primary treatment"
+    ],
+    "common_complaints": [
+      "Wrong diagnosis leading to unnecessary surgery",
+      "Medication errors causing additional harm",
+      "Operation theatre negligence",
+      "Failure to obtain informed consent",
+      "Withholding medical records and reports"
+    ],
+    "steps": [
+      "Obtain all medical records immediately (request formally in writing)",
+      "Send legal notice to the hospital's Medical Superintendent",
+      "File complaint with State Medical Council for license action",
+      "File at DCDRC in {city} for compensation"
+    ],
+    "time_limit": "2 years from date of negligent act or discovery",
+    "compensation": "Treatment costs + income loss + ₹2 lakh–₹5 crore depending on severity",
+    "faqs": [
+      {
+        "q": "Are doctors and private hospitals covered under consumer law in {city}?",
+        "a": "Yes. Since IMA v. VP Shantha (1995 SC), medical services are covered under the Consumer Protection Act 2019. DCDRC {city} has jurisdiction to award compensation against any private hospital."
+      },
+      {
+        "q": "What proof do I need for a medical negligence complaint in {city}?",
+        "a": "Hospital medical records, discharge summary, prescriptions, and ideally an independent medical expert opinion. DCDRC {city} can also appoint a medical expert as court commissioner."
+      },
+      {
+        "q": "Can I file alone or do I need a lawyer for medical negligence in {city}?",
+        "a": "You can self-represent at DCDRC {city}. However, for higher-value claims (above ₹20 lakh), engaging a consumer lawyer in {city} is advisable. Lawly's legal notice (₹199) is the best first step."
+      }
+    ]
+  },
+  "courier": {
+    "slug": "courier",
+    "title": "Courier / Logistics Consumer Complaint",
+    "h1": "Courier Consumer Complaint in {city}",
+    "meta_desc": "File a consumer complaint against Blue Dart, DTDC, Delhivery in {city} for lost or damaged shipment. Lawly from ₹199.",
+    "regulator": "Department of Posts + DCDRC",
+    "governing_law": "Consumer Protection Act 2019, Indian Contract Act 1872",
+    "governing_law_short": "CPA 2019 + Indian Contract Act",
+    "regulator_url": "https://consumerhelpline.gov.in",
+    "regulator_name": "National Consumer Helpline (1915)",
+    "top_companies": ["Blue Dart", "DTDC", "Delhivery", "FedEx India", "DHL India", "Ecom Express", "XpressBees", "India Post"],
+    "key_rights": [
+      "Right to compensation for full declared value of lost shipment",
+      "Right to reject liability-cap clauses that violate CPA 2019",
+      "Right to compensation for consequential losses from courier delay",
+      "Right to documented proof of delivery or acknowledgement of non-delivery"
+    ],
+    "common_complaints": [
+      "Shipment lost entirely",
+      "Package delivered damaged",
+      "Delivery delayed causing business losses",
+      "Shipment marked delivered but not received",
+      "Courier refusing to pay beyond artificial liability cap"
+    ],
+    "steps": [
+      "Send a legal notice to the courier company's Grievance Officer",
+      "File complaint on National Consumer Helpline (1915)",
+      "File at DCDRC in {city} for full declared value + damages",
+      "Challenge artificial liability-cap clauses as unfair trade practice"
+    ],
+    "time_limit": "2 years from date of non-delivery or damage",
+    "compensation": "Full shipment value + consequential losses + ₹5,000–₹50,000 for harassment",
+    "faqs": [
+      {
+        "q": "Can I file a consumer complaint against Blue Dart or DTDC in {city}?",
+        "a": "Yes. Courier services are covered under the Consumer Protection Act 2019. You can file at DCDRC in {city} since you are the sender/receiver in {city}."
+      },
+      {
+        "q": "The courier says their liability is capped at ₹500. Is that valid?",
+        "a": "No. Consumer courts in {city} and across India have consistently held that artificial liability caps in courier T&C are an unfair trade practice under CPA 2019 §2(47). You can claim full value."
+      },
+      {
+        "q": "My package was marked delivered but I never received it. What can I do?",
+        "a": "File a police complaint (FIR) and simultaneously send a Lawly legal notice (₹199) to the courier demanding GPS records and proof of delivery. Then file at DCDRC {city}."
+      }
+    ]
+  },
+  "food": {
+    "slug": "food",
+    "title": "Food Delivery Consumer Complaint",
+    "h1": "Food Delivery Consumer Complaint in {city}",
+    "meta_desc": "File a consumer complaint against Zomato or Swiggy in {city} for food quality or delivery issues. Lawly from ₹199.",
+    "regulator": "FSSAI + DCDRC",
+    "governing_law": "Consumer Protection Act 2019, Food Safety and Standards Act 2006",
+    "governing_law_short": "CPA 2019 + FSSAI Act 2006",
+    "regulator_url": "https://foscos.fssai.gov.in",
+    "regulator_name": "FSSAI / National Consumer Helpline (1915)",
+    "top_companies": ["Zomato", "Swiggy", "McDonald's", "Domino's", "Pizza Hut", "KFC", "Burger King", "Blinkit", "Zepto"],
+    "key_rights": [
+      "Right to food that meets FSSAI safety standards",
+      "Right to accurate ingredient and allergen disclosure",
+      "Right to full refund for spoiled or contaminated food",
+      "Right to compensation for food poisoning causing health harm"
+    ],
+    "common_complaints": [
+      "Food delivered cold, spoiled, or wrong order",
+      "Foreign object found in food",
+      "Food poisoning after delivery",
+      "Refund rejected by platform",
+      "Restaurant misrepresenting food content (veg/non-veg)"
+    ],
+    "steps": [
+      "Photograph and preserve evidence of defective food",
+      "Send a legal notice to the platform's Grievance Officer",
+      "File complaint with FSSAI if food safety standards breached",
+      "File at DCDRC in {city} for compensation"
+    ],
+    "time_limit": "2 years from date of incident",
+    "compensation": "Full refund + medical expenses + ₹10,000–₹1 lakh mental agony",
+    "faqs": [
+      {
+        "q": "Can I file a consumer complaint against Zomato or Swiggy in {city}?",
+        "a": "Yes. Zomato India Pvt. Ltd. and Bundl Technologies Pvt. Ltd. (Swiggy) are covered under CPA 2019. DCDRC {city} has jurisdiction since you ordered from {city}."
+      },
+      {
+        "q": "I got food poisoning from a Swiggy order. What can I claim?",
+        "a": "Medical treatment costs + 3× the order value as minimum compensation + mental agony damages at DCDRC {city}. Preserve doctor prescriptions and the food packaging."
+      },
+      {
+        "q": "Zomato denied my refund for a wrong order. What next?",
+        "a": "Send a Lawly legal notice (₹199) to Zomato's Grievance Officer. If unresolved in 15 days, file at DCDRC {city}. Courts have consistently ordered refunds + compensation of ₹5,000–₹15,000."
+      }
+    ]
+  },
+  "education": {
+    "slug": "education",
+    "title": "Education / College Fee Refund Consumer Complaint",
+    "h1": "Education Consumer Complaint in {city}",
+    "meta_desc": "Get coaching fee refund or file a complaint against your college or coaching centre in {city}. Lawly from ₹199.",
+    "regulator": "University Grants Commission (UGC) + DCDRC",
+    "governing_law": "Consumer Protection Act 2019, UGC Fee Refund Policy 2023",
+    "governing_law_short": "CPA 2019 + UGC Fee Refund Policy 2023",
+    "regulator_url": "https://grievance.ugc.ac.in",
+    "regulator_name": "UGC Grievance Portal / National Consumer Helpline",
+    "top_companies": ["BYJU'S", "Unacademy", "Allen Career Institute", "Aakash Institute", "Vedantu", "FIITJEE", "IMS", "Career Launcher"],
+    "key_rights": [
+      "Right to full fee refund (minus processing) if you cancel before 15 days of class start (UGC 2023)",
+      "Right to proportionate refund under UGC policy even mid-term for genuine medical reasons",
+      "Right to receive promised faculty, infrastructure, and course materials",
+      "Right to fee receipt and written agreement for coaching services"
+    ],
+    "common_complaints": [
+      "Coaching centre refusing fee refund on cancellation",
+      "Promised faculty / online content not delivered",
+      "College deducting more than UGC permits on withdrawal",
+      "Diploma / certification not issued after course completion",
+      "Online course platform subscription not refunded after technical failure"
+    ],
+    "steps": [
+      "Send a legal notice to the institution's Director / CEO",
+      "File complaint on UGC Grievance Portal (grievance.ugc.ac.in)",
+      "File at DCDRC in {city} citing UGC fee refund policy",
+      "Claim full fee + mental agony compensation"
+    ],
+    "time_limit": "2 years from date of fee payment / breach",
+    "compensation": "Full fee refund + ₹10,000–₹1 lakh mental agony",
+    "faqs": [
+      {
+        "q": "Can I get a refund from a coaching centre in {city}?",
+        "a": "Yes. Coaching centres are covered under the Consumer Protection Act 2019. UGC's fee refund policy (updated 2023) provides a tiered refund schedule based on timing of withdrawal."
+      },
+      {
+        "q": "My college in {city} won't refund my fees even though I withdrew. What can I do?",
+        "a": "Send a legal notice citing UGC Circular F.No.1-3/2022(CPP-II). If the college doesn't respond within 15 days, file at DCDRC {city}. Courts have ordered full fee refunds + compensation."
+      },
+      {
+        "q": "BYJU'S sold me an expensive course that doesn't work. Can I get a refund in {city}?",
+        "a": "Yes. DCDRC courts across India have ordered BYJU'S to refund fees due to mis-selling and non-delivery of promised content. A Lawly legal notice is your fastest first step."
+      }
+    ]
+  },
+  "electricity": {
+    "slug": "electricity",
+    "title": "Electricity Board Consumer Complaint",
+    "h1": "Electricity Consumer Complaint in {city}",
+    "meta_desc": "File a consumer complaint against your electricity board in {city} for overbilling or wrong meter reading. Lawly from ₹199.",
+    "regulator": "State Electricity Regulatory Commission (SERC)",
+    "governing_law": "Consumer Protection Act 2019, Electricity Act 2003",
+    "governing_law_short": "CPA 2019 + Electricity Act 2003",
+    "regulator_url": "https://www.cercind.gov.in",
+    "regulator_name": "State Electricity Regulatory Commission",
+    "top_companies": ["BESCOM", "MSEDCL", "BSES", "Tata Power", "Adani Electricity", "TNEB", "APSPDCL", "UHBVN"],
+    "key_rights": [
+      "Right to accurate billing based on meter reading",
+      "Right to meter testing at your request (Electricity Act §55)",
+      "Right to compensation for power outages beyond 4 hours (SERC norms)",
+      "Right to new connection within 30 days of application"
+    ],
+    "common_complaints": [
+      "Excessively high electricity bill",
+      "Defective or tampered meter",
+      "Long power cuts without notice",
+      "Wrong meter reading repeated billing",
+      "New connection application delayed beyond 30 days"
+    ],
+    "steps": [
+      "Send a legal notice to the local DISCOM's Grievance Officer",
+      "File complaint with State Electricity Regulatory Commission",
+      "Approach Electricity Ombudsman (free)",
+      "File at DCDRC in {city} for compensation"
+    ],
+    "time_limit": "2 years from date of defective billing / service failure",
+    "compensation": "Overbilled amount refund + interest + ₹5,000–₹25,000 harassment",
+    "faqs": [
+      {
+        "q": "Can I challenge my electricity bill at a consumer court in {city}?",
+        "a": "Yes. Electricity distribution companies are covered under the Consumer Protection Act 2019. DCDRC {city} has jurisdiction alongside the Electricity Ombudsman."
+      },
+      {
+        "q": "My electricity meter is wrong. How do I prove it?",
+        "a": "Under Section 55 of the Electricity Act, you can formally request meter testing. If the meter is found defective, the board must adjust all bills for the preceding 6 months."
+      },
+      {
+        "q": "The electricity board is not responding to my complaint in {city}. What next?",
+        "a": "File a Lawly legal notice (₹199) to the DISCOM's Grievance Officer, then escalate to the State Electricity Ombudsman. If still unresolved, DCDRC {city} is the fastest option."
+      }
+    ]
+  }
+}

@@ -1,0 +1,354 @@
+{
+  "salary-not-paid": {
+    "slug": "salary-not-paid",
+    "title": "Salary Not Paid Legal Notice",
+    "h1": "Legal Notice for Salary Not Paid in {city}",
+    "meta_desc": "Send a legal notice for unpaid salary in {city}. Recover dues with 10× compensation under Payment of Wages Act. Lawly from ₹199.",
+    "governing_law": "Payment of Wages Act 1936 §15; Industrial Disputes Act 1947; Shops & Establishments Act",
+    "governing_law_short": "Payment of Wages Act 1936 §15",
+    "forum": "Labour Court / Industrial Tribunal / DCDRC",
+    "notice_period": "15 days",
+    "penalty": "Up to 10× the withheld salary as compensation (§15 Payment of Wages Act)",
+    "time_limit": "12 months from date of wage period where deduction made",
+    "what_to_include": [
+      "Exact months of salary unpaid with amounts",
+      "Employment start date and designation",
+      "Bank account details where salary was to be credited",
+      "Any verbal / written confirmation of dues from employer"
+    ],
+    "what_you_can_claim": [
+      "Full unpaid salary + arrears",
+      "Up to 10× salary as compensation (Payment of Wages Act §15)",
+      "Interest at 12% per annum on delayed wages",
+      "Retrenchment compensation if you were forced to resign"
+    ],
+    "steps": [
+      "Send a formal legal notice demanding payment within 15 days",
+      "File complaint under Payment of Wages Act with Labour Commissioner in {city}",
+      "File at Industrial Tribunal / Labour Court if employer disputes",
+      "File simultaneously at DCDRC if services engaged as consumer"
+    ],
+    "faqs": [
+      {
+        "q": "Can I send a legal notice for unpaid salary to my employer in {city}?",
+        "a": "Yes. A legal notice is the most effective first step. It creates a formal record and often prompts employers to pay immediately to avoid Labour Court proceedings in {city}."
+      },
+      {
+        "q": "How much compensation can I get for unpaid salary in {city}?",
+        "a": "Under Section 15 of the Payment of Wages Act, you can claim up to 10× the withheld amount. The Labour Court in {city} regularly awards this in addition to the unpaid salary."
+      },
+      {
+        "q": "My employer says the company has no money. Can I still recover salary in {city}?",
+        "a": "Yes. The Working Journalists Act and Industrial Disputes Act provide priority claims for workers. Labour Courts in {city} can attach employer property and payroll to recover dues."
+      }
+    ]
+  },
+  "property-dispute": {
+    "slug": "property-dispute",
+    "title": "Property Dispute Legal Notice",
+    "h1": "Legal Notice for Property Dispute in {city}",
+    "meta_desc": "Send a legal notice for property encroachment, illegal possession, or landlord-tenant dispute in {city}. Lawly from ₹199.",
+    "governing_law": "Transfer of Property Act 1882; Specific Relief Act 1963 §6 §38; Registration Act 1908",
+    "governing_law_short": "Specific Relief Act 1963 §6 + Transfer of Property Act",
+    "forum": "Civil Court / City Civil Court / District Court in {city}",
+    "notice_period": "30 days",
+    "penalty": "Mandatory injunction to vacate + damages + criminal trespass (IPC §441)",
+    "time_limit": "3–12 years depending on type (Limitation Act 1963)",
+    "what_to_include": [
+      "Full property description (survey number, area, address)",
+      "Title / ownership documents you hold",
+      "Specific acts of encroachment or illegal possession",
+      "Demand to vacate / stop interference within 30 days"
+    ],
+    "what_you_can_claim": [
+      "Recovery of possession (Specific Relief Act §6)",
+      "Permanent injunction against future interference",
+      "Mesne profits (rental value of property during illegal occupation)",
+      "Damages for any destruction or alteration to property"
+    ],
+    "steps": [
+      "Send a formal legal notice demanding vacation/restoration within 30 days",
+      "File suit under Specific Relief Act §6 in City Civil Court {city} (no title proof needed within 6 months)",
+      "Apply for interim injunction to prevent further encroachment",
+      "File criminal complaint for trespass under BNS §329 (old IPC §441)"
+    ],
+    "faqs": [
+      {
+        "q": "How quickly can I recover my property in {city} after sending a legal notice?",
+        "a": "Under Section 6 of the Specific Relief Act, you can file for recovery of possession within 6 months without proving title. City Civil Court {city} issues interim injunctions within days."
+      },
+      {
+        "q": "My tenants won't vacate in {city}. Do I need a legal notice first?",
+        "a": "Yes. A legal notice is mandatory before filing an eviction suit. Send a notice terminating tenancy citing non-payment or expiry of term, then file in Rent Court or Civil Court {city}."
+      },
+      {
+        "q": "My neighbour is encroaching on my property boundary. What can I do in {city}?",
+        "a": "Send a legal notice with survey map attached. File a civil suit for mandatory injunction in City Civil Court {city}. Also file a police complaint for criminal trespass (BNS §329)."
+      }
+    ]
+  },
+  "defamation": {
+    "slug": "defamation",
+    "title": "Defamation Legal Notice",
+    "h1": "Legal Notice for Defamation in {city}",
+    "meta_desc": "Send a legal notice for defamation, false accusations, or online harassment in {city}. Claim damages. Lawly from ₹199.",
+    "governing_law": "Bharatiya Nyaya Sanhita 2023 §356; IT Act 2000 §66A (civil); Civil Defamation under Tort Law",
+    "governing_law_short": "BNS 2023 §356 + Tort Law (Civil Defamation)",
+    "forum": "Sessions Court (criminal) / Civil Court (damages) in {city}",
+    "notice_period": "15 days",
+    "penalty": "Up to 2 years imprisonment (BNS §356) + unlimited civil damages",
+    "time_limit": "1 year for criminal complaint; 6 years for civil suit (Limitation Act)",
+    "what_to_include": [
+      "Exact defamatory statement(s) with date, time, platform",
+      "Evidence: screenshots, links, witness names, chat logs",
+      "How the statement is false and damaged your reputation",
+      "Demand for public apology + takedown + damages"
+    ],
+    "what_you_can_claim": [
+      "Financial damages for reputation loss",
+      "Mandatory apology (civil suit specific performance)",
+      "Content takedown under IT Rules 2021 (social media platforms)",
+      "Criminal prosecution under BNS §356 (imprisonment up to 2 years)"
+    ],
+    "steps": [
+      "Preserve all evidence: screenshots, timestamps, witness names",
+      "Send a legal notice demanding apology, takedown, and damages",
+      "Report to social media platform citing IT Rules 2021 (takedown in 36 hours for criminal content)",
+      "File civil suit for damages OR criminal complaint under BNS §356 in {city}"
+    ],
+    "faqs": [
+      {
+        "q": "Can I sue someone for defamatory social media posts in {city}?",
+        "a": "Yes. Both civil and criminal defamation actions lie under Indian law. The Sessions Court in {city} has jurisdiction for criminal defamation under BNS §356 (up to 2-year imprisonment)."
+      },
+      {
+        "q": "My ex-employer gave a false reference. Can I send a defamation notice?",
+        "a": "Yes. False statements to prospective employers causing job loss are actionable as defamation. A Lawly legal notice to the employer creates a formal record and often ends the behaviour."
+      },
+      {
+        "q": "Does sending a legal notice get defamatory content taken down quickly?",
+        "a": "Yes. Under IT Rules 2021, social media platforms must remove content notified as criminal defamation within 36 hours. A legal notice to the platform triggers this obligation."
+      }
+    ]
+  },
+  "medical-negligence": {
+    "slug": "medical-negligence",
+    "title": "Medical Negligence Legal Notice",
+    "h1": "Legal Notice for Medical Negligence in {city}",
+    "meta_desc": "Send a legal notice to a hospital or doctor for medical negligence in {city}. Claim compensation. Lawly from ₹199.",
+    "governing_law": "Consumer Protection Act 2019; IMA v. VP Shantha (1995 SC); NMC Act 2020; Tort law",
+    "governing_law_short": "CPA 2019 + IMA v. VP Shantha (1995 SC)",
+    "forum": "DCDRC {city} / High Court / National Consumer Commission",
+    "notice_period": "30 days",
+    "penalty": "Compensation from ₹50,000 to ₹5 crore+ depending on harm",
+    "time_limit": "2 years from date of negligence or discovery",
+    "what_to_include": [
+      "Full treatment timeline with dates",
+      "Medical records and discharge summary",
+      "Expert opinion documenting the negligence",
+      "Exact financial loss and health harm caused"
+    ],
+    "what_you_can_claim": [
+      "All treatment costs for corrective procedures",
+      "Income loss during recovery period",
+      "Compensation for permanent disability or disfigurement",
+      "Compensation for death of family member (loss of dependency)"
+    ],
+    "steps": [
+      "Obtain all medical records (hospital must provide within 72 hours)",
+      "Get independent medical expert opinion on the negligence",
+      "Send a legal notice to the hospital's Medical Superintendent",
+      "File at DCDRC {city} or High Court for larger claims"
+    ],
+    "faqs": [
+      {
+        "q": "Can I send a legal notice to a private hospital in {city} for negligence?",
+        "a": "Yes. Since the Supreme Court's ruling in IMA v. VP Shantha (1995), medical services are covered under the Consumer Protection Act 2019. DCDRC {city} handles all medical negligence complaints."
+      },
+      {
+        "q": "How much compensation can I get for medical negligence in {city}?",
+        "a": "Courts in {city} have awarded ₹50 lakh to ₹5 crore+ for cases involving death, permanent disability, or gross negligence. The amount depends on income loss, age, and severity of harm."
+      },
+      {
+        "q": "The hospital won't give me medical records. What can I do in {city}?",
+        "a": "Send a Lawly legal notice (₹199) citing the Hospital's legal obligation under MCI regulations and the RTI Act (if government hospital). Non-compliance can be cited as evidence of concealment in court."
+      }
+    ]
+  },
+  "cheque-bounce": {
+    "slug": "cheque-bounce",
+    "title": "Cheque Bounce Legal Notice",
+    "h1": "Legal Notice for Cheque Bounce in {city}",
+    "meta_desc": "Send a statutory legal notice for cheque bounce to recover your money in {city}. NI Act §138. Lawly from ₹199.",
+    "governing_law": "Negotiable Instruments Act 1881 §138",
+    "governing_law_short": "NI Act 1881 §138",
+    "forum": "Magistrate Court / Metropolitan Magistrate Court in {city}",
+    "notice_period": "30 days (mandatory — must be sent within 30 days of dishonour)",
+    "penalty": "Up to 2 years imprisonment + twice the cheque amount",
+    "time_limit": "30 days from dishonour to send notice; then 15 days for payment; then file within 30 days",
+    "what_to_include": [
+      "Cheque number, date, amount, drawee bank",
+      "Date of dishonour and bank return memo reason",
+      "Nature of underlying debt / liability",
+      "Demand for payment within 15 days of receiving this notice"
+    ],
+    "what_you_can_claim": [
+      "Full cheque amount + 12% interest",
+      "Up to 2× cheque amount as additional fine",
+      "Legal costs and expenses",
+      "Criminal prosecution leading to imprisonment of drawer"
+    ],
+    "steps": [
+      "Get the cheque return memo from your bank immediately",
+      "Send legal notice within 30 days of dishonour (mandatory — or you lose the case)",
+      "If no payment in 15 days, file complaint under §138 NI Act in Magistrate Court {city}",
+      "Court issues summons; upon conviction: up to 2 years jail + fine of 2× cheque amount"
+    ],
+    "faqs": [
+      {
+        "q": "How urgent is it to send a cheque bounce legal notice in {city}?",
+        "a": "Very urgent. Under NI Act §138, the legal notice MUST be sent within 30 days of cheque dishonour. Missing this deadline permanently bars you from filing a criminal complaint in {city}."
+      },
+      {
+        "q": "What if the person pays after receiving the notice?",
+        "a": "That's a successful outcome. Most cheque bounce matters settle within the 15-day notice period. If they pay, you do not need to file in court."
+      },
+      {
+        "q": "Can I file a cheque bounce case at a court in {city} against someone in another city?",
+        "a": "Yes. Under the Supreme Court's ruling in Dashrath Rupsingh Rathod (2015), cheque bounce complaints are filed in the city where the cheque was presented for payment (i.e., your bank in {city})."
+      }
+    ]
+  },
+  "rent-recovery": {
+    "slug": "rent-recovery",
+    "title": "Rent Recovery Legal Notice",
+    "h1": "Legal Notice for Rent Recovery in {city}",
+    "meta_desc": "Send a legal notice to your tenant for unpaid rent in {city}. Evict and recover dues quickly. Lawly from ₹199.",
+    "governing_law": "Transfer of Property Act 1882; Rent Control Act applicable to {city}; Code of Civil Procedure 1908",
+    "governing_law_short": "Transfer of Property Act + State Rent Control Act",
+    "forum": "Rent Control Court / City Civil Court in {city}",
+    "notice_period": "15 days",
+    "penalty": "Eviction decree + all rent arrears + mesne profits + legal costs",
+    "time_limit": "3 years from date of each rent default (Limitation Act)",
+    "what_to_include": [
+      "Lease agreement details (date, term, monthly rent)",
+      "Exact arrears with month-wise breakup",
+      "Prior reminders (verbal or written)",
+      "Demand for payment within 15 days or vacate premises"
+    ],
+    "what_you_can_claim": [
+      "All rent arrears with interest",
+      "Mesne profits (double rent) for period after tenancy termination",
+      "Cost of any damage to property",
+      "Legal costs of eviction proceedings"
+    ],
+    "steps": [
+      "Send legal notice terminating tenancy and demanding arrears",
+      "If no response, file eviction suit in Rent Court / Civil Court {city}",
+      "Apply for summary judgment / ex-parte decree if tenant absent",
+      "Execute decree: attach tenant's assets or get court bailiff to supervise exit"
+    ],
+    "faqs": [
+      {
+        "q": "Can I evict my tenant in {city} without going to court?",
+        "a": "No. Self-help eviction (cutting power, changing locks, removing belongings) is illegal. A legal notice followed by a court eviction suit is the proper path. Courts in {city} issue eviction decrees within 3–6 months for clear-cut defaults."
+      },
+      {
+        "q": "My tenant hasn't paid rent for 3 months in {city}. What can I do?",
+        "a": "Send a Lawly legal notice (₹199) terminating the tenancy and claiming arrears. Many tenants pay upon receiving a legal notice to avoid eviction. If not, file in Rent Court {city} immediately."
+      },
+      {
+        "q": "Does rent control protection apply even if my tenant doesn't pay?",
+        "a": "Non-payment of rent is a ground for eviction even under strict rent control laws. {city}'s Rent Court regularly grants eviction for repeated defaults. A legal notice is the mandatory first step."
+      }
+    ]
+  },
+  "consumer-complaint": {
+    "slug": "consumer-complaint",
+    "title": "Consumer Complaint Legal Notice",
+    "h1": "Legal Notice for Consumer Complaint in {city}",
+    "meta_desc": "Send a legal notice before filing your consumer complaint in {city}. Forces companies to settle. Lawly from ₹199.",
+    "governing_law": "Consumer Protection Act 2019; Consumer Protection (E-Commerce) Rules 2020",
+    "governing_law_short": "Consumer Protection Act 2019",
+    "forum": "District Consumer Disputes Redressal Commission (DCDRC) in {city}",
+    "notice_period": "15 days",
+    "penalty": "Compensation + punitive damages + product recall under CPA 2019",
+    "time_limit": "2 years from date of deficiency of service or unfair trade practice",
+    "what_to_include": [
+      "Invoice / receipt / order confirmation",
+      "Exact deficiency: what was promised vs. what was delivered",
+      "Prior complaints made to company and responses",
+      "Amount of compensation demanded"
+    ],
+    "what_you_can_claim": [
+      "Full refund or replacement",
+      "Compensation for mental agony and inconvenience",
+      "Legal costs",
+      "Punitive damages for wilful disregard under CPA 2019 §39"
+    ],
+    "steps": [
+      "Send a legal notice to the company's Grievance Officer",
+      "File complaint on National Consumer Helpline (consumerhelpline.gov.in / 1915)",
+      "If unresolved in 30 days, file at DCDRC in {city}",
+      "DCDRC is free for claims up to ₹50 lakh; no lawyer needed"
+    ],
+    "faqs": [
+      {
+        "q": "Do I need to send a legal notice before filing at DCDRC in {city}?",
+        "a": "No — it's not legally required. But a pre-litigation legal notice often settles the matter in 15 days, saving you months of court hearings. It's the smartest first step."
+      },
+      {
+        "q": "How much does it cost to file a consumer complaint in {city}?",
+        "a": "Filing fees at DCDRC {city} are: ₹50 (claims up to ₹5L), ₹200 (claims up to ₹10L), ₹400 (up to ₹20L), ₹500 (up to ₹50L). No lawyer needed. A Lawly legal notice (₹199) is the fastest first step."
+      },
+      {
+        "q": "How long does a consumer case take at DCDRC in {city}?",
+        "a": "CPA 2019 mandates resolution within 90 days. In practice, {city}'s DCDRC resolves most cases within 3–6 months. Sending a legal notice first can settle things in 15–30 days without any court visit."
+      }
+    ]
+  },
+  "employment-termination": {
+    "slug": "employment-termination",
+    "title": "Wrongful Termination Legal Notice",
+    "h1": "Legal Notice for Wrongful Termination in {city}",
+    "meta_desc": "Send a legal notice for wrongful termination or illegal dismissal in {city}. Recover dues and compensation. Lawly from ₹199.",
+    "governing_law": "Industrial Disputes Act 1947; Shops & Establishments Act; Payment of Gratuity Act 1972",
+    "governing_law_short": "Industrial Disputes Act 1947 + Shops & Establishments Act",
+    "forum": "Labour Court / Industrial Tribunal in {city}",
+    "notice_period": "30 days",
+    "penalty": "Reinstatement OR full back wages + gratuity + retrenchment compensation",
+    "time_limit": "3 years for Labour Court; 1 year recommended for best outcome",
+    "what_to_include": [
+      "Employment contract / appointment letter details",
+      "Date of termination and manner of termination",
+      "Notice period terms in contract and whether followed",
+      "Any prior disciplinary actions claimed by employer"
+    ],
+    "what_you_can_claim": [
+      "Notice pay (salary in lieu of notice)",
+      "Retrenchment compensation (15 days per year served for workmen)",
+      "Full gratuity (if 5+ years served, Payment of Gratuity Act)",
+      "Back wages for the period from termination to reinstatement"
+    ],
+    "steps": [
+      "Send a legal notice disputing the termination and claiming dues",
+      "File complaint under Industrial Disputes Act before Labour Commissioner {city}",
+      "If conciliation fails, the matter goes to Labour Court / Industrial Tribunal {city}",
+      "For senior executives (non-workmen): file civil suit for breach of contract"
+    ],
+    "faqs": [
+      {
+        "q": "Can I fight a wrongful termination in {city} even without a written contract?",
+        "a": "Yes. Offer letter, salary slips, and appointment order are sufficient evidence. Industrial Courts in {city} regularly reinstate workers terminated without proper procedure."
+      },
+      {
+        "q": "My employer fired me via WhatsApp. Is that valid?",
+        "a": "Probably not. Under the Industrial Disputes Act, termination requires written notice (usually 30–90 days) and proper dues payment. A verbal or WhatsApp termination without dues is challengeable in Labour Court {city}."
+      },
+      {
+        "q": "What if I was a senior manager, not a 'workman'?",
+        "a": "Senior managers not covered under the Industrial Disputes Act can file a civil suit for breach of contract in City Civil Court {city} and claim notice pay, unpaid bonuses, and damages."
+      }
+    ]
+  }
+}

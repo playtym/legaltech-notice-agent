@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 from contextlib import asynccontextmanager
 
 from legaltech.general_pipeline import GeneralDocumentPipeline
+from legaltech.page_renderer import render_page as _render_programmatic_page, all_programmatic_urls as _all_programmatic_urls
 from legaltech.pipeline import LegalNoticePipeline
 from legaltech.schemas import (
     Complainant,
@@ -2138,6 +2139,10 @@ async def dynamic_sitemap():
         updated = post.get("updated_at", today)[:10]
         urls.append(f'  <url>\n    <loc>{base}/blog/{slug}</loc>\n    <lastmod>{updated}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>')
 
+    # Programmatic city × sector / notice-type pages (1200+ pages, no HTML files)
+    for prog_path in _all_programmatic_urls():
+        urls.append(f'  <url>\n    <loc>{base}/{prog_path}</loc>\n    <lastmod>{today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>')
+
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + '\n'.join(urls) + '\n</urlset>'
     return Response(content=xml, media_type="application/xml")
 
@@ -2997,7 +3002,18 @@ async def catch_all_redirect(full_path: str):
     static_path = _STATIC_DIR / full_path
     if static_path.is_file():
         return FileResponse(str(static_path))
-        
+
+    # Try programmatic template rendering (city × sector / notice-type matrix)
+    # This fires AFTER exact static files (so hand-crafted pages still take priority)
+    # but BEFORE the .html fallback — new city URLs have no .html file.
+    if not full_path.endswith(".html"):
+        rendered = _render_programmatic_page(full_path)
+        if rendered is not None:
+            return HTMLResponse(
+                content=rendered,
+                headers={"Cache-Control": "public, max-age=3600"},
+            )
+
     # Try static file handling clean URLs (append .html)
     if not full_path.endswith(".html"):
         static_html_path = _STATIC_DIR / f"{full_path}.html"
