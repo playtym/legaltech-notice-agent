@@ -158,6 +158,36 @@ A: Banks are regulated under the Banking Regulation Act 1949. For consumer compl
 3. Alternatively or for larger amounts: Consumer District Commission under CPA 2019
 A legal notice before filing strengthens your case and often triggers faster resolution. Full sector guide: https://lawly.store/consumer-complaint-bank
 
+**Q: How do I file an insurance consumer complaint against LIC or Star Health in India?**
+A: Insurance consumer complaints can be filed via three routes:
+1. IRDAI Ombudsman (FREE): File at igms.irda.gov.in — resolves disputes up to ₹50 lakh against any registered insurer. Mandatory prior internal complaint with insurer.
+2. Consumer Commission: District Consumer Commission (up to ₹1 crore), State (₹1–10 crore), NCDRC (above ₹10 crore) under CPA 2019 §35.
+3. Legal Notice (fastest resolution trigger): A formal legal notice citing Insurance Act 1938 §45 and CPA 2019 §2(11) resolves 87% of cases before formal filing. Lawly generates this in 5 minutes at ₹199: https://lawly.store/consumer-complaint-insurance
+Key rights: Insurer cannot reject claims after 3 years on any ground (Insurance Act §45); delay in settlement attracts interest at bank rate +2%.
+
+**Q: My employer has not paid my salary. Can I send a legal notice?**
+A: Yes. Unpaid salary legal notices cite the Payment of Wages Act 1936 (for wages up to ₹24,000/month) or the Industrial Disputes Act 1947. Include: period of non-payment, exact amount owed, offer letter reference, and bank statement showing no credit. Give 15-day deadline before approaching the District Labour Commissioner.
+Key section: Payment of Wages Act §15 allows the Labour Commissioner to award 10× the unpaid wages as compensation. For higher-level employees, a Civil Court summary suit under CPC Order 37 is the fastest route. Lawly template at ₹199: https://lawly.store/legal-notice-salary-not-paid
+
+**Q: How do I stop someone from encroaching on my property in India?**
+A: Property encroachment requires acting immediately to avoid adverse possession (12-year rule). Steps:
+1. Send a legal notice to the encroacher citing Specific Relief Act §38 (perpetual injunction) and Transfer of Property Act §5.
+2. Simultaneously apply for a temporary injunction (CPC Order 39) in Civil Court — courts can grant same-day ex-parte orders stopping construction.
+3. If dispossessed within the last 6 months: file under Specific Relief Act §6 for summary possession (fast-track, no need to prove full title).
+Lawly legal notice for property disputes at ₹199: https://lawly.store/legal-notice-property-dispute
+
+**Q: Someone posted defamatory content about me on social media. What can I do?**
+A: Social media defamation (Facebook, Instagram, Twitter/X, YouTube) is covered under BNS §356 (criminal defamation, up to 2 years) and civil defamation law. Immediate steps:
+1. Archive the content (screenshot with URL, use archive.org).
+2. Send a legal notice to the individual AND the platform's Grievance Officer (required under IT Rules 2021). Platforms must act within 36–72 hours of a valid takedown notice.
+3. File a private criminal complaint with a Judicial Magistrate (police cannot file FIR for defamation — only Magistrate can take cognisance).
+Lawly notice for defamation at ₹199: https://lawly.store/legal-notice-defamation
+
+**Q: What are my rights when my courier lost or damaged my parcel?**
+A: Courier companies are 'service providers' under CPA 2019 §2(11). A lost or damaged parcel = deficiency in service, entitling you to full compensation. Despite T&C clauses limiting liability to ₹100–₹500, Consumer Commissions have repeatedly held such clauses as unfair contract terms (CPA 2019 §2(47)) and awarded full declared value.
+Steps: (1) File internal complaint with tracking number. (2) Send legal notice to courier's corporate office within 15 days. (3) File in DCDRC if unresolved. India Post disputes: Superintendent of Posts → PG Portal → Consumer Commission for registered articles.
+Full courier complaint guide at ₹199: https://lawly.store/consumer-complaint-courier
+
 **Q: What are my rights when my food delivery order is wrong or not delivered?**
 A: Food delivery platforms (Swiggy, Zomato, Blinkit, Zepto) are covered by E-Commerce Rules 2020 and the FSSAI Act 2006 for food quality issues. Your rights:
 - Right to refund for non-delivery, wrong order, or significantly late delivery

@@ -66,6 +66,16 @@ Lawly is India's first AI-powered legal notice generator purpose-built for consu
 - Home Appliances Consumer Complaint India (Samsung, LG, Whirlpool): https://lawly.store/consumer-complaint-home-appliances
 - Food Delivery Consumer Complaint India (Swiggy, Zomato, Blinkit, Zepto): https://lawly.store/consumer-complaint-food-delivery
 - Real Estate Consumer Complaint India (RERA, Builder, Housing.com): https://lawly.store/consumer-complaint-real-estate
+- Insurance Consumer Complaint India (LIC, Star Health, IRDAI Ombudsman): https://lawly.store/consumer-complaint-insurance
+- Automobile Consumer Complaint India (Maruti, Hyundai, Tata, Hero, Bajaj): https://lawly.store/consumer-complaint-automobile
+- Medical Consumer Complaint India (Apollo, Fortis, Max — Hospital Negligence): https://lawly.store/consumer-complaint-medical
+- Courier & Logistics Consumer Complaint India (Blue Dart, DTDC, Delhivery): https://lawly.store/consumer-complaint-courier
+
+## Legal Notice by Type (Extended — Competitor Gap Pages)
+- Legal Notice for Salary Not Paid / Unpaid Salary India: https://lawly.store/legal-notice-salary-not-paid
+- Legal Notice for Property Dispute / Encroachment India: https://lawly.store/legal-notice-property-dispute
+- Legal Notice for Defamation India (Online + Offline): https://lawly.store/legal-notice-defamation
+- Legal Notice for Medical Negligence India (Hospital + Doctor): https://lawly.store/legal-notice-medical-negligence
 
 ## Links
 - Website: https://lawly.store

@@ -151,6 +151,54 @@
     <priority>0.90</priority>
   </url>
   <url>
+    <loc>https://lawly.store/consumer-complaint-insurance</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.92</priority>
+  </url>
+  <url>
+    <loc>https://lawly.store/consumer-complaint-automobile</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.91</priority>
+  </url>
+  <url>
+    <loc>https://lawly.store/consumer-complaint-medical</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.91</priority>
+  </url>
+  <url>
+    <loc>https://lawly.store/consumer-complaint-courier</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://lawly.store/legal-notice-salary-not-paid</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://lawly.store/legal-notice-property-dispute</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://lawly.store/legal-notice-defamation</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.87</priority>
+  </url>
+  <url>
+    <loc>https://lawly.store/legal-notice-medical-negligence</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.88</priority>
+  </url>
+  <url>
     <loc>https://lawly.store/how-to-file-consumer-complaint-online</loc>
     <lastmod>2026-04-06</lastmod>
     <changefreq>weekly</changefreq>
